@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='PermutiveAPI',
-    version='v2.0.2',
+    version='v2.0.3',
     packages=find_packages(),
     install_requires=[
 
