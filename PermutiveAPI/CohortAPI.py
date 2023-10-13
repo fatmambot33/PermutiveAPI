@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 
-from . import WORKSPACES
+
 from .APIRequestHandler import APIRequestHandler
 from .Utils import FileHelper
 
@@ -46,30 +46,6 @@ class CohortAPI:
 
         def to_file(self, filepath: str):
             FileHelper.save_to_json(self, filepath=filepath)
-
-        def create(self):
-            if self.workspace_id is None:
-                raise ValueError("Missing workspace_id")
-            api_key = WORKSPACES.get_privateKey(self.workspace_id)
-            if api_key is None:
-                raise ValueError("Missing api_key for the workspace")
-            self = CohortAPI(api_key=api_key).create(self)
-
-        def update(self):
-            if self.workspace_id is None:
-                raise ValueError("Missing workspace_id")
-            api_key = WORKSPACES.get_privateKey(self.workspace_id)
-            if api_key is None:
-                raise ValueError("Missing api_key for the workspace")
-            self = CohortAPI(api_key=api_key).update(self)
-
-        def delete(self):
-            if self.workspace_id is None:
-                raise ValueError("Missing workspace_id")
-            api_key = WORKSPACES.get_privateKey(self.workspace_id)
-            if api_key is None:
-                raise ValueError("Missing api_key for the workspace")
-            self = CohortAPI(api_key=api_key).update(self)
 
         @staticmethod
         def from_file(filepath: str):
