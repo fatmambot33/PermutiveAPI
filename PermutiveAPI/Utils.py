@@ -93,5 +93,6 @@ class ListHelper:
             lst2 = [lst2]
         if lst2 is None:
             lst2 = []
-        lst = list(filter(None, list(dict.fromkeys(lst1+lst2)))).sort()
+        lst = list(filter(None, list(dict.fromkeys(lst1+lst2))))
+        lst.sort()
         return lst
