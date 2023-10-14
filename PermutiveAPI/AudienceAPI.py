@@ -212,8 +212,11 @@ class AudienceAPI:
             else:
                 segment_cohort.id = cohort.id
                 segment_cohort.code = cohort.code
-                segment_cohort.tags = ListHelper.merge_list(
-                    segment_cohort.tags, cohort.tags)
+                if segment_cohort.tags is not None:
+                    segment_cohort.tags = ListHelper.merge_list(
+                        segment_cohort.tags, cohort.tags)
+                else:
+                    segment_cohort.tags = cohort.tags
                 cohort_api.update(segment_cohort)
 
     def list_cohorts(self, import_id: str):
