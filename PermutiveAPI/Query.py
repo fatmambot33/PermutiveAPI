@@ -594,7 +594,8 @@ class Query():
         during_the_last_unit: str = 'str'
 
         def to_query(self) -> Dict:
-            conditions = CohortAPI.Cohort.PageView.keywords_to_conditions(
+
+            conditions = self.keywords_to_conditions(
                 self.keywords)
 
             page_view_query = {
@@ -657,7 +658,7 @@ class Query():
         during_the_last_unit: str = 'day'
 
         def to_query(self) -> Dict:
-            conditions = CohortAPI.Cohort.VideoView.keywords_to_conditions(
+            conditions = self.keywords_to_conditions(
                 self.keywords)
 
             video_view_query = {
@@ -730,9 +731,19 @@ class Query():
         def to_query(self) -> Dict:
             engaged_time = {'engaged_time': {
                 'seconds': {self.operator: self.value},
-                'where': {'or': CohortAPI.Cohort.PageView.keywords_to_conditions(self.keywords)}}
+                'where': {'or': self.keywords_to_conditions(self.keywords)}}
             }
             return engaged_time
+
+        @staticmethod
+        def keywords_to_conditions(keywords: List[str]) -> List[Dict]:
+            conditions = []
+            conditions.append({
+                'condition': {
+                    'contains': [f' {keyword} ' for keyword in keywords]
+                },
+                'property': 'properties.videoTitle'})
+            return conditions
 
     @dataclass
     class EngagedCompletion:
@@ -743,8 +754,18 @@ class Query():
         def to_query(self) -> Dict:
             engaged_completion = {'engaged_completion':
                                   {'completion': {self.operator: self.value},
-                                   'where': {'or': CohortAPI.Cohort.PageView.keywords_to_conditions(self.keywords)}}}
+                                   'where': {'or': self.keywords_to_conditions(self.keywords)}}}
             return engaged_completion
+
+        @staticmethod
+        def keywords_to_conditions(keywords: List[str]) -> List[Dict]:
+            conditions = []
+            conditions.append({
+                'condition': {
+                    'contains': [f' {keyword} ' for keyword in keywords]
+                },
+                'property': 'properties.videoTitle'})
+            return conditions
 
     @dataclass
     class SlotClick:

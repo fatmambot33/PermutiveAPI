@@ -59,7 +59,7 @@ class WorkspaceList(List[Workspace]):
         if filepath != "":
             files = [filepath]
         else:
-            files = glob(os.environ.get("DATA_PATH") + folder_name + '/*.json')
+            files = glob(f'{os.environ.get("DATA_PATH")}{folder_name}/*.json')
         files.sort()  # type: ignore
         for file_path in files:
             if file_path is not None and FileHelper.file_exists(file_path):
