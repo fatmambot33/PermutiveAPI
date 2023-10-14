@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Any
 
 
 from .APIRequestHandler import APIRequestHandler
@@ -41,7 +41,7 @@ class CohortAPI:
         request_id: Optional[str] = None
         error: Optional[str] = None
 
-        def to_payload(self, keys: Optional[List[str]] = None) -> Dict[str, any]:
+        def to_payload(self, keys: Optional[List[str]] = None) -> Dict[str, Any]:
             return APIRequestHandler.to_payload(self, keys=keys)
 
         def to_file(self, filepath: str):
@@ -92,7 +92,7 @@ class CohortAPI:
         :return: Cohort object
         '''
         logging.info(f"CohortAPI::get_by_name::{cohort_name}")
-        for cohort in self.list():
+        for cohort in self.list(include_child_workspaces=True):
             if cohort_name == cohort.name and cohort.id is not None:
                 return self.get(cohort.id)
         return None
@@ -107,7 +107,7 @@ class CohortAPI:
         if type(cohort_code) == str:
             cohort_code = int(cohort_code)
         logging.info(f"CohortAPI::get_by_code::{cohort_code}")
-        for cohort in self.list():
+        for cohort in self.list(include_child_workspaces=True):
             if cohort_code == cohort.code and cohort.id is not None:
                 return self.get(cohort.id)
 
@@ -161,7 +161,7 @@ class CohortAPI:
         url = f"{COHORT_API_ENDPOINT}{cohort_id}?k={self.__api_key}"
         APIRequestHandler.delete(url=url)
 
-    def copy(self, cohort_id: str, k2: Optional[str] = None) -> Cohort:
+    def copy(self, cohort_id: str, k2: Optional[str] = None) -> Optional[Cohort]:
         """
         Meant for copying a cohort
         :param cohort_id: str the cohort's id to duplicat. Required
@@ -169,20 +169,21 @@ class CohortAPI:
         :return: Response
         :rtype: Response
         """
-        logging.info(f"CohortAPI::copy::{cohort.name}")
+        logging.info(f"CohortAPI::copy::")
         if cohort_id is None:
             raise ValueError("cohort_id must be specified")
         cohort = self.get(cohort_id)
-        cohort.id = None
-        cohort.code = None
-        cohort.name = cohort.name + ' (copy)'
-        new_description = "Copy of " + cohort_id
-        if cohort.description is not None:
-            cohort.description = cohort.description + new_description
-        else:
-            cohort.description = new_description
-        if k2 is None:
-            return self.create(cohort)
-        else:
-            api = CohortAPI(k=k2)
-            return api.create(cohort)
+        if cohort is not None:
+            cohort.id = None
+            cohort.code = None
+            cohort.name = cohort.name + ' (copy)'
+            new_description = "Copy of " + cohort_id
+            if cohort.description is not None:
+                cohort.description = cohort.description + new_description
+            else:
+                cohort.description = new_description
+            if k2 is None:
+                return self.create(cohort)
+            else:
+                api = CohortAPI(api_key=k2)
+                return api.create(cohort)

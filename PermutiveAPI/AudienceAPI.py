@@ -31,7 +31,6 @@ class AudienceAPI:
         code: str
         relation: str
         identifiers: List[str]
-        source: 'Source'
         description: Optional[Dict] = None
         source: Optional['Source'] = None
         inheritance: Optional[str] = None
@@ -139,10 +138,10 @@ class AudienceAPI:
             raise ValueError('name must be specified')
         logging.info(
             f"AudienceAPI::create_segment::{segment.import_id}::{segment.name}")
-        url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_idd}/segments?k={self.__api_key}"
+        url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments?k={self.__api_key}"
         payload = ['name', 'code', 'description', 'cpm', 'categories']
         response = APIRequestHandler.post(
-            url=url, data=segment.to_payload(payload))
+            url=url, data=APIRequestHandler.to_payload(payload))
         return AudienceAPI.Import.Segment(**response.json())
 
     def update_segment(self, segment: Import.Segment) -> Optional[Import.Segment]:
