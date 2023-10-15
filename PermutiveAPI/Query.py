@@ -2,16 +2,16 @@
 import glob
 import logging
 import os
-import urllib
+import urllib.parse
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Any
 
 import pandas as pd
 
 
 from .CohortAPI import CohortAPI
 from .Utils import ListHelper, FileHelper
-
+from .Workspace import WorkspaceList
 
 TAGS = ['#automatic', '#spireglobal']
 DEFAULT = {}
@@ -66,10 +66,10 @@ class Query():
                     if len(description_list) > 0:
                         self.keywords = description_list
 
-    def sync_clickers(self, k, new_tags: List[str] = TAGS,  override_tags: bool = False):
+    def sync_clickers(self, api_key, new_tags: List[str] = TAGS,  override_tags: bool = False):
         if self.name is not None:
             logging.info('segment: ' + self.name)
-        cohort_api = CohortAPI(k)
+        cohort_api = CohortAPI(api_key)
         cohort = cohort_api.get_by_name(cohort_name=self.name + " | Clickers")
         if cohort is None:
             cohort = CohortAPI.Cohort(
@@ -82,7 +82,7 @@ class Query():
             cohort.tags = new_tags
             cohort_api.update(cohort)
 
-    def sync(self, api_key, new_tags: List[str] = TAGS,  override_tags: bool = False):
+    def sync(self, api_key: str, new_tags: List[str] = TAGS,  override_tags: bool = False):
         if self.name is not None:
             logging.info('segment: ' + self.name)
 
@@ -774,7 +774,7 @@ class Query():
         operator: str = DEFAULT['NUM_OPERATOR']
         frequency: int = 1
 
-        def to_query(self) -> Dict[str, any]:
+        def to_query(self) -> Dict[str, Any]:
             slot_click = {
                 'event': 'GamLogSlotClicked',
                 'frequency': {
@@ -806,7 +806,7 @@ class Query():
         unit: str = 'days'
         value: int = 0
 
-        def to_query(self) -> Dict[str, any]:
+        def to_query(self) -> Dict[str, Any]:
             if self.value > 0:
                 condition = {
                     'during': {
@@ -831,7 +831,7 @@ class Query():
         third_party_segment: ThirdPartySegment
         transition_type: str = 'in_third_party_segment'
 
-        def to_query(self) -> Dict[str, any]:
+        def to_query(self) -> Dict[str, Any]:
             return {
                 self.transition_type:
                     {"provider": self.third_party_segment.provider,
@@ -883,24 +883,28 @@ class QueryList(List[Query]):
             super().__init__(queries)
 
     @staticmethod
-    def read_json(filepath: Optional[str] = "") -> 'QueryList':
+    def read_json(filepath: Optional[str] = None) -> Optional['QueryList']:
         folder_name = "query"
         query_list = []
         files = List[str]
-        if filepath != "":
+        if filepath is not None:
             files = [filepath]
+        elif os.environ.get("DATA_PATH") is not None:
+            files = glob.glob(
+                f'{os.environ.get("DATA_PATH")}{folder_name}/*.json')
+            files.sort()
         else:
-            files = glob(os.environ.get("DATA_PATH") + folder_name + '/*.json')
-        files.sort()
-        for file_path in files:
-            if file_path is not None and FileHelper.file_exists(file_path):
-                definitions = FileHelper.read_json(file_path)
-                if not isinstance(definitions, List):
-                    definitions = [definitions]
-                for definition in definitions:
-                    if definition.get("market", "CN") is not None:
-                        query_list.append(Query(**definition))
-        return QueryList(query_list)
+            files = None
+        if files is not None:
+            for file_path in files:
+                if file_path is not None and FileHelper.file_exists(file_path):
+                    definitions = FileHelper.read_json(file_path)
+                    if not isinstance(definitions, List):
+                        definitions = [definitions]
+                    for definition in definitions:
+                        if definition.get("market", "CN") is not None:
+                            query_list.append(Query(**definition))
+            return QueryList(query_list)
 
     def to_query(self):
         query_dict = {}
@@ -965,12 +969,6 @@ class QueryList(List[Query]):
         return [query_dict[cohort_name]
                 for cohort_name in query_dict]
 
-    def sync(self, new_tags: Optional[List[str]] = TAGS, override_tags: bool = False):
-        for definition in self:
-            if definition.market is not None:
-                if new_tags is not None:
-                    definition.sync(new_tags, override_tags)
-
     def to_json(self, filepath: str):
         FileHelper.save_to_json(self, filepath)
 
@@ -980,13 +978,13 @@ class QueryList(List[Query]):
         return QueryList(filtered_queries)
 
     @staticmethod
-    def sync_definitions(file: str = None,
+    def sync_definitions(workspaceList: WorkspaceList, file: Optional[str] = None,
                          new_tags=TAGS):
         folder_name = "query"
         if file is not None:
             files = [file]
         else:
-            files = glob(
+            files = glob.glob(
                 pathname=f"{os.environ.get('DATA_PATH')}{folder_name}/*.json")
         files.sort()
         for filepath in files:
@@ -997,20 +995,25 @@ class QueryList(List[Query]):
                 definitions = [definitions]
             for definition in definitions:
                 query = Query(**definition)
-                query.sync(new_tags=new_tags)
+                api_key = workspaceList.get_privateKey(
+                    query.workspace_id)
+                if api_key is not None:
+                    query.sync(api_key=api_key,
+                               new_tags=new_tags)
                 definitions[definition_index] = query
                 definition_index = definition_index + 1
             definitions = sorted(definitions, key=lambda d: d["name"])
             FileHelper.save_to_json(definitions, filepath)
 
     @staticmethod
-    def sync_clicks(file: str = None,
+    def sync_clicks(workspaceList: WorkspaceList,
+                    file: Optional[str] = None,
                     new_tags=TAGS):
         folder_name = "query"
         if file is not None:
             files = [file]
         else:
-            files = glob(
+            files = glob.glob(
                 pathname=f"{os.environ.get('DATA_PATH')}{folder_name}/*.json")
         files.sort()
         for filepath in files:
@@ -1020,5 +1023,8 @@ class QueryList(List[Query]):
                 definitions = [definitions]
             for definition in definitions:
                 query = Query(**definition)
-                query.sync_clickers(
-                    new_tags=ListHelper.merge_list(new_tags, TAGS))
+                api_key = workspaceList.get_privateKey(
+                    query.workspace_id)
+                if api_key is not None:
+                    query.sync_clickers(api_key=api_key,
+                                        new_tags=ListHelper.merge_list(new_tags, TAGS))

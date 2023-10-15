@@ -37,7 +37,9 @@ class WorkspaceList(List[Workspace]):
         if workspaces is not None:
             super().__init__(workspaces)
 
-    def get_privateKey(self, workspaceID: str) -> Optional[str]:
+    def get_privateKey(self, workspaceID: Optional[str] = None) -> Optional[str]:
+        if workspaceID is None:
+            return None
         for workspace in self:
             if workspace.workspaceID == workspaceID:
                 return workspace.privateKey
