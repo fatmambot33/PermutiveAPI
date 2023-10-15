@@ -9,9 +9,9 @@ from typing import Dict, List, Optional, Union, Any
 import pandas as pd
 
 
-from .CohortAPI import CohortAPI
-from .Utils import ListHelper, FileHelper
-from .Workspace import WorkspaceList
+from PermutiveAPI.CohortAPI import CohortAPI
+from PermutiveAPI.Utils import ListHelper, FileHelper
+from PermutiveAPI.Workspace import WorkspaceList
 
 TAGS = ['#automatic', '#spireglobal']
 DEFAULT = {}
