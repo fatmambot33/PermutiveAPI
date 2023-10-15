@@ -584,6 +584,261 @@ class Query():
         return domain_condition
 # endregion
 
+    @dataclass
+    class PageView:
+        keywords: List[str]
+
+        frequency_value: int = 1
+        frequency_operator: str = DEFAULT['NUM_OPERATOR']
+        during_the_last_value: int = 0
+        during_the_last_unit: str = 'str'
+
+        def to_query(self) -> Dict:
+
+            conditions = self.keywords_to_conditions(
+                self.keywords)
+
+            page_view_query = {
+                'event': 'Pageview',
+                'frequency': {
+                    self.frequency_operator: self.frequency_value
+                },
+                'where': {
+                    'or': conditions
+                }
+            }
+
+            if self.during_the_last_value > 0:
+                page_view_query['during'] = {
+                    'the_last': {
+                        'unit': self.during_the_last_unit,
+                        'value': self.during_the_last_value
+                    }
+                }
+
+            return page_view_query
+
+        @staticmethod
+        def keywords_to_conditions(keywords: List[str]) -> List[Dict]:
+            conditions = []
+            conditions.append({
+                'condition': {
+                    'contains': [f' {keyword} ' for keyword in keywords]
+                },
+                'property': 'properties.article.title'})
+            conditions.append({
+                'condition': {
+                    'contains': [f' {keyword} ' for keyword in keywords]
+                },
+                'property': 'properties.article.description'})
+            conditions.append({
+                'condition': {
+                    'equal_to': keywords
+                },
+                'property': 'properties.article.category'})
+            conditions.append({
+                'condition': {
+                    'equal_to': keywords
+                },
+                'property': 'properties.article.subcategory'})
+            conditions.append({
+                'condition': {
+                    'list_contains': keywords
+                },
+                'property': 'properties.article.tags'})
+            return conditions
+
+    @dataclass
+    class VideoView:
+        keywords: List[str]
+
+        frequency_value: int = 1
+        frequency_operator: str = DEFAULT['NUM_OPERATOR']
+        during_the_last_value: int = 0
+        during_the_last_unit: str = 'day'
+
+        def to_query(self) -> Dict:
+            conditions = self.keywords_to_conditions(
+                self.keywords)
+
+            video_view_query = {
+                'event': 'videoViews',
+                'frequency': {
+                    self.frequency_operator: self.frequency_value
+                },
+                'where': {
+                    'or': conditions
+                }
+            }
+
+            if self.during_the_last_value > 0:
+                video_view_query['during'] = {
+                    'the_last': {
+                        'unit': self.during_the_last_unit,
+                        'value': self.during_the_last_value
+                    }
+                }
+
+            return video_view_query
+
+        @staticmethod
+        def keywords_to_conditions(keywords: List[str]) -> List[Dict]:
+            conditions = []
+            conditions.append({
+                'condition': {
+                    'contains': [f' {keyword} ' for keyword in keywords]
+                },
+                'property': 'properties.videoTitle'})
+            return conditions
+
+    @dataclass
+    class LinkClick:
+        keywords: List[str]
+        dest_urls: List[str] = field(default_factory=lambda: ['facebook.com',
+                                                              'instagram.com', 'pinterest.com'])
+
+        def to_query(self) -> Dict:
+            LinkClick = {
+                'event': 'LinkClick',
+                'frequency': {
+                    'greater_than_or_equal_to': 1
+                },
+                'where': {
+                    'and': [
+                        {
+                            'condition': {
+                                'contains': self.dest_urls
+                            },
+                            'property': 'properties.dest_url'
+                        },
+                        {
+                            'condition': {
+                                'contains': self.keywords
+                            },
+                            'property': 'properties.client.url'
+                        }
+                    ]
+                }
+            }
+            return LinkClick
+
+    @dataclass
+    class EngagedTime:
+        keywords: List[str]
+        operator: str = DEFAULT['NUM_OPERATOR']
+        value: float = 0.6
+
+        def to_query(self) -> Dict:
+            engaged_time = {'engaged_time': {
+                'seconds': {self.operator: self.value},
+                'where': {'or': self.keywords_to_conditions(self.keywords)}}
+            }
+            return engaged_time
+
+        @staticmethod
+        def keywords_to_conditions(keywords: List[str]) -> List[Dict]:
+            conditions = []
+            conditions.append({
+                'condition': {
+                    'contains': [f' {keyword} ' for keyword in keywords]
+                },
+                'property': 'properties.videoTitle'})
+            return conditions
+
+    @dataclass
+    class EngagedCompletion:
+        keywords: List[str]
+        operator: str = DEFAULT['NUM_OPERATOR']
+        value: float = 0.6
+
+        def to_query(self) -> Dict:
+            engaged_completion = {'engaged_completion':
+                                  {'completion': {self.operator: self.value},
+                                   'where': {'or': self.keywords_to_conditions(self.keywords)}}}
+            return engaged_completion
+
+        @staticmethod
+        def keywords_to_conditions(keywords: List[str]) -> List[Dict]:
+            conditions = []
+            conditions.append({
+                'condition': {
+                    'contains': [f' {keyword} ' for keyword in keywords]
+                },
+                'property': 'properties.videoTitle'})
+            return conditions
+
+    @dataclass
+    class SlotClick:
+        values: List[Union[int, str]]
+        key_name: str = 'permutive'
+        operator: str = DEFAULT['NUM_OPERATOR']
+        frequency: int = 1
+
+        def to_query(self) -> Dict[str, Any]:
+            slot_click = {
+                'event': 'GamLogSlotClicked',
+                'frequency': {
+                    self.operator: self.frequency
+                },
+                'where': {
+                    'condition': {
+                        'condition': {
+                            'equal_to': self.key_name
+                        },
+                        'function': 'any',
+                        'property': 'key',
+                        'where': {
+                            'condition': {
+                                    'list_contains': [str(value) for value in self.values]
+                            },
+                            'property': 'value'
+                        }
+                    },
+                    'property': 'properties.slot.targeting_keys'
+                }
+            }
+            return slot_click
+
+    @dataclass
+    class CohortTransition:
+        segment: int
+        transition_type: str = 'has_entered'
+        unit: str = 'days'
+        value: int = 0
+
+        def to_query(self) -> Dict[str, Any]:
+            if self.value > 0:
+                condition = {
+                    'during': {
+                        'the_last': {
+                            'unit': self.unit,
+                            'value': self.value
+                        }
+                    },
+                    'segment': self.segment
+                }
+            else:
+                condition = {'segment': self.segment}
+            return {self.transition_type: condition}
+
+    @dataclass
+    class ThirdPartyTransition:
+        @dataclass
+        class ThirdPartySegment:
+            provider: str
+            segment: str
+
+        third_party_segment: ThirdPartySegment
+        transition_type: str = 'in_third_party_segment'
+
+        def to_query(self) -> Dict[str, Any]:
+            return {
+                self.transition_type:
+                    {"provider": self.third_party_segment.provider,
+                     'segment': self.third_party_segment.segment
+                     }
+            }
+
     @ staticmethod
     def slugify_keywords(keywords: List[str]) -> List[str]:
         logging.info("slugify_keywords")
