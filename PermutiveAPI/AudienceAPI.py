@@ -16,11 +16,7 @@ class AudienceAPI:
         AudienceAPI class
         This class is responsible for interacting with the audience end points of the permutive API.
     """
-
-    def __init__(self, api_key: str):
-        logging.info(f"AudienceAPI::__init__")
-        self.__api_key = api_key
-
+    # region dataclasses
     @dataclass
     class Import:
         """
@@ -86,6 +82,11 @@ class AudienceAPI:
             def from_file(filepath: str):
                 jsonObj = FileHelper.read_json(filepath=filepath)
                 return AudienceAPI.Import.Segment(**jsonObj)
+    # endregion
+
+    def __init__(self, api_key: str):
+        logging.info(f"AudienceAPI::__init__")
+        self.__api_key = api_key
 
     def list_imports(self) -> List[Import]:
         """
