@@ -8,5 +8,6 @@ load_dotenv()
 ws_list = WorkspaceList.read_json()
 masterKey = ws_list.get_MasterprivateKey()
 for ws in ws_list:
+    logging.info(ws.name)
     audience_api = AudienceAPI(api_key=ws.privateKey)
     audience_api.sync_cohorts(masterKey=masterKey)

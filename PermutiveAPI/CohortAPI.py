@@ -137,10 +137,10 @@ class CohortAPI:
         if cohort.id is None:
             raise ValueError('id must be specified')
         url = f"{COHORT_API_ENDPOINT}{cohort.id}?k={self.__api_key}"
-        response = APIRequestHandler.patch(
+        APIRequestHandler.patch(
             url=url,
             data=cohort.to_payload(keys=["name", "query", "description", "tags"]))
-        return CohortAPI.Cohort(**response.json())
+        return self.get(cohort_id=cohort.id)
 
     def delete(self, cohort_id: str) -> None:
         """

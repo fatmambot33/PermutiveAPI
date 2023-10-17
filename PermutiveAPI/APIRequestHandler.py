@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Any
 import requests
 from requests.exceptions import RequestException
 from requests.models import Response
+import json
 
 
 class APIRequestHandler:
@@ -16,8 +17,17 @@ class APIRequestHandler:
     @staticmethod
     def handle_exception(response: Optional[Response], e: Exception):
         if response is not None:
-            logging.warning(response.content)
             if 200 <= response.status_code <= 300:
+                return response
+            elif response.status_code == 400:
+                try:
+                    error_content = json.loads(response.content)
+                    error_message = error_content.get(
+                        "error", {}).get("cause", "Unknown error")
+                except json.JSONDecodeError:
+                    error_message = "Could not parse error message"
+
+                logging.warning(f"Received a 400 Bad Request: {error_message}")
                 return response
         logging.error(f"An error occurred: {e}")
         raise e
