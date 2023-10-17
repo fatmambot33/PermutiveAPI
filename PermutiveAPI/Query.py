@@ -10,6 +10,7 @@ import pandas as pd
 
 
 from .CohortAPI import CohortAPI
+from .AudienceAPI import AudienceAPI
 from .Utils import ListHelper, FileHelper
 from .Workspace import WorkspaceList
 
@@ -33,6 +34,7 @@ class Query():
     urls: Optional[List[str]] = None
     taxonomy: Optional[List[str]] = None
     segments: Optional[List[str]] = None
+    second_party_segments: Optional[List[AudienceAPI.Import.Segment]] = None
     third_party_segment: Optional[List[int]] = None
     cohort_global: Optional[str] = None
     accurate_segments: Optional[List[str]] = None
@@ -116,15 +118,12 @@ class Query():
         slugify_keywords = []
         if self.keywords is not None or self.taxonomy is not None or self.urls is not None or self.obsidian_id is not None:
             if self.keywords is not None:
-                # self.keywords = Query.normalize_keywords(self.keywords)
-
-                # self.keywords = Query.reduce_keywords(self.keywords)
                 slugify_keywords = Query.slugify_keywords(self.keywords)
                 query_list.append(
                     self.__create_cohort_pageview(slugify_keywords=slugify_keywords))
                 query_list.append(
                     self.__create_cohort_videoview(slugify_keywords=slugify_keywords))
-            if self.engaged_time and self.engaged_time is not None:
+            if self.engaged_time:
                 query_list.append(
                     self.__create_cohort_engaged_time(slugify_keywords=slugify_keywords))
             if self.engaged_completion:
@@ -134,9 +133,11 @@ class Query():
                 query_list.append(
                     self.__create_cohort_link_click(slugify_keywords=slugify_keywords))
 
-        query_list = query_list + self.__create_cohort_transition()
         if self.slot_click:
             query_list.append(self.__create_cohort_slot_click())
+
+        query_list = query_list + self.__create_cohort_transition()
+        query_list = query_list+self.__create_second_party_segments()
 
         query = {
             'or': query_list
@@ -194,10 +195,12 @@ class Query():
                     self.urls, wrap_query.urls)
 
     @staticmethod
-    def read_json(filepath: str) -> Optional['Query']:
+    def read_json(filepath: str) -> 'Query':
         if FileHelper.file_exists(filepath):
             definition = FileHelper.read_json(filepath)
             return Query(**definition)
+        else:
+            raise ValueError(f'{filepath} does not exist')
 # region permutive query dict
 
     def __create_cohort_query_clickers(self) -> Dict:
@@ -446,9 +449,12 @@ class Query():
         }
         return engaged_time
 
-    def __create_cohort_engaged_completion(self,   slugify_keywords: Optional[List[str]] = None) -> Dict:
+    def __create_cohort_engaged_completion(self,  slugify_keywords: Optional[List[str]] = None) -> Dict:
 
         conditions = []
+        if self.keywords is None and self.taxonomy is None and self.obsidian_id is None and self.urls is None:
+            raise ValueError(
+                'self.keywords is None and self.taxonomy is None and self.obsidian_id is None and self.urls is None')
         if self.keywords is not None:
             conditions.append({
                 'condition': {
@@ -541,32 +547,46 @@ class Query():
 
     def __create_cohort_transition(self) -> List[Dict]:
         transitions = []
-        if self.segments is not None:
-            for segment in self.segments:
-                segment_int = None
-                if isinstance(segment, str):
-                    try:
-                        segment_int = int(segment)
-                    except ValueError:
-                        # If the value cannot be converted to an integer, skip to the next iteration
-                        continue
-                elif isinstance(segment, int):
-                    segment_int = segment
+        if self.segments is None:
+            raise ValueError('self.segments is None')
+        for segment in self.segments:
+            segment_int = None
+            if isinstance(segment, str):
+                try:
+                    segment_int = int(segment)
+                except ValueError:
+                    # If the value cannot be converted to an integer, skip to the next iteration
+                    continue
+            elif isinstance(segment, int):
+                segment_int = segment
 
-                transition = {
-                    'has_entered': {
-                        'during': {
-                            'the_last': {
-                                'unit': 'days',
-                                        'value': 30
-                            }
-                        },
-                        'segment': segment_int
-                    }
+            transition = {
+                'has_entered': {
+                    'during': {
+                        'the_last': {
+                            'unit': 'days',
+                                    'value': 30
+                        }
+                    },
+                    'segment': segment_int
                 }
-                if segment_int is not None:
-                    transitions.append(transition)
+            }
+            if segment_int is not None:
+                transitions.append(transition)
         return transitions
+
+    def __create_second_party_segments(self) -> List[Dict]:
+        second_party_condition = []
+        if self.second_party_segments is None:
+            raise ValueError('self.second_party_segments is None')
+        for segment in self.second_party_segments:
+
+            second_party = {"in_second_party_segment": {
+                "provider": segment.import_id,
+                "segment": segment.id
+            }}
+            second_party_condition.append(second_party)
+        return second_party_condition
 
     def __create_cohort_domains(self) -> Dict:
         domain_condition = {

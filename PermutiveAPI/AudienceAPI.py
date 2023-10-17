@@ -124,6 +124,8 @@ class AudienceAPI:
         logging.info(f"AudienceAPI::get_segment::{import_id}::{segment_id}")
         url = f"{AUDIENCE_API_ENDPOINT}/{import_id}/segments/{segment_id}?k={self.__api_key}"
         response = APIRequestHandler.get(url=url)
+        if response is None:
+            raise ValueError('Unable to get_segment')
         return AudienceAPI.Import.Segment(**response.json())
 
     def create_segment(self, segment: Import.Segment) -> Import.Segment:
@@ -144,7 +146,7 @@ class AudienceAPI:
             url=url, data=APIRequestHandler.to_payload(payload))
         return AudienceAPI.Import.Segment(**response.json())
 
-    def update_segment(self, segment: Import.Segment) -> Optional[Import.Segment]:
+    def update_segment(self, segment: Import.Segment) -> Import.Segment:
         """
         Updates a specific segment by its id.
 
@@ -163,8 +165,6 @@ class AudienceAPI:
         payload = ['name', 'code', 'description', 'cpm', 'categories']
         response = APIRequestHandler.patch(
             url=url,  data=APIRequestHandler.to_payload(segment, payload))
-        if response is None:
-            return response
         return AudienceAPI.Import.Segment(**response.json())
 
     def delete_segments(self, import_id: str, segment_id: str) -> bool:
@@ -181,7 +181,7 @@ class AudienceAPI:
         response = APIRequestHandler.delete(url=url)
         return response.status_code == 204
 
-    def create_cohorts(self, import_id: str):
+    def create_cohorts(self, import_id: str, masterKey: Optional[str] = None):
         logging.info(
             f"AudienceAPI::create_cohorts::{import_id:}")
         imports = self.list_imports()
@@ -194,16 +194,24 @@ class AudienceAPI:
             raise ValueError(f'import {import_id} does not exist')
 
         import_segments = self.list_segments(import_id=import_id)
-        cohort_api = CohortAPI(self.__api_key)
+        if len(import_segments) == 0:
+            return
+        if masterKey is not None:
+            cohort_api = CohortAPI(masterKey)
+        else:
+            cohort_api = CohortAPI(self.__api_key)
+        provider_segments = []
         for import_segment in import_segments:
             logging.info(
                 f"AudienceAPI::create_cohorts::{import_id:}::{import_segment.name}")
             segment_cohort = CohortAPI.Cohort(
                 name=import_segment.name, tags=[_import.name, '#automatic', '#imports'])
-            segment_cohort.query = {"in_second_party_segment": {
+            segment_condition = {"in_second_party_segment": {
                 "provider": _import.code,
                 "segment": import_segment.code
             }}
+            segment_cohort.query = segment_condition
+            provider_segments.append(segment_condition)
             segment_cohort.description = f'{_import.name} ({_import.id}) : {import_segment.code} : {import_segment.name} ({import_segment.id})'
             cohort = cohort_api.get_by_name(segment_cohort.name)
 
@@ -218,6 +226,23 @@ class AudienceAPI:
                 else:
                     segment_cohort.tags = cohort.tags
                 cohort_api.update(segment_cohort)
+        provider_cohort = CohortAPI.Cohort(
+            name=_import.name, tags=[_import.name, '#automatic', '#imports'])
+        provider_cohort.query = {
+            'or': provider_segments
+        }
+        cohort = cohort_api.get_by_name(provider_cohort.name)
+        if cohort is None:
+            cohort_api.create(provider_cohort)
+        else:
+            provider_cohort.id = cohort.id
+            provider_cohort.code = cohort.code
+            if provider_cohort.tags is not None:
+                provider_cohort.tags = ListHelper.merge_list(
+                    provider_cohort.tags, cohort.tags)
+            else:
+                provider_cohort.tags = cohort.tags
+            cohort_api.update(provider_cohort)
 
     def list_cohorts(self, import_id: str):
         logging.info(
@@ -231,11 +256,11 @@ class AudienceAPI:
                 import_segments.append(cohort)
         return import_segments
 
-    def sync_cohorts(self):
+    def sync_cohorts(self, masterKey: Optional[str] = None):
         logging.info(
             f"AudienceAPI:sync_cohorts")
         providers = self.list_imports()
         for provider in providers:
             logging.info(
                 f"AudienceAPI:sync_cohorts::{provider.name:}")
-            self.create_cohorts(provider.id)
+            self.create_cohorts(provider.id, masterKey)

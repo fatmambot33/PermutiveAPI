@@ -1,6 +1,6 @@
+from ast import Not
 from dataclasses import dataclass
 from typing import List, Optional
-from glob import glob
 import os
 from .Utils import FileHelper
 
@@ -46,28 +46,22 @@ class WorkspaceList(List[Workspace]):
         else:
             return None
 
-    def get_MasterprivateKey(self) -> Optional[str]:
+    def get_MasterprivateKey(self) -> str:
         for workspace in self:
             if workspace.isTopLevel:
                 return workspace.privateKey
-        else:
-            return None
+        raise ValueError("No master key found")
 
     @staticmethod
-    def read_json(filepath: Optional[str] = "") -> 'WorkspaceList':
-        folder_name = "workspace"
-        workspace_list = []
-        files = List[str]
-        if filepath != "":
-            files = [filepath]
-        else:
-            files = glob(f'{os.environ.get("DATA_PATH")}{folder_name}/*.json')
-        files.sort()  # type: ignore
-        for file_path in files:
-            if file_path is not None and FileHelper.file_exists(file_path):
-                definitions = FileHelper.read_json(file_path)
-                if not isinstance(definitions, List):
-                    definitions = [definitions]
-                for definition in definitions:
-                    workspace_list.append(Workspace(**definition))
-        return WorkspaceList(workspace_list)
+    def read_json(filepath: Optional[str] = None) -> 'WorkspaceList':
+        if filepath is None:
+            filepath = os.environ.get("PERMUTIVE_APPLICATION_CREDENTIALS")
+        if filepath is None:
+            raise ValueError(
+                'Unable to get PERMUTIVE_APPLICATION_CREDENTIALS from .env')
+
+        workspace_list = FileHelper.read_json(filepath)
+        if not isinstance(workspace_list, list):
+            raise TypeError("Expected a list of workspaces from the JSON file")
+
+        return WorkspaceList([Workspace(**workspace) for workspace in workspace_list])

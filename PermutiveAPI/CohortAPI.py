@@ -63,10 +63,9 @@ class CohortAPI:
         if include_child_workspaces:
             url = f"{url}&include-child-workspaces=true"
         response = APIRequestHandler.get(url=url)
-        cohort_data = response.json()
-        return [CohortAPI.Cohort(**cohort) for cohort in cohort_data]
+        return [CohortAPI.Cohort(**cohort) for cohort in response.json()]
 
-    def get(self, cohort_id: str) -> Optional[Cohort]:
+    def get(self, cohort_id: str) -> Cohort:
         """
         Fetches a specific cohort from the API using its ID.
 
@@ -76,13 +75,8 @@ class CohortAPI:
         logging.info(f"CohortAPI::get::{cohort_id}")
         url = f"{COHORT_API_ENDPOINT}{cohort_id}?k={self.__api_key}"
         response = APIRequestHandler.get(url=url)
-        if response is None:
-            return None
-        if response.status_code == 200:
-            cohort_data = response.json()
-            return CohortAPI.Cohort(**cohort_data)
 
-        return None
+        return CohortAPI.Cohort(**response.json())
 
     def get_by_name(self, cohort_name: str) -> Optional[Cohort]:
         '''
@@ -95,7 +89,6 @@ class CohortAPI:
         for cohort in self.list(include_child_workspaces=True):
             if cohort_name == cohort.name and cohort.id is not None:
                 return self.get(cohort.id)
-        return None
 
     def get_by_code(self, cohort_code: Union[int, str]) -> Optional[Cohort]:
         '''
@@ -111,7 +104,7 @@ class CohortAPI:
             if cohort_code == cohort.code and cohort.id is not None:
                 return self.get(cohort.id)
 
-    def create(self, cohort: Cohort) -> Optional[Cohort]:
+    def create(self, cohort: Cohort) -> Cohort:
         """
         Creates a new cohort.
 
@@ -129,10 +122,10 @@ class CohortAPI:
         response = APIRequestHandler.post(
             url=url,
             data=data)
-        if response is not None:
-            return CohortAPI.Cohort(**response.json())
 
-    def update(self, cohort: Cohort) -> Optional[Cohort]:
+        return CohortAPI.Cohort(**response.json())
+
+    def update(self, cohort: Cohort) -> Cohort:
         """
         Updates an existing cohort.
 
@@ -147,8 +140,6 @@ class CohortAPI:
         response = APIRequestHandler.patch(
             url=url,
             data=cohort.to_payload(keys=["name", "query", "description", "tags"]))
-        if response is None:
-            return response
         return CohortAPI.Cohort(**response.json())
 
     def delete(self, cohort_id: str) -> None:
@@ -161,7 +152,7 @@ class CohortAPI:
         url = f"{COHORT_API_ENDPOINT}{cohort_id}?k={self.__api_key}"
         APIRequestHandler.delete(url=url)
 
-    def copy(self, cohort_id: str, k2: Optional[str] = None) -> Optional[Cohort]:
+    def copy(self, cohort_id: str, k2: Optional[str] = None) -> Cohort:
         """
         Meant for copying a cohort
         :param cohort_id: str the cohort's id to duplicat. Required
@@ -172,18 +163,18 @@ class CohortAPI:
         logging.info(f"CohortAPI::copy::")
         if cohort_id is None:
             raise ValueError("cohort_id must be specified")
-        cohort = self.get(cohort_id)
-        if cohort is not None:
-            cohort.id = None
-            cohort.code = None
-            cohort.name = cohort.name + ' (copy)'
-            new_description = "Copy of " + cohort_id
-            if cohort.description is not None:
-                cohort.description = cohort.description + new_description
-            else:
-                cohort.description = new_description
-            if k2 is None:
-                return self.create(cohort)
-            else:
-                api = CohortAPI(api_key=k2)
-                return api.create(cohort)
+        new_cohort = self.get(cohort_id)
+
+        new_cohort.id = None
+        new_cohort.code = None
+        new_cohort.name = new_cohort.name + ' (copy)'
+        new_description = "Copy of " + cohort_id
+        if new_cohort.description is not None:
+            new_cohort.description = new_cohort.description + new_description
+        else:
+            new_cohort.description = new_description
+        if k2 is None:
+            return self.create(new_cohort)
+        else:
+            api = CohortAPI(api_key=k2)
+            return api.create(new_cohort)

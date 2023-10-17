@@ -25,6 +25,8 @@ class FileHelper:
 
     @staticmethod
     def read_json(filepath: str):
+        if not FileHelper.file_exists(filepath):
+            raise ValueError(f'{filepath} does not exist')
         with open(file=filepath, mode='r') as json_file:
             return json.load(json_file)
 
