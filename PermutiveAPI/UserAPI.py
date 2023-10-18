@@ -1,4 +1,4 @@
-from APIRequestHandler import APIRequestHandler
+from .APIRequestHandler import APIRequestHandler
 import logging
 
 

@@ -9,10 +9,10 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 
-from CohortAPI import CohortAPI
-from AudienceAPI import AudienceAPI
-from Utils import ListHelper, FileHelper
-from Workspace import WorkspaceList
+from .CohortAPI import CohortAPI
+from .AudienceAPI import AudienceAPI
+from .Utils import ListHelper, FileHelper
+from .Workspace import WorkspaceList
 
 TAGS = ['#automatic', '#spireglobal']
 DEFAULT = {}

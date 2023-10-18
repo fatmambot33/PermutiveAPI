@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional
 import os
-from Utils import FileHelper
+from .Utils import FileHelper
 
 
 @dataclass
