@@ -9,5 +9,6 @@ ws_list = WorkspaceList.from_json()
 masterKey = ws_list.get_MasterprivateKey()
 for ws in ws_list:
     logging.info(ws.name)
-    audience_api = CohortAPI(api_key=ws.privateKey)
-    audience_api.list()
+    api = CohortAPI(api_key=ws.privateKey)
+    api_list=api.list()
+    print(api_list)
