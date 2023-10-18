@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import logging
 logging.getLogger().setLevel(logging.INFO)
 load_dotenv()
-ws_list = WorkspaceList.read_json()
+ws_list = WorkspaceList.from_file()
 masterKey = ws_list.get_MasterprivateKey()
 
 

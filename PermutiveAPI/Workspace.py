@@ -52,8 +52,11 @@ class WorkspaceList(List[Workspace]):
                 return workspace.privateKey
         raise ValueError("No master key found")
 
+    def to_file(self, filepath: str):
+        FileHelper.save_to_json(self, filepath=filepath)
+
     @staticmethod
-    def read_json(filepath: Optional[str] = None) -> 'WorkspaceList':
+    def from_file(filepath: Optional[str] = None) -> 'WorkspaceList':
         if filepath is None:
             filepath = os.environ.get("PERMUTIVE_APPLICATION_CREDENTIALS")
         if filepath is None:
