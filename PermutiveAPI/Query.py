@@ -35,7 +35,7 @@ class Query():
     taxonomy: Optional[List[str]] = None
     segments: Optional[List[str]] = None
     second_party_segments: Optional[List[AudienceAPI.Import.Segment]] = None
-    third_party_segment: Optional[List[int]] = None
+    third_party_segments: Optional[List[int]] = None
     cohort_global: Optional[str] = None
     accurate_segments: Optional[List[str]] = None
     volume_segments: Optional[List[str]] = None
@@ -117,7 +117,7 @@ class Query():
         query_list = []
         slugify_keywords = []
         if self.keywords is not None or self.taxonomy is not None or self.urls is not None or self.obsidian_id is not None:
-            if self.keywords is not None:
+            if self.keywords:
                 slugify_keywords = Query.slugify_keywords(self.keywords)
                 query_list.append(
                     self.__create_cohort_pageview(slugify_keywords=slugify_keywords))
@@ -136,8 +136,11 @@ class Query():
         if self.slot_click:
             query_list.append(self.__create_cohort_slot_click())
 
-        query_list = query_list + self.__create_cohort_transition()
-        query_list = query_list+self.__create_second_party_segments()
+        if self.segments:
+            query_list = query_list + self.__create_cohort_transition()
+
+        if self.second_party_segments:
+            query_list = query_list+self.__create_second_party_segments()
 
         query = {
             'or': query_list
@@ -147,56 +150,70 @@ class Query():
 
         return query
 
-    def to_file(self, filepath):
-        FileHelper.save_to_json(self, filepath=filepath)
-
     def merge(self, wrap_query: 'Query'):
-        if wrap_query.segments is not None:
-            if self.segments is None:
+        if wrap_query.segments:
+            if self.segments:
                 self.segments = wrap_query.segments
             else:
                 self.segments = ListHelper.merge_list(
                     self.segments, wrap_query.segments)
-        if wrap_query.accurate_segments is not None:
+        if wrap_query.accurate_segments:
             if self.accurate_segments is None:
                 self.accurate_segments = wrap_query.accurate_segments
             else:
                 self.accurate_segments = ListHelper.merge_list(
                     self.accurate_segments, wrap_query.accurate_segments)
-        if wrap_query.volume_segments is not None:
+        if wrap_query.volume_segments:
             if self.volume_segments is None:
                 self.volume_segments = wrap_query.volume_segments
             else:
                 self.volume_segments = ListHelper.merge_list(
                     self.volume_segments, wrap_query.volume_segments)
-        if wrap_query.obsidian_segments is not None:
+        if wrap_query.obsidian_segments:
             if self.obsidian_segments is None:
                 self.obsidian_segments = wrap_query.obsidian_segments
             else:
                 self.obsidian_segments = ListHelper.merge_list(
                     self.obsidian_segments, wrap_query.obsidian_segments)
-        if wrap_query.keywords is not None:
+        if wrap_query.keywords:
             if self.keywords is None:
                 self.keywords = wrap_query.keywords
             else:
                 self.keywords = ListHelper.merge_list(
                     self.keywords, wrap_query.keywords)
-        if wrap_query.taxonomy is not None:
+        if wrap_query.taxonomy:
             if self.taxonomy is None:
                 self.taxonomy = wrap_query.taxonomy
             else:
                 self.taxonomy = ListHelper.merge_list(
                     self.taxonomy, wrap_query.taxonomy)
-        if wrap_query.urls is not None:
-            if self.urls is None:
+        if wrap_query.urls:
+            if not self.urls:
                 self.urls = wrap_query.urls
             else:
                 self.urls = ListHelper.merge_list(
                     self.urls, wrap_query.urls)
 
+        if wrap_query.second_party_segments:
+            if self.second_party_segments:
+                self.second_party_segments = ListHelper.merge_list(
+                    self.second_party_segments, wrap_query.second_party_segments)
+            else:
+                self.second_party_segments = wrap_query.second_party_segments
+
+        if wrap_query.third_party_segments:
+            if self.third_party_segments:
+                self.third_party_segments = ListHelper.merge_list(
+                    self.third_party_segments, wrap_query.third_party_segments)
+            else:
+                self.third_party_segments = wrap_query.third_party_segments
+
+    def to_json(self, filepath):
+        FileHelper.to_json(self, filepath=filepath)
+
     @staticmethod
-    def from_file(filepath: str) -> 'Query':
-        definition = FileHelper.read_json(filepath)
+    def from_json(filepath: str) -> 'Query':
+        definition = FileHelper.from_json(filepath)
         return Query(**definition)
 
 # region permutive query dict
@@ -661,7 +678,7 @@ class QueryList(List[Query]):
         if files is not None:
             for file_path in files:
                 if file_path is not None and FileHelper.file_exists(file_path):
-                    definitions = FileHelper.read_json(file_path)
+                    definitions = FileHelper.from_json(file_path)
                     if not isinstance(definitions, List):
                         definitions = [definitions]
                     for definition in definitions:
@@ -733,7 +750,7 @@ class QueryList(List[Query]):
                 for cohort_name in query_dict]
 
     def to_file(self, filepath: str):
-        FileHelper.save_to_json(self, filepath)
+        FileHelper.to_json(self, filepath)
 
     def filter_by_workspace_id(self, workspace_id: str) -> 'QueryList':
         filtered_queries = [
@@ -752,7 +769,7 @@ class QueryList(List[Query]):
         files.sort()
         for filepath in files:
             logging.info(filepath)
-            definitions = FileHelper.read_json(filepath)
+            definitions = FileHelper.from_json(filepath)
             definition_index = 0
             if not isinstance(definitions, List):
                 definitions = [definitions]
@@ -766,7 +783,7 @@ class QueryList(List[Query]):
                 definitions[definition_index] = query
                 definition_index = definition_index + 1
             definitions = sorted(definitions, key=lambda d: d["name"])
-            FileHelper.save_to_json(definitions, filepath)
+            FileHelper.to_json(definitions, filepath)
 
     @staticmethod
     def sync_clicks(workspaceList: WorkspaceList,
@@ -781,7 +798,7 @@ class QueryList(List[Query]):
         files.sort()
         for filepath in files:
             logging.info(filepath)
-            definitions = FileHelper.read_json(filepath)
+            definitions = FileHelper.from_json(filepath)
             if not isinstance(definitions, List):
                 definitions = [definitions]
             for definition in definitions:

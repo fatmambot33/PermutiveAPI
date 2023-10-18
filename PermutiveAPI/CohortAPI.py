@@ -44,12 +44,12 @@ class CohortAPI:
         def to_payload(self, keys: Optional[List[str]] = None) -> Dict[str, Any]:
             return APIRequestHandler.to_payload(self, keys=keys)
 
-        def to_file(self, filepath: str):
-            FileHelper.save_to_json(self, filepath=filepath)
+        def to_json(self, filepath: str):
+            FileHelper.to_json(self, filepath=filepath)
 
         @staticmethod
-        def from_file(filepath: str):
-            jsonObj = FileHelper.read_json(filepath=filepath)
+        def from_json(filepath: str) -> 'CohortAPI.Cohort':
+            jsonObj = FileHelper.from_json(filepath=filepath)
             return CohortAPI.Cohort(**jsonObj)
 
     def list(self, include_child_workspaces=False) -> List[Cohort]:

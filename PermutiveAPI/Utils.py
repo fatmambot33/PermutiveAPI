@@ -11,7 +11,7 @@ from typing import List, Optional, Union
 
 class FileHelper:
     @staticmethod
-    def save_to_json(obj, filepath: str):
+    def to_json(obj, filepath: str):
 
         def json_default(value):
             if isinstance(value, datetime.date):
@@ -24,7 +24,7 @@ class FileHelper:
                       ensure_ascii=False, indent=4, default=json_default)
 
     @staticmethod
-    def read_json(filepath: str):
+    def from_json(filepath: str):
         if not FileHelper.file_exists(filepath):
             raise ValueError(f'{filepath} does not exist')
         with open(file=filepath, mode='r') as json_file:

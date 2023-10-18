@@ -33,12 +33,12 @@ class AudienceAPI:
         segments: Optional[List['Segment']] = None
         updated_at: Optional[datetime] = datetime.now()
 
-        def to_file(self, filepath: str):
-            FileHelper.save_to_json(self, filepath=filepath)
+        def to_json(self, filepath: str):
+            FileHelper.to_json(self, filepath=filepath)
 
         @staticmethod
-        def from_file(filepath: str):
-            jsonObj = FileHelper.read_json(filepath=filepath)
+        def from_json(filepath: str) -> 'AudienceAPI.Import':
+            jsonObj = FileHelper.from_json(filepath=filepath)
             return AudienceAPI.Import(**jsonObj)
 
         @dataclass
@@ -53,12 +53,12 @@ class AudienceAPI:
             phase: str
             type: str
 
-            def to_file(self, filepath: str):
-                FileHelper.save_to_json(self, filepath=filepath)
+            def to_json(self, filepath: str):
+                FileHelper.to_json(self, filepath=filepath)
 
             @staticmethod
-            def from_file(filepath: str):
-                jsonObj = FileHelper.read_json(filepath=filepath)
+            def from_json(filepath: str) -> 'AudienceAPI.Import.Source':
+                jsonObj = FileHelper.from_json(filepath=filepath)
                 return AudienceAPI.Import.Source(**jsonObj)
 
         @dataclass
@@ -75,12 +75,12 @@ class AudienceAPI:
             categories: Optional[List[str]] = None
             updated_at: Optional[datetime] = datetime.now()
 
-            def to_file(self, filepath: str):
-                FileHelper.save_to_json(self, filepath=filepath)
+            def to_json(self, filepath: str):
+                FileHelper.to_json(self, filepath=filepath)
 
             @staticmethod
-            def from_file(filepath: str):
-                jsonObj = FileHelper.read_json(filepath=filepath)
+            def from_json(filepath: str) -> 'AudienceAPI.Import.Segment':
+                jsonObj = FileHelper.from_json(filepath=filepath)
                 return AudienceAPI.Import.Segment(**jsonObj)
     # endregion
 

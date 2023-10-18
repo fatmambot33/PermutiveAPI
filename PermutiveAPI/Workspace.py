@@ -22,11 +22,11 @@ class Workspace:
         return False
 
     def to_file(self, filepath: str):
-        FileHelper.save_to_json(self, filepath=filepath)
+        FileHelper.to_json(self, filepath=filepath)
 
     @staticmethod
     def from_file(filepath: str):
-        jsonObj = FileHelper.read_json(filepath=filepath)
+        jsonObj = FileHelper.from_json(filepath=filepath)
         return Workspace(**jsonObj)
 
 
@@ -49,18 +49,18 @@ class WorkspaceList(List[Workspace]):
                 return workspace.privateKey
         raise ValueError("No Top WS")
 
-    def to_file(self, filepath: str):
-        FileHelper.save_to_json(self, filepath=filepath)
+    def to_json(self, filepath: str):
+        FileHelper.to_json(self, filepath=filepath)
 
     @staticmethod
-    def from_file(filepath: Optional[str] = None) -> 'WorkspaceList':
+    def from_json(filepath: Optional[str] = None) -> 'WorkspaceList':
         if filepath is None:
             filepath = os.environ.get("PERMUTIVE_APPLICATION_CREDENTIALS")
         if filepath is None:
             raise ValueError(
                 'Unable to get PERMUTIVE_APPLICATION_CREDENTIALS from .env')
 
-        workspace_list = FileHelper.read_json(filepath)
+        workspace_list = FileHelper.from_json(filepath)
         if not isinstance(workspace_list, list):
             raise TypeError("Expected a list of workspaces from the JSON file")
 
