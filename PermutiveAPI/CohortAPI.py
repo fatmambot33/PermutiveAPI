@@ -4,8 +4,8 @@ from datetime import datetime
 from typing import Dict, List, Optional, Union, Any
 
 
-from .APIRequestHandler import APIRequestHandler
-from .Utils import FileHelper
+from APIRequestHandler import APIRequestHandler
+from Utils import FileHelper
 
 COHORT_API_VERSION = 'v2'
 COHORT_API_ENDPOINT = f'https://api.permutive.app/cohorts-api/{COHORT_API_VERSION}/cohorts/'

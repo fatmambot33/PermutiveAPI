@@ -3,16 +3,16 @@ import glob
 import logging
 import os
 import urllib.parse
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union, Any
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 import pandas as pd
 
 
-from .CohortAPI import CohortAPI
-from .AudienceAPI import AudienceAPI
-from .Utils import ListHelper, FileHelper
-from .Workspace import WorkspaceList
+from CohortAPI import CohortAPI
+from AudienceAPI import AudienceAPI
+from Utils import ListHelper, FileHelper
+from Workspace import WorkspaceList
 
 TAGS = ['#automatic', '#spireglobal']
 DEFAULT = {}

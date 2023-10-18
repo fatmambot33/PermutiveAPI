@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional
 import logging
-from .APIRequestHandler import APIRequestHandler
-from .CohortAPI import CohortAPI
-from .Utils import ListHelper, FileHelper
+from APIRequestHandler import APIRequestHandler
+from CohortAPI import CohortAPI
+from Utils import ListHelper, FileHelper
 
 AUDIENCE_API_VERSION = 'v1'
 AUDIENCE_API_ENDPOINT = f'https://api.permutive.app/audience-api/{AUDIENCE_API_VERSION}/imports'
