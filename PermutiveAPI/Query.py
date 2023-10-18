@@ -147,7 +147,7 @@ class Query():
 
         return query
 
-    def to_json(self, filepath):
+    def to_file(self, filepath):
         FileHelper.save_to_json(self, filepath=filepath)
 
     def merge(self, wrap_query: 'Query'):
@@ -195,12 +195,10 @@ class Query():
                     self.urls, wrap_query.urls)
 
     @staticmethod
-    def read_json(filepath: str) -> 'Query':
-        if FileHelper.file_exists(filepath):
-            definition = FileHelper.read_json(filepath)
-            return Query(**definition)
-        else:
-            raise ValueError(f'{filepath} does not exist')
+    def from_file(filepath: str) -> 'Query':
+        definition = FileHelper.read_json(filepath)
+        return Query(**definition)
+
 # region permutive query dict
 
     def __create_cohort_query_clickers(self) -> Dict:
@@ -648,7 +646,7 @@ class QueryList(List[Query]):
             super().__init__(queries)
 
     @staticmethod
-    def read_json(filepath: Optional[str] = None) -> Optional['QueryList']:
+    def from_file(filepath: Optional[str] = None) -> 'QueryList':
         folder_name = "query"
         query_list = []
         files = List[str]
@@ -734,7 +732,7 @@ class QueryList(List[Query]):
         return [query_dict[cohort_name]
                 for cohort_name in query_dict]
 
-    def to_json(self, filepath: str):
+    def to_file(self, filepath: str):
         FileHelper.save_to_json(self, filepath)
 
     def filter_by_workspace_id(self, workspace_id: str) -> 'QueryList':
