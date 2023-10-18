@@ -82,7 +82,7 @@ class CohortAPI:
         '''
         Object Oriented Permutive Cohort DETAIL API Call for https://api.permutive.app/cohorts-api/v2/cohorts
         :rtype: Cohort object
-        :param cohort_id: str Cohort UUID. Required
+        :param cohort_name: str Cohort Name. Required
         :return: Cohort object
         '''
         logging.info(f"CohortAPI::get_by_name::{cohort_name}")
@@ -94,7 +94,7 @@ class CohortAPI:
         '''
         Object Oriented Permutive Cohort DETAIL API Call for https://api.permutive.app/cohorts-api/v2/cohorts
         :rtype: Cohort object
-        :param cohort_id: str Cohort UUID. Required
+        :param cohort_code: Union[int, str] Cohort Code. Required
         :return: Cohort object
         '''
         if type(cohort_code) == str:
