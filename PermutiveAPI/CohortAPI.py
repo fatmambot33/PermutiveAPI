@@ -5,7 +5,6 @@ from typing import Dict, List, Optional, Union, Any
 
 
 from .APIRequestHandler import APIRequestHandler
-from .APIRequestHandler2 import APIRequestHandler2
 from .Utils import FileHelper
 
 COHORT_API_VERSION = 'v2'
