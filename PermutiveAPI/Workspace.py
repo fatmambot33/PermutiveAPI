@@ -37,20 +37,17 @@ class WorkspaceList(List[Workspace]):
         if workspaces is not None:
             super().__init__(workspaces)
 
-    def get_privateKey(self, workspaceID: Optional[str] = None) -> Optional[str]:
-        if workspaceID is None:
-            return None
+    def get_privateKey(self, workspaceID: str) -> str:
         for workspace in self:
             if workspace.workspaceID == workspaceID:
                 return workspace.privateKey
-        else:
-            return None
+        raise ValueError("workspaceID does not exist")
 
     def get_MasterprivateKey(self) -> str:
         for workspace in self:
             if workspace.isTopLevel:
                 return workspace.privateKey
-        raise ValueError("No master key found")
+        raise ValueError("No Top WS")
 
     def to_file(self, filepath: str):
         FileHelper.save_to_json(self, filepath=filepath)
