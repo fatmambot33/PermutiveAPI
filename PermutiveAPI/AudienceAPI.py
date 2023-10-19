@@ -21,7 +21,7 @@ class AudienceAPI:
     @dataclass
     class Import:
         """
-        Dataclass for the Provider entity in the Permutive ecosystem.
+        Dataclass for the Provider Import in the Permutive ecosystem.
         """
         id: str
         name: str
@@ -70,7 +70,7 @@ class AudienceAPI:
             id: str
             code: str
             name: str
-            import_id: Optional[str] = None
+            import_id: str
             description: Optional[str] = None
             cpm: Optional[float] = 0.0
             categories: Optional[List[str]] = None
@@ -91,9 +91,9 @@ class AudienceAPI:
 
     def list_imports(self) -> List[Import]:
         """
-        Fetches all providers from the API.
+        Fetches all imports from the API.
 
-        :return: List of all providers.
+        :return: List of all imports.
         """
         logging.info(f"AudienceAPI::list_imports")
         url = f"{AUDIENCE_API_ENDPOINT}?k={self.__api_key}"
@@ -105,7 +105,7 @@ class AudienceAPI:
         """
         Fetches a specific import by its id.
 
-        :param data_provider_id: ID of the data provider.
+        :param import_id: ID of the import.
         :return: The requested Importt.
         """
         logging.info(f"AudienceAPI::get_import::{import_id}")
@@ -117,23 +117,23 @@ class AudienceAPI:
 
     def list_segments(self, import_id: str) -> List[Import.Segment]:
         """
-        Fetches all segments for a specific data provider.
+        Fetches all segments for a specific import.
 
-        :param data_provider_id: ID of the data provider.
+        :param import_id: ID of the import.
         :return: List of all segments.
         """
         logging.info(f"AudienceAPI::list_segments::{import_id}")
         url = f"{AUDIENCE_API_ENDPOINT}/{import_id}/segments?k={self.__api_key}"
         response = APIRequestHandler.get(url=url)
-        segment_data = response.json()
-
-        return [AudienceAPI.Import.Segment(**segment) for segment in segment_data['elements']]
+        if response is None:
+            raise ValueError('Unable to list_segments')
+        return [AudienceAPI.Import.Segment(**segment) for segment in response.json()['elements']]
 
     def get_segment(self,  import_id: str, segment_id: str) -> Import.Segment:
         """
         Fetches a specific segment by its id.
 
-        :param data_provider_id: ID of the data provider.
+        :param import_id: ID of the import.
         :param segment_id: ID of the segment.
         :return: The requested Segment.
         """
@@ -146,63 +146,73 @@ class AudienceAPI:
 
     def create_segment(self, segment: Import.Segment) -> Import.Segment:
         """
-        Creates a new segment for a specific import_id.
+        Creates a new segment
 
         :return: The created Segment.
         """
-        if segment.import_id is None:
-            raise ValueError('import_idmust be specified')
-        if segment.name is None:
-            raise ValueError('name must be specified')
         logging.info(
             f"AudienceAPI::create_segment::{segment.import_id}::{segment.name}")
         url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments?k={self.__api_key}"
         payload = ['name', 'code', 'description', 'cpm', 'categories']
         response = APIRequestHandler.post(
             url=url, data=APIRequestHandler.to_payload(payload))
+        if response is None:
+            raise ValueError('Unable to create_segment')
         return AudienceAPI.Import.Segment(**response.json())
 
     def update_segment(self, segment: Import.Segment) -> Import.Segment:
         """
-        Updates a specific segment by its id.
+        Updates a specific segment
 
-        :param data_provider_id: ID of the data provider.
+        :param import_id: ID of the import.
         :param segment_id: ID of the segment.
         :param segment_data: Updated data of the segment.
         :return: The updated Segment.
         """
-        if segment.import_id is None:
-            raise ValueError('data_provider_id must be specified')
-        if segment.id is None:
-            raise ValueError('id must be specified')
+
         logging.info(
             f"AudienceAPI::update_segment::{segment.import_id}::{segment.name}")
         url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments/{segment.id}?k={self.__api_key}"
         payload = ['name', 'code', 'description', 'cpm', 'categories']
         response = APIRequestHandler.patch(
             url=url,  data=APIRequestHandler.to_payload(segment, payload))
+        if response is None:
+            raise ValueError('Unable to update_segment')
         return AudienceAPI.Import.Segment(**response.json())
 
-    def delete_segments(self, import_id: str, segment_id: str) -> bool:
+    def delete_segment(self, segment: Import.Segment) -> bool:
         """
         Deletes a specific segment by its id.
 
-        :param data_provider_id: ID of the data provider.
+        :param import_id: ID of the import.
         :param segment_id: ID of the segment.
         :return: True if deletion was successful, otherwise False.
         """
         logging.info(
-            f"AudienceAPI::delete_segment::{import_id:}::{segment_id}")
-        url = f"{AUDIENCE_API_ENDPOINT}/{import_id}/segments/{segment_id}?k={self.__api_key}"
+            f"AudienceAPI::delete_segment::{segment.import_id:}::{segment.segment_id}")
+        url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments/{segment.segment_id}?k={self.__api_key}"
         response = APIRequestHandler.delete(url=url)
         return response.status_code == 204
 
-    def sync_cohorts(self, import_id: str,
+    def sync_cohorts(self, 
+                     import_id: str,
                      masterKey: Optional[str] = None,
                      cohorts_list: Optional[List[CohortAPI.Cohort]] = None,
                      prefix: Optional[str] = None,
 
                      inheritance: bool = False):
+        """
+            Creates a cohort for each import's segment. 
+            Cohort name=f"{prefix or ''}{import.name} | {segment.name}"
+            Plus a cohort wrapping up all the import's segment
+            Cohort name=f"{prefix or ''}{import.name}"
+
+            :param import_id: str ID of the import.
+            :param masterKey: Optional[str] if specified all cohorts will be created on the masterKey Level
+            :param cohorts_list: Optional[List[CohortAPI.Cohort]] if specified, the reference cohort list; if not API call for the lis
+            :param prefix: Optional[str] cohort name are prefixed if specified
+            :param inheritance: Optional[str] inherited segment's cohort are created if specified
+        """
         logging.info(
             f"AudienceAPI::sync_cohorts::{import_id:}")
         import_detail = self.get_import(import_id=import_id)

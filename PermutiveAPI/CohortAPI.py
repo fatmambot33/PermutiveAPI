@@ -41,7 +41,7 @@ class CohortAPI:
         request_id: Optional[str] = None
         error: Optional[str] = None
 
-        def to_payload(self, keys: Optional[List[str]] = None) -> Dict[str, Any]:
+        def to_payload(self, keys: Optional[List[str]] = ["name", "query", "description", "tags"]) -> Dict[str, Any]:
             return APIRequestHandler.to_payload(self, keys=keys)
 
         def to_json(self, filepath: str):
@@ -54,9 +54,9 @@ class CohortAPI:
 
     def list(self, include_child_workspaces=False) -> List[Cohort]:
         """
-        Fetches all cohorts from the API.
+            Fetches all cohorts from the API.
 
-        :return: List of all cohorts.
+            :return: List of all cohorts.
         """
         logging.info(f"CohortAPI::list")
         url = f"{COHORT_API_ENDPOINT}?k={self.__api_key}"
@@ -80,10 +80,10 @@ class CohortAPI:
 
     def get_by_name(self, cohort_name: str) -> Optional[Cohort]:
         '''
-        Object Oriented Permutive Cohort DETAIL API Call for https://api.permutive.app/cohorts-api/v2/cohorts
-        :rtype: Cohort object
-        :param cohort_name: str Cohort Name. Required
-        :return: Cohort object
+            Object Oriented Permutive Cohort seqrch
+            :rtype: Cohort object
+            :param cohort_name: str Cohort Name. Required
+            :return: Cohort object
         '''
         logging.info(f"CohortAPI::get_by_name::{cohort_name}")
         for cohort in self.list(include_child_workspaces=True):
@@ -92,7 +92,7 @@ class CohortAPI:
 
     def get_by_code(self, cohort_code: Union[int, str]) -> Optional[Cohort]:
         '''
-        Object Oriented Permutive Cohort DETAIL API Call for https://api.permutive.app/cohorts-api/v2/cohorts
+        Object Oriented Permutive Cohort seqrch
         :rtype: Cohort object
         :param cohort_code: Union[int, str] Cohort Code. Required
         :return: Cohort object
@@ -118,10 +118,9 @@ class CohortAPI:
         logging.info(f"CohortAPI::create::{cohort.name}")
 
         url = f"{COHORT_API_ENDPOINT}?k={self.__api_key}"
-        data = cohort.to_payload(keys=["name", "query", "description", "tags"])
         response = APIRequestHandler.post(
             url=url,
-            data=data)
+            data=cohort.to_payload())
 
         return CohortAPI.Cohort(**response.json())
 
@@ -139,7 +138,7 @@ class CohortAPI:
         url = f"{COHORT_API_ENDPOINT}{cohort.id}?k={self.__api_key}"
         APIRequestHandler.patch(
             url=url,
-            data=cohort.to_payload(keys=["name", "query", "description", "tags"]))
+            data=cohort.to_payload())
         return self.get(cohort_id=cohort.id)
 
     def delete(self, cohort_id: str) -> None:
@@ -160,10 +159,10 @@ class CohortAPI:
         :return: Response
         :rtype: Response
         """
-        logging.info(f"CohortAPI::copy::")
-        if cohort_id is None:
-            raise ValueError("cohort_id must be specified")
+        logging.info(f"CohortAPI::copy")
         new_cohort = self.get(cohort_id)
+        if not new_cohort:
+            raise ValueError(f"cohort::{cohort_id} does not exist")
 
         new_cohort.id = None
         new_cohort.code = None
@@ -173,8 +172,7 @@ class CohortAPI:
             new_cohort.description = new_cohort.description + new_description
         else:
             new_cohort.description = new_description
-        if k2 is None:
-            return self.create(new_cohort)
-        else:
+        if k2:
             api = CohortAPI(api_key=k2)
             return api.create(new_cohort)
+        return self.create(new_cohort)
