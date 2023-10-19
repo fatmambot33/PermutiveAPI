@@ -89,35 +89,31 @@ class AudienceAPI:
         logging.info(f"AudienceAPI::__init__")
         self.__api_key = api_key
 
-    def listimport_details(self) -> List[Import]:
+    def list_imports(self) -> List[Import]:
         """
         Fetches all providers from the API.
 
         :return: List of all providers.
         """
-        logging.info(f"AudienceAPI::listimport_details")
+        logging.info(f"AudienceAPI::list_imports")
         url = f"{AUDIENCE_API_ENDPOINT}?k={self.__api_key}"
         response = APIRequestHandler.get(url=url)
         provider_data = response.json()
         return [AudienceAPI.Import(**provider) for provider in provider_data['items']]
-    def getimport_detail(self, import_id: str) -> Import:
+
+    def get_import(self,  import_id: str) -> Import:
         """
-        Fetches a specific cohort from the API using its ID.
+        Fetches a specific import by its id.
 
-        :param cohort_id: ID of the cohort.
-        :return: Cohort object or None if not found.
+        :param data_provider_id: ID of the data provider.
+        :return: The requested Importt.
         """
-        logging.info(f"AudienceAPI::get::{import_id}")
-        imports=self.list_segments()
-
-        # Using a list comprehension to find the Import object with the desired id
-        desiredimport_detail = next((import_obj for import_obj in imports if import_obj.id == import_id), None)
-
-        if desiredimport_detail is not None:
-            return desiredimport_detail
-        else:
-            raise ValueError("import_id::{import_id} does not exist")
-
+        logging.info(f"AudienceAPI::get_import::{import_id}")
+        url = f"{AUDIENCE_API_ENDPOINT}/{import_id}?k={self.__api_key}"
+        response = APIRequestHandler.get(url=url)
+        if response is None:
+            raise ValueError('Unable to get_import')
+        return AudienceAPI.Import(**response.json())
 
     def list_segments(self, import_id: str) -> List[Import.Segment]:
         """
@@ -201,91 +197,76 @@ class AudienceAPI:
         response = APIRequestHandler.delete(url=url)
         return response.status_code == 204
 
-    def sync_cohorts(self, import_id: str, masterKey: Optional[str] = None):
+    def sync_cohorts(self, import_id: str,
+                     masterKey: Optional[str] = None,
+                     cohorts_list: Optional[List[CohortAPI.Cohort]] = None,
+                     prefix: Optional[str] = None,
+
+                     inheritance: bool = False):
         logging.info(
-            f"AudienceAPI::create_cohorts::{import_id:}")
-        import_detail=self.getimport_detail(import_id=import_id)
+            f"AudienceAPI::sync_cohorts::{import_id:}")
+        import_detail = self.get_import(import_id=import_id)
+        if (inheritance and import_detail.inheritance) or \
+                (not inheritance and not import_detail.inheritance):
+            import_segments = self.list_segments(import_id=import_id)
 
+            if len(import_segments) == 0:
+                return
+            api_key = masterKey if masterKey is not None else self.__api_key
+            if not cohorts_list:
+                cohorts_list = self.list_cohorts()
 
-        import_segments = self.list_segments(import_id=import_id)
-        if len(import_segments) == 0:
-            return
-        if masterKey is not None:
-            cohort_api = CohortAPI(masterKey)
-        else:
-            cohort_api = CohortAPI(self.__api_key)
-        provider_segments = []
-        q_provider_segments= Query(name=import_segment.name, 
-                            tags=[import_detail.name, '#automatic', '#imports'],
-                            second_party_segments=[])
-        for import_segment in import_segments:
+            q_provider_segments = Query(name=f"{prefix or ''}{import_detail.name}",
+                                        tags=[import_detail.name,
+                                              '#automatic', '#imports'],
+                                        second_party_segments=[])
+            q_provider_segments.id = next(
+                (cohort.id for cohort in cohorts_list if cohort.name == q_provider_segments.name), None)
+
+            if q_provider_segments.id:
+                cohort_tags = next(
+                    (cohort.tags for cohort in cohorts_list if cohort.id == q_provider_segments.id), None)
+                q_provider_segments.tags = ListHelper.merge_list(
+                    q_provider_segments.tags, cohort_tags)
+            for import_segment in import_segments:
+
+                logging.info(
+                    f"AudienceAPI::sync_cohort::{import_detail.name}::{import_segment.name}")
+                t_segment = (import_detail.code, import_segment.code)
+
+                q_segment = Query(name=f"{prefix or ''}{import_detail.name} | {import_segment.name}",
+                                  description=f'{import_detail.name} ({import_detail.id}) : {import_segment.code} : {import_segment.name} ({import_segment.id})',
+                                  tags=[import_detail.name,
+                                        '#automatic', '#imports'],
+                                  second_party_segments=[t_segment])
+                q_segment.id = next(
+                    (cohort.id for cohort in cohorts_list if cohort.name == q_segment.name), None)
+
+                if q_segment.id:
+                    cohort_tags = next(
+                        (cohort.tags for cohort in cohorts_list if cohort.id == q_segment.id), None)
+                    q_segment.tags = ListHelper.merge_list(
+                        q_segment.tags, cohort_tags)
+                q_segment.sync(api_key=api_key)
+                q_provider_segments.second_party_segments.append(t_segment)
             logging.info(
-                f"AudienceAPI::create_cohort::{import_detail.name}::{import_segment.name}")
-            t_segment=(import_detail.code,import_segment.code)
-            q_segment=Query(name=import_segment.name, 
-                            description=f'{import_detail.name} ({import_detail.id}) : {import_segment.code} : {import_segment.name} ({import_segment.id})',
-                            tags=[import_detail.name, '#automatic', '#imports'],
-                            second_party_segments=[t_segment])
-            
+                f"AudienceAPI::sync_cohort::{import_detail.name}")
+            q_provider_segments.sync(api_key=api_key)
 
-            q_provider_segments.second_party_segments.append(t_segment)
-            segment_cohort = CohortAPI.Cohort(
-                name=import_segment.name, tags=[import_detail.name, '#automatic', '#imports'])
-            segment_condition = {"in_second_party_segment": {
-                "provider": import_detail.code,
-                "segment": import_segment.code
-            }}
-            segment_cohort.query = segment_condition
-            provider_segments.append(segment_condition)
-            segment_cohort.description = f'{import_detail.name} ({import_detail.id}) : {import_segment.code} : {import_segment.name} ({import_segment.id})'
-            cohort = cohort_api.get_by_name(segment_cohort.name)
+    def list_cohorts(self) -> List[CohortAPI.Cohort]:
+        logging.info(f"AudienceAPI::list_cohorts")
+        return CohortAPI(self.__api_key).list(include_child_workspaces=True)
 
-            if cohort is None:
-                cohort_api.create(segment_cohort)
-            else:
-                segment_cohort.id = cohort.id
-                segment_cohort.code = cohort.code
-                if segment_cohort.tags is not None:
-                    segment_cohort.tags = ListHelper.merge_list(
-                        segment_cohort.tags, cohort.tags)
-                else:
-                    segment_cohort.tags = cohort.tags
-                cohort_api.update(segment_cohort)
-        provider_cohort = CohortAPI.Cohort(
-            name=import_detail.name, tags=[import_detail.name, '#automatic', '#imports'])
-        provider_cohort.query = {
-            'or': provider_segments
-        }
-        cohort = cohort_api.get_by_name(provider_cohort.name)
-        if cohort is None:
-            cohort_api.create(provider_cohort)
-        else:
-            provider_cohort.id = cohort.id
-            provider_cohort.code = cohort.code
-            if provider_cohort.tags is not None:
-                provider_cohort.tags = ListHelper.merge_list(
-                    provider_cohort.tags, cohort.tags)
-            else:
-                provider_cohort.tags = cohort.tags
-            cohort_api.update(provider_cohort)
+    def sync_imports_cohorts(self,
+                             masterKey: Optional[str] = None,
+                             prefix: Optional[str] = None,
 
-    def list_cohorts(self, import_id: str):
-        logging.info(
-            f"AudienceAPI::list_cohorts::{import_id:}")
-        import_segments = self.list_segments(import_id=import_id)
-        import_segments = []
-        cohort_api = CohortAPI(self.__api_key)
-        for import_segment in import_segments:
-            cohort = cohort_api.get_by_name(import_segment.name)
-            if cohort is not None:
-                import_segments.append(cohort)
-        return import_segments
+                             inheritance: bool = False):
+        logging.info(f"AudienceAPI:sync_imports_cohorts")
+        providers = self.list_imports()
 
-    def sync_providers_cohorts(self, masterKey: Optional[str] = None):
-        logging.info(
-            f"AudienceAPI:sync_cohorts")
-        providers = self.listimport_details()
         for provider in providers:
-            logging.info(
-                f"AudienceAPI:sync_cohorts::{provider.name:}")
-            self.sync_cohorts(provider.id, masterKey)
+            self.sync_cohorts(provider.id,
+                              masterKey,
+                              prefix=prefix,
+                              inheritance=inheritance)

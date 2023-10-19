@@ -4,13 +4,12 @@ import logging
 import os
 import urllib.parse
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
 
 from .CohortAPI import CohortAPI
-from .AudienceAPI import AudienceAPI
 from .Utils import ListHelper, FileHelper
 from .Workspace import WorkspaceList
 
@@ -34,7 +33,7 @@ class Query():
     urls: Optional[List[str]] = None
     taxonomy: Optional[List[str]] = None
     segments: Optional[List[str]] = None
-    second_party_segments: Optional[List[AudienceAPI.Import.Segment]] = None
+    second_party_segments: Optional[List[Tuple[str, str]]] = None
     third_party_segments: Optional[List[int]] = None
     cohort_global: Optional[str] = None
     accurate_segments: Optional[List[str]] = None
@@ -50,6 +49,7 @@ class Query():
     engaged_time: Optional[bool] = False
     engaged_completion: Optional[bool] = False
     workspace_id: Optional[str] = None
+    tags: Optional[List[str]] = None
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -597,8 +597,8 @@ class Query():
         for segment in self.second_party_segments:
 
             second_party = {"in_second_party_segment": {
-                "provider": segment.import_id,
-                "segment": segment.id
+                "provider": segment[0],
+                "segment": segment[1]
             }}
             second_party_condition.append(second_party)
         return second_party_condition

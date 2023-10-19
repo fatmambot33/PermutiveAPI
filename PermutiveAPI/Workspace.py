@@ -43,9 +43,13 @@ class WorkspaceList(List[Workspace]):
         raise ValueError("workspaceID does not exist")
 
     def get_MasterprivateKey(self) -> str:
+
+        return self.get_Masterworkspace().privateKey
+
+    def get_Masterworkspace(self) -> Workspace:
         for workspace in self:
             if workspace.isTopLevel:
-                return workspace.privateKey
+                return workspace
         raise ValueError("No Top WS")
 
     def to_json(self, filepath: str):
