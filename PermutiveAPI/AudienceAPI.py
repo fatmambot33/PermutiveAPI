@@ -6,6 +6,7 @@ from .APIRequestHandler import APIRequestHandler
 from .Query import Query
 from .CohortAPI import CohortAPI
 from .Utils import ListHelper, FileHelper
+from PermutiveAPI import Utils
 
 AUDIENCE_API_VERSION = 'v1'
 AUDIENCE_API_ENDPOINT = f'https://api.permutive.app/audience-api/{AUDIENCE_API_VERSION}/imports'
@@ -115,7 +116,7 @@ class AudienceAPI:
             raise ValueError('Unable to get_import')
         return AudienceAPI.Import(**response.json())
 
-    def list_segments(self, import_id: str) -> List[Import.Segment]:
+    def list_segments(self, import_id: str,pagination_token:Optional[str]=None) -> List[Import.Segment]:
         """
         Fetches all segments for a specific import.
 
@@ -124,10 +125,19 @@ class AudienceAPI:
         """
         logging.info(f"AudienceAPI::list_segments::{import_id}")
         url = f"{AUDIENCE_API_ENDPOINT}/{import_id}/segments?k={self.__api_key}"
+        if pagination_token:
+            url=f"{url}&pagination_token={pagination_token}"
         response = APIRequestHandler.get(url=url)
         if response is None:
             raise ValueError('Unable to list_segments')
-        return [AudienceAPI.Import.Segment(**segment) for segment in response.json()['elements']]
+        response_json=response.json()
+        segments=[AudienceAPI.Import.Segment(**segment) for segment in response_json['elements']]
+        pagination=response_json['pagination']
+        next_token=response_json.get('pagination',{}).get('next_token',None)
+        if next_token:
+            segments+=self.list_segments(import_id,pagination_token=next_token)
+            print(len(segments))
+        return segments
 
     def get_segment(self,  import_id: str, segment_id: str) -> Import.Segment:
         """
@@ -189,8 +199,8 @@ class AudienceAPI:
         :return: True if deletion was successful, otherwise False.
         """
         logging.info(
-            f"AudienceAPI::delete_segment::{segment.import_id:}::{segment.segment_id}")
-        url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments/{segment.segment_id}?k={self.__api_key}"
+            f"AudienceAPI::delete_segment::{segment.import_id:}::{segment.id}")
+        url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments/{segment.id}?k={self.__api_key}"
         response = APIRequestHandler.delete(url=url)
         return response.status_code == 204
 
