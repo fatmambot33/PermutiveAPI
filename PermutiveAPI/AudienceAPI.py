@@ -246,8 +246,11 @@ class AudienceAPI:
             if q_provider_segments.id:
                 cohort_tags = next(
                     (cohort.tags for cohort in cohorts_list if cohort.id == q_provider_segments.id), None)
-                q_provider_segments.tags = ListHelper.merge_list(
-                    q_provider_segments.tags, cohort_tags)
+                if q_provider_segments.tags:
+                    q_provider_segments.tags = ListHelper.merge_list(
+                        q_provider_segments.tags, cohort_tags)
+                else:
+                    q_provider_segments.tags=cohort_tags
             for import_segment in import_segments:
 
                 logging.info(
@@ -265,9 +268,14 @@ class AudienceAPI:
                 if q_segment.id:
                     cohort_tags = next(
                         (cohort.tags for cohort in cohorts_list if cohort.id == q_segment.id), None)
-                    q_segment.tags = ListHelper.merge_list(
-                        q_segment.tags, cohort_tags)
+                    if q_segment.tags :
+                        q_segment.tags = ListHelper.merge_list(
+                            q_segment.tags, cohort_tags)
+                    else:
+                        q_segment.tags=cohort_tags
                 q_segment.sync(api_key=api_key)
+                if not q_provider_segments.second_party_segments:
+                    q_provider_segments.second_party_segments=[]
                 q_provider_segments.second_party_segments.append(t_segment)
             logging.info(
                 f"AudienceAPI::sync_cohort::{import_detail.name}")

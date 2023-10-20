@@ -152,7 +152,7 @@ class Query():
 
     def merge(self, wrap_query: 'Query'):
         if wrap_query.segments:
-            if self.segments:
+            if self.segments is None:
                 self.segments = wrap_query.segments
             else:
                 self.segments = ListHelper.merge_list(
@@ -685,6 +685,8 @@ class QueryList(List[Query]):
                         if definition.get("market", "CN") is not None:
                             query_list.append(Query(**definition))
             return QueryList(query_list)
+        else:
+            raise ValueError(f"No file")
 
     def to_query(self):
         query_dict = {}
@@ -775,13 +777,14 @@ class QueryList(List[Query]):
                 definitions = [definitions]
             for definition in definitions:
                 query = Query(**definition)
-                api_key = workspaceList.get_privateKey(
-                    query.workspace_id)
-                if api_key is not None:
-                    query.sync(api_key=api_key,
-                               new_tags=new_tags)
-                definitions[definition_index] = query
-                definition_index = definition_index + 1
+                if query.workspace_id:
+                    api_key = workspaceList.get_privateKey(
+                        query.workspace_id)
+                    if api_key is not None:
+                        query.sync(api_key=api_key,
+                                new_tags=new_tags)
+                    definitions[definition_index] = query
+                    definition_index = definition_index + 1
             definitions = sorted(definitions, key=lambda d: d["name"])
             FileHelper.to_json(definitions, filepath)
 
@@ -803,8 +806,9 @@ class QueryList(List[Query]):
                 definitions = [definitions]
             for definition in definitions:
                 query = Query(**definition)
-                api_key = workspaceList.get_privateKey(
-                    query.workspace_id)
-                if api_key is not None:
-                    query.sync_clickers(api_key=api_key,
-                                        new_tags=ListHelper.merge_list(new_tags, TAGS))
+                if query.workspace_id:
+                    api_key = workspaceList.get_privateKey(
+                        query.workspace_id)
+                    if api_key is not None:
+                        query.sync_clickers(api_key=api_key,
+                                            new_tags=ListHelper.merge_list(new_tags, TAGS))
