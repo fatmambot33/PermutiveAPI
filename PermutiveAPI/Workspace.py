@@ -1,5 +1,6 @@
+
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional,Dict
 import os
 from .Utils import FileHelper
 
@@ -32,16 +33,18 @@ class Workspace:
 @dataclass
 class WorkspaceList(List[Workspace]):
 
-    def __init__(self, workspaces: Optional[List[Workspace]]):
-        if workspaces is not None:
-            super().__init__(workspaces)
 
-    def get_privateKey(self, workspaceID: str) -> str:
-        for workspace in self:
-            if workspace.workspaceID == workspaceID:
-                return workspace.privateKey
-        raise ValueError("workspaceID does not exist")
+    def __init__(self, workspaces: Optional[List[Workspace]] = None):
+        super().__init__(workspaces if workspaces is not None else [])
+        self._id_map = {workspace.workspaceID: workspace for workspace in self}
+        self._name_map = {workspace.name: workspace for workspace in self}
 
+    def get_by_id(self, workspaceID: str) -> Optional[Workspace]:
+        return self._id_map.get(workspaceID, None)
+
+    def get_by_name(self, name: str) -> Optional[Workspace]:
+        return self._name_map.get(name, None)
+    
     def get_MasterprivateKey(self) -> str:
 
         return self.get_Masterworkspace().privateKey

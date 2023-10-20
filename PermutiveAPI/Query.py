@@ -778,9 +778,10 @@ class QueryList(List[Query]):
             for definition in definitions:
                 query = Query(**definition)
                 if query.workspace_id:
-                    api_key = workspaceList.get_privateKey(
-                        query.workspace_id)
-                    if api_key is not None:
+                    api_key=None
+                    query_ws=workspaceList.get_by_id(query.workspace_id)
+                    if query_ws:
+                        api_key = query_ws.privateKey
                         query.sync(api_key=api_key,
                                 new_tags=new_tags)
                     definitions[definition_index] = query
@@ -807,8 +808,7 @@ class QueryList(List[Query]):
             for definition in definitions:
                 query = Query(**definition)
                 if query.workspace_id:
-                    api_key = workspaceList.get_privateKey(
-                        query.workspace_id)
+                    api_key = workspaceList.get_by_id(query.workspace_id)
                     if api_key is not None:
                         query.sync_clickers(api_key=api_key,
                                             new_tags=ListHelper.merge_list(new_tags, TAGS))

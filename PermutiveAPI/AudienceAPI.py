@@ -132,11 +132,10 @@ class AudienceAPI:
             raise ValueError('Unable to list_segments')
         response_json=response.json()
         segments=[AudienceAPI.Import.Segment(**segment) for segment in response_json['elements']]
-        pagination=response_json['pagination']
         next_token=response_json.get('pagination',{}).get('next_token',None)
         if next_token:
+            logging.info(f"AudienceAPI::list_segments::{import_id}::{next_token}")
             segments+=self.list_segments(import_id,pagination_token=next_token)
-            print(len(segments))
         return segments
 
     def get_segment(self,  import_id: str, segment_id: str) -> Import.Segment:
