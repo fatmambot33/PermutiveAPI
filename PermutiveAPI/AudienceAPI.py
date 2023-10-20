@@ -79,11 +79,73 @@ class AudienceAPI:
 
             def to_json(self, filepath: str):
                 FileHelper.to_json(self, filepath=filepath)
+            
+            def create(self,api_key:str):
+                AudienceAPI.Import.Segment.create_segment(api_key=api_key,
+                                                          segment=self)
+            def update(self,api_key:str):
+                AudienceAPI.Import.Segment.update_segment(api_key=api_key,
+                                                          segment=self)
+            def delete(self,api_key:str):
+                AudienceAPI.Import.Segment.delete_segment(api_key=api_key,
+                                                          segment=self)
 
             @staticmethod
             def from_json(filepath: str) -> 'AudienceAPI.Import.Segment':
                 jsonObj = FileHelper.from_json(filepath=filepath)
                 return AudienceAPI.Import.Segment(**jsonObj)
+            
+            @staticmethod
+            def create_segment(api_key:str, segment: 'AudienceAPI.Import.Segment') -> 'AudienceAPI.Import.Segment':
+                """
+                Creates a new segment
+
+                :return: The created Segment.
+                """
+                logging.info(
+                    f"AudienceAPI::create_segment::{segment.import_id}::{segment.name}")
+                url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments?k={api_key}"
+                payload = ['name', 'code', 'description', 'cpm', 'categories']
+                response = APIRequestHandler.post(
+                    url=url, data=APIRequestHandler.to_payload(payload))
+                if response is None:
+                    raise ValueError('Unable to create_segment')
+                return AudienceAPI.Import.Segment(**response.json())
+            @staticmethod
+            def update_segment(api_key:str, segment: 'AudienceAPI.Import.Segment') -> 'AudienceAPI.Import.Segment':
+                """
+                PATCH
+                https://api.permutive.app/audience-api/v1/imports/{importId}/segments/{segmentId}
+                Updates a segment for an import. The segment is identified by its globally unique public ID.
+                https://developer.permutive.com/reference/patchimportsimportidsegmentssegmentid
+                :param segment: AudienceAPI.Import.Segment to update
+                :return: The updated Segment.
+                """
+
+                logging.info(
+                    f"AudienceAPI::update_segment::{segment.import_id}::{segment.name}")
+                url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments/{segment.id}?k={api_key}"
+                payload = ['name', 'code', 'description', 'cpm', 'categories']
+                response = APIRequestHandler.patch(
+                    url=url,  data=APIRequestHandler.to_payload(segment, payload))
+                if response is None:
+                    raise ValueError('Unable to update_segment')
+                return AudienceAPI.Import.Segment(**response.json())
+            @staticmethod
+            def delete_segment(api_key:str, segment: 'AudienceAPI.Import.Segment') -> bool:
+                """
+                Deletes a specific segment by its id.
+
+                :param import_id: ID of the import.
+                :param segment_id: ID of the segment.
+                :return: True if deletion was successful, otherwise False.
+                """
+                logging.info(
+                    f"AudienceAPI::delete_segment::{segment.import_id:}::{segment.id}")
+                url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments/{segment.id}?k={api_key}"
+                response = APIRequestHandler.delete(url=url)
+                return response.status_code == 204
+
     # endregion
 
     def __init__(self, api_key: str):
@@ -138,70 +200,35 @@ class AudienceAPI:
             segments+=self.list_segments(import_id,pagination_token=next_token)
         return segments
 
-    def get_segment(self,  import_id: str, segment_id: str) -> Import.Segment:
+    def get_segment_by_id(self,  import_id: str, segment_id: str) -> Import.Segment:
         """
         Fetches a specific segment by its id.
-
+        https://developer.permutive.com/reference/getimportsimportidsegmentssegmentid
         :param import_id: ID of the import.
-        :param segment_id: ID of the segment.
+        :param segment_id: UUID of the segment.
         :return: The requested Segment.
         """
-        logging.info(f"AudienceAPI::get_segment::{import_id}::{segment_id}")
+        logging.info(f"AudienceAPI::get_segment_by_id::{import_id}::{segment_id}")
         url = f"{AUDIENCE_API_ENDPOINT}/{import_id}/segments/{segment_id}?k={self.__api_key}"
         response = APIRequestHandler.get(url=url)
         if response is None:
             raise ValueError('Unable to get_segment')
         return AudienceAPI.Import.Segment(**response.json())
 
-    def create_segment(self, segment: Import.Segment) -> Import.Segment:
+    def get_segment_by_code(self,  import_id: str, segment_code: str) -> Import.Segment:
         """
-        Creates a new segment
-
-        :return: The created Segment.
-        """
-        logging.info(
-            f"AudienceAPI::create_segment::{segment.import_id}::{segment.name}")
-        url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments?k={self.__api_key}"
-        payload = ['name', 'code', 'description', 'cpm', 'categories']
-        response = APIRequestHandler.post(
-            url=url, data=APIRequestHandler.to_payload(payload))
-        if response is None:
-            raise ValueError('Unable to create_segment')
-        return AudienceAPI.Import.Segment(**response.json())
-
-    def update_segment(self, segment: Import.Segment) -> Import.Segment:
-        """
-        Updates a specific segment
-
+        Fetches a specific segment by its code.
+        https://developer.permutive.com/reference/getimportsimportidsegmentscodesegmentcode
         :param import_id: ID of the import.
-        :param segment_id: ID of the segment.
-        :param segment_data: Updated data of the segment.
-        :return: The updated Segment.
+        :param segment_code: Public code of the segment.
+        :return: The requested Segment.
         """
-
-        logging.info(
-            f"AudienceAPI::update_segment::{segment.import_id}::{segment.name}")
-        url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments/{segment.id}?k={self.__api_key}"
-        payload = ['name', 'code', 'description', 'cpm', 'categories']
-        response = APIRequestHandler.patch(
-            url=url,  data=APIRequestHandler.to_payload(segment, payload))
+        logging.info(f"AudienceAPI::get_segment_by_code::{import_id}::{segment_code}")
+        url = f"{AUDIENCE_API_ENDPOINT}/{import_id}/segments/code/{segment_code}?k={self.__api_key}"
+        response = APIRequestHandler.get(url=url)
         if response is None:
-            raise ValueError('Unable to update_segment')
+            raise ValueError('Unable to get_segment')
         return AudienceAPI.Import.Segment(**response.json())
-
-    def delete_segment(self, segment: Import.Segment) -> bool:
-        """
-        Deletes a specific segment by its id.
-
-        :param import_id: ID of the import.
-        :param segment_id: ID of the segment.
-        :return: True if deletion was successful, otherwise False.
-        """
-        logging.info(
-            f"AudienceAPI::delete_segment::{segment.import_id:}::{segment.id}")
-        url = f"{AUDIENCE_API_ENDPOINT}/{segment.import_id}/segments/{segment.id}?k={self.__api_key}"
-        response = APIRequestHandler.delete(url=url)
-        return response.status_code == 204
 
     def sync_cohorts(self, 
                      import_id: str,
