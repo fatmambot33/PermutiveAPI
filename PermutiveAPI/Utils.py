@@ -6,7 +6,7 @@ import pathlib
 import re
 import unicodedata
 from glob import glob
-from typing import List, Optional, Union
+from typing import List, Optional, Union,Dict,Any
 
 
 class FileHelper:
@@ -98,3 +98,24 @@ class ListHelper:
         lst = list(filter(None, list(dict.fromkeys(lst1+lst2))))
         lst.sort()
         return lst
+
+class RequestHelper:
+
+    @staticmethod
+    def to_payload(dataclass_obj: Any, keys: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+            Convert a data class object to a dictionary payload.
+
+            This method converts a data class object into a dictionary, optionally filtering keys.
+
+            Args:
+                dataclass_obj (Any): The data class object to be converted.
+                keys (Optional[List[str]]): List of keys to include in the payload. If None, all keys with non-None values are included.
+
+            Returns:
+                Dict[str, Any]: The dictionary payload.
+
+        """
+        if keys:
+            return {key: value for key, value in vars(dataclass_obj).items() if value is not None and key in keys}
+        return {key: value for key, value in vars(dataclass_obj).items() if value is not None}

@@ -41,10 +41,12 @@ class CohortAPI:
         request_id: Optional[str] = None
         error: Optional[str] = None
 
-        def to_payload(self, keys: Optional[List[str]] = ["name", "query", "description", "tags"]) -> Dict[str, Any]:
+        def to_payload(self, 
+                       keys: Optional[List[str]] = ["name", "query", "description", "tags"]) -> Dict[str, Any]:
             return APIRequestHandler.to_payload(self, keys=keys)
 
-        def to_json(self, filepath: str):
+        def to_json(self, 
+                    filepath: str):
             FileHelper.to_json(self, filepath=filepath)
 
         @staticmethod
@@ -52,7 +54,8 @@ class CohortAPI:
             jsonObj = FileHelper.from_json(filepath=filepath)
             return CohortAPI.Cohort(**jsonObj)
 
-    def list(self, include_child_workspaces=False) -> List[Cohort]:
+    def list(self, 
+             include_child_workspaces=False) -> List[Cohort]:
         """
             Fetches all cohorts from the API.
 
@@ -65,7 +68,8 @@ class CohortAPI:
         response = APIRequestHandler.get(url=url)
         return [CohortAPI.Cohort(**cohort) for cohort in response.json()]
 
-    def get(self, cohort_id: str) -> Cohort:
+    def get(self, 
+            cohort_id: str) -> Cohort:
         """
         Fetches a specific cohort from the API using its ID.
 
@@ -78,7 +82,8 @@ class CohortAPI:
 
         return CohortAPI.Cohort(**response.json())
 
-    def get_by_name(self, cohort_name: str) -> Optional[Cohort]:
+    def get_by_name(self, 
+                    cohort_name: str) -> Optional[Cohort]:
         '''
             Object Oriented Permutive Cohort seqrch
             :rtype: Cohort object
@@ -90,7 +95,8 @@ class CohortAPI:
             if cohort_name == cohort.name and cohort.id is not None:
                 return self.get(cohort.id)
 
-    def get_by_code(self, cohort_code: Union[int, str]) -> Optional[Cohort]:
+    def get_by_code(self, 
+                    cohort_code: Union[int, str]) -> Optional[Cohort]:
         '''
         Object Oriented Permutive Cohort seqrch
         :rtype: Cohort object
@@ -104,7 +110,8 @@ class CohortAPI:
             if cohort_code == cohort.code and cohort.id is not None:
                 return self.get(cohort.id)
 
-    def create(self, cohort: Cohort) -> Cohort:
+    def create(self, 
+               cohort: Cohort) -> Cohort:
         """
         Creates a new cohort.
 
@@ -124,7 +131,8 @@ class CohortAPI:
 
         return CohortAPI.Cohort(**response.json())
 
-    def update(self, cohort: Cohort) -> Cohort:
+    def update(self, 
+               cohort: Cohort) -> Cohort:
         """
         Updates an existing cohort.
 
@@ -141,7 +149,8 @@ class CohortAPI:
             data=cohort.to_payload())
         return self.get(cohort_id=cohort.id)
 
-    def delete(self, cohort_id: str) -> None:
+    def delete(self, 
+               cohort_id: str) -> None:
         """
         Deletes a specific cohort.
         :param cohort_id: ID of the cohort to be deleted.
@@ -151,7 +160,8 @@ class CohortAPI:
         url = f"{COHORT_API_ENDPOINT}{cohort_id}?k={self.__api_key}"
         APIRequestHandler.delete(url=url)
 
-    def copy(self, cohort_id: str, k2: Optional[str] = None) -> Cohort:
+    def copy(self, 
+             cohort_id: str, k2: Optional[str] = None) -> Cohort:
         """
         Meant for copying a cohort
         :param cohort_id: str the cohort's id to duplicat. Required
