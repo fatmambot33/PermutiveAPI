@@ -32,11 +32,16 @@ class APIRequestHandler:
         self.api_key=api_key
         self.api_endpoint=api_endpoint
         self.payload_keys=payload_keys
+    def gen_url(self,url):
+        if "?" in url:
+            return f"{url}&"
+        else:
+            return f"{url}?"
 
     def getRequest(self,
                    url)-> Response:
         response = None
-        url = f"{url}?k={self.api_key}"
+        url = f"{self.gen_url(url)}k={self.api_key}"
         try:
             response = requests.get(url, headers=self.DEFAULT_HEADERS)
             response.raise_for_status()
@@ -61,7 +66,7 @@ class APIRequestHandler:
 
         """
         response = None
-        url = f"{url}?k={self.api_key}"
+        url = f"{self.gen_url(url)}k={self.api_key}"
         try:
             response = requests.post(url,
                                     headers=self.DEFAULT_HEADERS,
@@ -88,7 +93,7 @@ class APIRequestHandler:
 
         """        
         response = None
-        url = f"{url}?k={self.api_key}"
+        url = f"{self.gen_url(url)}k={self.api_key}"
         try:
             response = requests.patch(url, 
                                       headers=self.DEFAULT_HEADERS, 
@@ -112,7 +117,7 @@ class APIRequestHandler:
 
         """        
         response = None
-        url = f"{url}?k={self.api_key}"
+        url = f"{self.gen_url(url)}k={self.api_key}"
         try:
             response = requests.delete(url, headers=self.DEFAULT_HEADERS)
             response.raise_for_status()
@@ -167,4 +172,3 @@ class APIRequestHandler:
                 return response
         logging.error(f"An error occurred: {e}")
         raise e
-

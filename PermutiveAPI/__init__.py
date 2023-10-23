@@ -852,24 +852,23 @@ class Workspace(FileHelper):
         return UserAPI(self.privateKey)
     
     def sync_imports_cohorts(self,
-                            import_: 'AudienceAPI.Import',
+                            import_detail: 'AudienceAPI.Import',
                             prefix: Optional[str] = None,
                             inheritance: bool = False,
                             masterKey:Optional[str]=None):
         cohorts_list=self.CohortAPI.list(include_child_workspaces=True)
-        for import_ in self.AudienceAPI.list_imports():
-            if (inheritance and import_.inheritance) or(not inheritance and not import_.inheritance):
-                self.sync_import_cohorts(import_=import_,
+        for import_detail in self.AudienceAPI.list_imports():
+            if (inheritance and import_detail.inheritance) or(not inheritance and not import_detail.inheritance):
+                self.sync_import_cohorts(import_detail=import_detail,
                                          prefix=prefix,
                                          cohorts_list=cohorts_list,
                                          masterKey=masterKey)
 
     def sync_import_cohorts(self,
-                            import_: 'AudienceAPI.Import',
+                            import_detail: 'AudienceAPI.Import',
                             prefix: Optional[str] = None,
                             cohorts_list:Optional[List['CohortAPI.Cohort']]=None,
                             masterKey:Optional[str]=None):
-            for import_detail in self.AudienceAPI.list_segments(import_id=import_.id):
                 import_segments = self.AudienceAPI.list_segments(import_id=import_detail.id)
                 if len(import_segments)==0:
                     return
@@ -892,7 +891,8 @@ class Workspace(FileHelper):
                     q_segment = Query(name=f"{prefix or ''}{import_detail.name} | {import_segment.name}",
                                       description=f'{import_detail.name} ({import_detail.id}) : {import_segment.code} : {import_segment.name} ({import_segment.id})',
                                       tags=[import_detail.name,'#automatic', '#imports'],
-                                      second_party_segments=[t_segment])
+                                      second_party_segments=[t_segment],
+                                      workspace_id=self.workspaceID)
                     q_segment.id = next((cohort.id for cohort in cohorts_list if cohort.name == q_segment.name), None)
 
                     if q_segment.id:
@@ -905,6 +905,7 @@ class Workspace(FileHelper):
                     if not q_provider_segments.second_party_segments:
                         q_provider_segments.second_party_segments=[]
                     q_provider_segments.second_party_segments.append(t_segment)
+                q_provider_segments.sync(api_key=api_key)
                 
                 
     def from_description(self):
@@ -922,7 +923,7 @@ class Workspace(FileHelper):
     def sync_imports_segments(self):
         cohorts_list=self.CohortAPI.list(include_child_workspaces=True)
         for item in self.AudienceAPI.list_imports():
-            self.sync_import_cohorts(import_=item,
+            self.sync_import_cohorts(import_detail=item,
                                      prefix=f"{self.name} | Import | ",
                                      cohorts_list=cohorts_list)
 
@@ -1010,7 +1011,7 @@ class CohortAPI(APIRequestHandler):
         logging.info(f"CohortAPI::list")
         url = self.api_endpoint
         if include_child_workspaces:
-            url = f"{url}&include-child-workspaces=true"
+            url = f"{self.gen_url(url)}include-child-workspaces=true"
         response = self.getRequest(url)
         return [CohortAPI.Cohort(**cohort) for cohort in response.json()]
 
@@ -1091,9 +1092,8 @@ class CohortAPI(APIRequestHandler):
         if cohort.id is None:
             raise ValueError('id must be specified')
         url = f"{self.api_endpoint}{cohort.id}"
-        self.patchRequest(url=url,
-                          data=self.to_payload(cohort))
-        response = self.postRequest(url=url,
+
+        response = self.patchRequest(url=url,
                                     data=self.to_payload(cohort))
 
         return CohortAPI.Cohort(**response.json())
