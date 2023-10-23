@@ -1,16 +1,16 @@
 import logging
 
 
-from PermutiveAPI.Workspace import WorkspaceList
+import PermutiveAPI
 
 from dotenv import load_dotenv
 import logging
 logging.getLogger().setLevel(logging.INFO)
 load_dotenv()
-ws_list = WorkspaceList.from_json()
+ws_list = PermutiveAPI.WorkspaceList.from_json()
 for ws in ws_list:
-    imports=ws.list_imports()
-    print(ws.list_imports())
+    imports=ws.AudienceAPI.list_imports()
+    print(imports)
     for item in imports:
-        print(ws.list_segments(import_id=item.id))
+        print(ws.AudienceAPI.list_segments(import_id=item.id))
 
