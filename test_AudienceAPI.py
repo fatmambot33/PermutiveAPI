@@ -2,7 +2,6 @@ import unittest
 import os
 from unittest.mock import patch
 # Replace 'your_module' with the actual module name where AudienceAPI resides
-from PermutiveAPI.AudienceAPI import AudienceAPI
 from PermutiveAPI.Workspace import WorkspaceList
 
 from dotenv import load_dotenv
@@ -10,7 +9,7 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 load_dotenv()
 ws_list = WorkspaceList.from_json()
-masterKey = ws_list.get_MasterprivateKey()
+masterKey = ws_list.Masterworkspace
 
 
 class TestAudienceAPI(unittest.TestCase):
@@ -27,11 +26,10 @@ class TestAudienceAPI(unittest.TestCase):
                     "relation": None, "identifiers": ["xID"]}
             ]
         }
-        # Initialize as per your requirements
-        api = AudienceAPI(api_key=masterKey)
+       
 
         # Act
-        result = api.list_imports()
+        result =  masterKey.list_cohorts()
 
         # Assert
         self.assertEqual(len(result), 2)
