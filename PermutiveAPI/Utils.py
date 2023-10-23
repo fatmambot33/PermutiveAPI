@@ -88,6 +88,9 @@ class ListHelper:
             return ast.literal_eval(val)
         else:
             return val
+    @staticmethod
+    def compare_list(list1:List[str],list2:List[str]):
+        return set(list1) == set(list2)
 
     @staticmethod
     def merge_list(lst1: List, lst2: Optional[Union[int, str, List]] = None) -> List:

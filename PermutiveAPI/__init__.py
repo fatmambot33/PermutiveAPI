@@ -850,15 +850,15 @@ class Workspace(FileHelper):
     @property
     def UserAPI(self):
         return UserAPI(self.privateKey)
-    
+
     def sync_imports_cohorts(self,
-                            import_detail: 'AudienceAPI.Import',
-                            prefix: Optional[str] = None,
-                            inheritance: bool = False,
-                            masterKey:Optional[str]=None):
-        cohorts_list=self.CohortAPI.list(include_child_workspaces=True)
+                             import_detail: 'AudienceAPI.Import',
+                             prefix: Optional[str] = None,
+                             inheritance: bool = False,
+                             masterKey: Optional[str] = None):
+        cohorts_list = self.CohortAPI.list(include_child_workspaces=True)
         for import_detail in self.AudienceAPI.list_imports():
-            if (inheritance and import_detail.inheritance) or(not inheritance and not import_detail.inheritance):
+            if (inheritance and import_detail.inheritance) or (not inheritance and not import_detail.inheritance):
                 self.sync_import_cohorts(import_detail=import_detail,
                                          prefix=prefix,
                                          cohorts_list=cohorts_list,
@@ -867,61 +867,68 @@ class Workspace(FileHelper):
     def sync_import_cohorts(self,
                             import_detail: 'AudienceAPI.Import',
                             prefix: Optional[str] = None,
-                            cohorts_list:Optional[List['CohortAPI.Cohort']]=None,
-                            masterKey:Optional[str]=None):
-                import_segments = self.AudienceAPI.list_segments(import_id=import_detail.id)
-                if len(import_segments)==0:
-                    return
-                if not cohorts_list:
-                    cohorts_list=self.CohortAPI.list(include_child_workspaces=True)
-                api_key=masterKey if masterKey is not None else self.privateKey
-                q_provider_segments=Query(name=f"{prefix or ''}{import_detail.name}",
-                                          tags=[import_detail.name,'automatic', 'imports'],
-                                          second_party_segments=[])
-                q_provider_segments.id=next((cohort.id for cohort in self.CohortAPI.list() if cohort.name==q_provider_segments.name),None)
-                cohort_tags=next((cohort.tags for cohort in self.CohortAPI.list() if cohort.name==q_provider_segments.name),None)
-                if q_provider_segments.tags:
-                    q_provider_segments.tags=ListHelper.merge_list(q_provider_segments.tags,cohort_tags)
-                else:
-                    q_provider_segments.tags=cohort_tags
-                for import_segment in import_segments:
-                    logging.info(f"AudienceAPI::sync_cohort::{import_detail.name}::{import_segment.name}")
-                    t_segment = (import_detail.code, import_segment.code)
+                            cohorts_list: Optional[List['CohortAPI.Cohort']] = None,
+                            masterKey: Optional[str] = None):
+        import_segments = self.AudienceAPI.list_segments(
+            import_id=import_detail.id)
+        if len(import_segments) == 0:
+            return
+        if not cohorts_list:
+            cohorts_list = self.CohortAPI.list(include_child_workspaces=True)
+        api_key = masterKey if masterKey is not None else self.privateKey
+        q_provider_segments = Query(name=f"{prefix or ''}{import_detail.name}",
+                                    tags=[import_detail.name,
+                                          'automatic', 'imports'],
+                                    second_party_segments=[])
+        q_provider_segments.id = next((cohort.id for cohort in self.CohortAPI.list(
+        ) if cohort.name == q_provider_segments.name), None)
+        cohort_tags = next((cohort.tags for cohort in self.CohortAPI.list(
+        ) if cohort.name == q_provider_segments.name), None)
+        if q_provider_segments.tags:
+            q_provider_segments.tags = ListHelper.merge_list(
+                q_provider_segments.tags, cohort_tags)
+        else:
+            q_provider_segments.tags = cohort_tags
+        for import_segment in import_segments:
+            logging.info(
+                f"AudienceAPI::sync_cohort::{import_detail.name}::{import_segment.name}")
+            t_segment = (import_detail.code, import_segment.code)
 
-                    q_segment = Query(name=f"{prefix or ''}{import_detail.name} | {import_segment.name}",
-                                      description=f'{import_detail.name} ({import_detail.id}) : {import_segment.code} : {import_segment.name} ({import_segment.id})',
-                                      tags=[import_detail.name,'#automatic', '#imports'],
-                                      second_party_segments=[t_segment],
-                                      workspace_id=self.workspaceID)
-                    q_segment.id = next((cohort.id for cohort in cohorts_list if cohort.name == q_segment.name), None)
+            q_segment = Query(name=f"{prefix or ''}{import_detail.name} | {import_segment.name}",
+                              description=f'{import_detail.name} ({import_detail.id}) : {import_segment.code} : {import_segment.name} ({import_segment.id})',
+                              tags=[import_detail.name,
+                                    '#automatic', '#imports'],
+                              second_party_segments=[t_segment],
+                              workspace_id=self.workspaceID)
+            q_segment.id = next(
+                (cohort.id for cohort in cohorts_list if cohort.name == q_segment.name), None)
 
-                    if q_segment.id:
-                        cohort_tags = next((cohort.tags for cohort in cohorts_list if cohort.id == q_segment.id), None)
-                    if q_segment.tags :
-                        q_segment.tags = ListHelper.merge_list(q_segment.tags, cohort_tags)
-                    else:
-                        q_segment.tags=cohort_tags
-                    q_segment.sync(api_key=api_key)
-                    if not q_provider_segments.second_party_segments:
-                        q_provider_segments.second_party_segments=[]
-                    q_provider_segments.second_party_segments.append(t_segment)
-                q_provider_segments.sync(api_key=api_key)
-                
-                
+            if q_segment.id:
+                cohort_tags = next(
+                    (cohort.tags for cohort in cohorts_list if cohort.id == q_segment.id), None)
+            if q_segment.tags:
+                q_segment.tags = ListHelper.merge_list(
+                    q_segment.tags, cohort_tags)
+            else:
+                q_segment.tags = cohort_tags
+            q_segment.sync(api_key=api_key)
+            if not q_provider_segments.second_party_segments:
+                q_provider_segments.second_party_segments = []
+            q_provider_segments.second_party_segments.append(t_segment)
+        q_provider_segments.sync(api_key=api_key)
+
     def from_description(self):
-        cohorts_list=self.CohortAPI.list(include_child_workspaces=True)
+        cohorts_list = self.CohortAPI.list(include_child_workspaces=True)
         for cohort in cohorts_list:
             if cohort.tags:
                 if "from_description" in cohort.tags and cohort.description:
                     keywords = cohort.description.split(",")
                     query = Query(name=cohort.name, id=cohort.id,
-                          keywords=keywords)
+                                  keywords=keywords)
                     query.sync(self.privateKey)
 
-
-
     def sync_imports_segments(self):
-        cohorts_list=self.CohortAPI.list(include_child_workspaces=True)
+        cohorts_list = self.CohortAPI.list(include_child_workspaces=True)
         for item in self.AudienceAPI.list_imports():
             self.sync_import_cohorts(import_detail=item,
                                      prefix=f"{self.name} | Import | ",
@@ -1094,7 +1101,7 @@ class CohortAPI(APIRequestHandler):
         url = f"{self.api_endpoint}{cohort.id}"
 
         response = self.patchRequest(url=url,
-                                    data=self.to_payload(cohort))
+                                     data=self.to_payload(cohort))
 
         return CohortAPI.Cohort(**response.json())
 
@@ -1331,48 +1338,52 @@ class AudienceAPI(APIRequestHandler):
 
 class UserAPI(APIRequestHandler):
     USER_API_VERSION = 'v2.0'
-    USER_API_ENDPOINT = f'https://api.permutive.com/{USER_API_VERSION}/identify'
 
-    def __init__(self, api_key: str):
-        logging.info(f"UserAPI::__init__")
-        self.__api_key = api_key
+    @dataclass
+    class Identity:
+        """
+        Dataclass for the Source entity in the Permutive ecosystem.
+        """
+        user_id: str
+        aliases: List['UserAPI.Identity.Alias']
+
+        @dataclass
+        class Alias:
+            """
+            Dataclass for the Source entity in the Permutive ecosystem.
+            """
+            id: str
+            tag: str = "email_sha256"
+            priority: int = 0
+
+    def __init__(self,
+                 api_key
+                 ) -> None:
+        super().__init__(api_key=api_key,
+                         api_endpoint=f'https://api.permutive.com/{self.USER_API_VERSION}/identify',
+                         payload_keys=["user_id", "aliases"])
 
     def identify(self,
-                 user_id: str,
-                 id: str,
-                 tag: str = "email_sha256",
-                 priority: int = 0):
+                 identity: Identity):
 
-        if user_id is None:
-            raise ValueError('user_id must be specified')
-        if id is None:
-            raise ValueError('id must be specified')
-        logging.info(f"UserAPI::identify::{user_id}")
+        logging.info(f"UserAPI::identify::{identity.user_id}")
 
-        url = f"{self.USER_API_VERSION}?k={self.__api_key}"
-        aliases = [
-            {
-                "tag": tag,
-                "id": id,
-                "priority": priority
-            }
-        ]
-        if tag == "email_sha256":
-            aliases.append({
-                "tag": "uID",
-                "id": id,
-                "priority": priority
-            })
-        if tag == "uID":
-            aliases.append({
-                "tag": "email_sha256",
-                "id": id,
-                "priority": priority
-            })
-        payload = {
-            "aliases": aliases,
-            "user_id": user_id
-        }
+        url = f"{self.USER_API_VERSION}"
+        aliases_name = [alias.tag for alias in identity.aliases]
+        if "email_sha256" in aliases_name and "uID" not in aliases_name:
+            alias_id = next(
+                (alias.id for alias in identity.aliases if alias.tag == "email_sha256"), "")
+            alias = UserAPI.Identity.Alias(id=alias_id,
+                                           tag="uID")
+            identity.aliases.append(alias)
+        if "email_sha256" not in aliases_name and "uID" in aliases_name:
+            tag = "uID"
+            alias_id = next(
+                (alias.id for alias in identity.aliases if alias.tag == tag), "")
+            alias = UserAPI.Identity.Alias(id=alias_id,
+                                           tag="email_sha256")
+            identity.aliases.append(alias)
+
         return self.postRequest(
             url=url,
-            data=payload)
+            data=self.to_payload(identity))
