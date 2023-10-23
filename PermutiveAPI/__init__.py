@@ -1337,7 +1337,7 @@ class UserAPI(APIRequestHandler):
         aliases: List['UserAPI.Identity.Alias']
 
         @dataclass
-        class Alias:
+        class Alias():
             """
             Dataclass for the Alias entity in the Permutive ecosystem.
             """

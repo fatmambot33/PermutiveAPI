@@ -3,6 +3,7 @@
 import logging
 
 from typing import Dict, List, Optional, Any,Union
+from dataclasses import asdict
 
 import requests
 from requests.exceptions import RequestException
@@ -125,23 +126,23 @@ class APIRequestHandler:
             return APIRequestHandler.handle_exception(response, e)
         return response
 
-    def to_payload(self,dataclass_obj: Any) -> Dict[str, Any]:
-        """
+    def to_payload(self, dataclass_obj: Any) -> Dict[str, Any]:
+            """
             Convert a data class object to a dictionary payload.
-
-            This method converts a data class object into a dictionary, optionally filtering keys.
-
+            
             Args:
                 dataclass_obj (Any): The data class object to be converted.
-                keys (Optional[List[str]]): List of keys to include in the payload. If None, all keys with non-None values are included.
 
             Returns:
                 Dict[str, Any]: The dictionary payload.
+            """
+            full_payload = asdict(dataclass_obj)
 
-        """
-        if self.payload_keys:
-            return {key: value for key, value in vars(dataclass_obj).items() if value is not None and key in self.payload_keys}
-        return {key: value for key, value in vars(dataclass_obj).items() if value is not None}
+            if self.payload_keys:
+                payload = {key: value for key, value in full_payload.items() if value is not None and key in self.payload_keys}
+                return payload
+
+            return {key: value for key, value in full_payload.items() if value is not None}
     @staticmethod
     def handle_exception(response: Optional[Response], e: Exception):
         """
