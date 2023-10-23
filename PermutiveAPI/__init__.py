@@ -61,19 +61,6 @@ class Query():
     def __setitem__(self, key, value):
         setattr(self, key, value)
 
-    def from_cohort_description(self, api_key):
-        if self.id is not None:
-            cohort_api = CohortAPI(api_key=api_key)
-            cohort = cohort_api.get(
-                cohort_id=self.id)
-            if cohort is not None:
-                self.number = cohort.code
-                if cohort.description is not None:
-                    description_list = [
-                        keyword.strip() for keyword in cohort.description.split(",") if len(keyword.strip()) > 0]
-                    if len(description_list) > 0:
-                        self.keywords = description_list
-
     def sync_clickers(self, api_key, new_tags: List[str] = TAGS,  override_tags: bool = False):
         if not self.name:
             raise ValueError("self.name is None")
@@ -917,15 +904,7 @@ class Workspace(FileHelper):
             q_provider_segments.second_party_segments.append(t_segment)
         q_provider_segments.sync(api_key=api_key)
 
-    def from_description(self):
-        cohorts_list = self.CohortAPI.list(include_child_workspaces=True)
-        for cohort in cohorts_list:
-            if cohort.tags:
-                if "from_description" in cohort.tags and cohort.description:
-                    keywords = cohort.description.split(",")
-                    query = Query(name=cohort.name, id=cohort.id,
-                                  keywords=keywords)
-                    query.sync(self.privateKey)
+
 
     def sync_imports_segments(self):
         cohorts_list = self.CohortAPI.list(include_child_workspaces=True)
@@ -959,6 +938,16 @@ class WorkspaceList(List[Workspace]):
             if workspace.isTopLevel:
                 return workspace
         raise ValueError("No Top WS")
+    
+    def from_description(self):
+        cohorts_list = self.Masterworkspace.CohortAPI.list(include_child_workspaces=True)
+        for cohort in cohorts_list:
+            if cohort.tags:
+                if "from_description" in cohort.tags and cohort.description:
+                    keywords = cohort.description.split(",")
+                    query = Query(name=cohort.name, id=cohort.id,
+                                  keywords=keywords)
+                    query.sync(self.Masterworkspace.privateKey)
 
     def to_json(self, filepath: str):
         FileHelper.to_json(self, filepath=filepath)
