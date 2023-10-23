@@ -1,6 +1,6 @@
 import logging
 from typing import Dict, List, Optional, Any, Union, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass,asdict
 from datetime import datetime
 import os
 import urllib.parse
@@ -1339,7 +1339,7 @@ class UserAPI(APIRequestHandler):
         @dataclass
         class Alias:
             """
-            Dataclass for the Source entity in the Permutive ecosystem.
+            Dataclass for the Alias entity in the Permutive ecosystem.
             """
             id: str
             tag: str = "email_sha256"
@@ -1357,7 +1357,7 @@ class UserAPI(APIRequestHandler):
 
         logging.info(f"UserAPI::identify::{identity.user_id}")
 
-        url = f"{self.USER_API_VERSION}"
+        url = f"{self.api_endpoint}"
         aliases_name = [alias.tag for alias in identity.aliases]
         if "email_sha256" in aliases_name and "uID" not in aliases_name:
             alias_id = next(

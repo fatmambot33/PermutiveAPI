@@ -11,17 +11,21 @@ from typing import List, Optional, Union,Dict,Any
 
 class FileHelper:
     @staticmethod
+    def json_default(value):
+        if isinstance(value, datetime.date):
+            return dict(year=value.year, month=value.month, day=value.day)
+        elif isinstance(value, list):
+            return [FileHelper.json_default(item) for item in value]
+        else:
+            return value.__dict__
+    @staticmethod
     def to_json(obj, filepath: str):
 
-        def json_default(value):
-            if isinstance(value, datetime.date):
-                return dict(year=value.year, month=value.month, day=value.day)
-            else:
-                return value.__dict__
+
         FileHelper.check_filepath(filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
             json.dump(obj, f,
-                      ensure_ascii=False, indent=4, default=json_default)
+                      ensure_ascii=False, indent=4, default=FileHelper.json_default)
 
     @staticmethod
     def from_json(filepath: str):
