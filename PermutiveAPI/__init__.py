@@ -1,6 +1,6 @@
 import logging
 from typing import Dict, List, Optional, Any, Union, Tuple
-from dataclasses import dataclass,asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 import os
 import urllib.parse
@@ -45,13 +45,13 @@ class Query():
     obsidian_segments: Optional[List[str]] = None
     domains: Optional[List[str]] = None
     number: Optional[str] = None
-    during_value: Optional[int] = 0
-    frequency_value: Optional[int] = 1
-    page_view: Optional[bool] = True
-    link_click: Optional[bool] = False
-    slot_click: Optional[bool] = False
-    engaged_time: Optional[bool] = False
-    engaged_completion: Optional[bool] = False
+    during_value: int = 0
+    frequency_value: int = 1
+    page_view: bool = True
+    link_click: bool = False
+    slot_click: bool = False
+    engaged_time: bool = False
+    engaged_completion: bool = False
     workspace_id: Optional[str] = None
     tags: Optional[List[str]] = None
 
@@ -109,6 +109,60 @@ class Query():
                             new_tags+old_cohort.tags)
             cohort = cohort_api.update(cohort=cohort)
 
+    def to_query2(self) -> Dict:
+        query_list = []
+        slugify_keywords = []
+        if self.keywords is not None or self.taxonomy is not None or self.urls is not None or self.obsidian_id is not None:
+            if self.keywords:
+                slugify_keywords = Query.slugify_keywords(self.keywords)
+                q=Query.PageView(keywords=self.keywords,
+                               frequency_value=self.frequency_value,
+                               during_value=self.during_value)
+                query_list.append(q.to_query())
+
+                q=Query.VideoView(keywords=self.keywords)
+                query_list.append(q.to_query())
+                if self.engaged_time:
+                    q=Query.EngagedTimeCondition(keywords=self.keywords)
+                    query_list.append(q.to_query())
+
+                if self.engaged_completion:
+                    q=Query.EngagedCompletionCondition(keywords=self.keywords)
+                    query_list.append(q.to_query())
+
+                if self.link_click:
+
+                    q=Query.LinkClickCondition(self.keywords)
+                    query_list.append(q.to_query())
+
+        if self.slot_click:
+            segments_list = []
+            if not self.segments is None:
+                segments_list += self.segments
+            if not self.number is None:
+                segments_list.append(self.number)
+            if len(segments_list)>0:
+                q=Query.SlotClickCondition(values=segments_list)
+                query_list.append(q.to_query())
+
+        if self.segments:
+            for segment in self.segments:
+                q=Query.CohortTransitionCondition(segment=int(segment))
+                query_list.append(q.to_query())
+
+        if self.second_party_segments:
+            for second_party_segment in self.second_party_segments:
+                q=Query.SecondPartyTransitionCondition(provider=second_party_segment[0],
+                                                       segment=second_party_segment[1])
+                query_list.append(q.to_query())
+
+        query = {
+            'or': query_list
+        }
+        if self.domains is not None:
+            query = {'and': [query, self.__create_cohort_domains()]}
+
+        return query
     def to_query(self) -> Dict:
         query_list = []
         slugify_keywords = []
@@ -211,6 +265,238 @@ class Query():
     def from_json(filepath: str) -> 'Query':
         definition = FileHelper.from_json(filepath)
         return Query(**definition)
+
+    @staticmethod
+    def values_to_condition(property: str,
+                            operator: str,
+                            values: List[str]) -> Dict:
+
+        return {'condition': {operator: values},
+                'property': property}
+
+    @staticmethod
+    def to_article_conditions(keywords: List[str]) -> List[Dict]:
+        conditions = []
+        contains = []
+        for keyword in keywords:
+            if " " in keyword or "-" in keyword or len(keyword) > 7:
+                contains.append(keyword)
+            else:
+                contains.append(f' {keyword} ')
+        for property in ['properties.article.title', 'properties.article.description']:
+            conditions.append(Query.values_to_condition(property=property,
+                                                        operator='contains',
+                                                        values=contains))
+
+        for property in ['properties.article.category', 'properties.article.subcategory']:
+            conditions.append(Query.values_to_condition(property=property,
+                                                        operator='equal_to',
+                                                        values=keywords))
+
+        conditions.append(Query.values_to_condition(property='properties.article.tags',
+                                                    operator='list_contains',
+                                                    values=keywords))
+        return conditions
+
+    @dataclass
+    class PageView:
+        keywords: List[str]
+
+        frequency_value: int = 1
+        frequency_operator: str = "equal_to"
+        during_value: int = 0
+        during_the_last_unit: str = 'str'
+
+        def to_query(self) -> Dict:
+
+            conditions = Query.to_article_conditions(self.keywords)
+
+            page_view_query = {
+                'event': 'Pageview',
+                'frequency': {
+                    self.frequency_operator: self.frequency_value
+                },
+                'where': {
+                    'or': conditions
+                }
+            }
+
+            if self.during_value > 0:
+                page_view_query['during'] = {
+                    'the_last': {
+                        'unit': self.during_the_last_unit,
+                        'value': self.during_value
+                    }
+                }
+
+            return page_view_query
+
+    @dataclass
+    class VideoView:
+        keywords: List[str]
+        frequency_operator: str = 'greater_than_or_equal_to'
+        frequency_value: int = 1
+
+        during_the_last_value: int = 0
+        during_the_last_unit: str = 'day'
+
+        def to_query(self) -> Dict:
+            condition_dict = []
+            contains = []
+            for keyword in self.keywords:
+                if " " in keyword or "-" in keyword or len(keyword) > 7:
+                    contains.append(keyword)
+                else:
+                    contains.append(f' {keyword} ')
+            condition_dict = Query.values_to_condition(property='properties.videoTitle',
+                                                       operator='contains',
+                                                       values=contains)
+
+            video_view_query = {
+                'event': 'videoViews',
+                'frequency': {
+                    self.frequency_operator: self.frequency_value
+                },
+                'where': {
+                    'or': [condition_dict]
+                }
+            }
+
+            if self.during_the_last_value > 0:
+                video_view_query['during'] = {
+                    'the_last': {
+                        'unit': self.during_the_last_unit,
+                        'value': self.during_the_last_value
+                    }
+                }
+
+            return video_view_query
+
+    @dataclass
+    class EngagedTimeCondition:
+        keywords: List[str]
+        operator: str = 'greater_than_or_equal_to'
+        value: float = 30
+
+        def to_query(self) -> Dict:
+            conditions = Query.to_article_conditions(keywords=self.keywords)
+            engaged_time = {'engaged_time': {
+                'seconds': {self.operator: self.value},
+                'where': {'or': conditions}}
+            }
+            return engaged_time
+
+    @dataclass
+    class EngagedCompletionCondition:
+        keywords: List[str]
+        operator: str = 'greater_than_or_equal_to'
+        value: float = 0.6
+
+        def to_query(self) -> Dict:
+            conditions = Query.to_article_conditions(keywords=self.keywords)
+            engaged_completion = {'engaged_completion':
+                                  {'completion': {self.operator: self.value},
+                                   'where': {'or': conditions}}}
+            return engaged_completion
+
+    @dataclass
+    class LinkClickCondition:
+        keywords: List[str]
+        dest_urls: List[str] = field(default_factory=lambda: ['facebook.com',
+                                                              'instagram.com',
+                                                              'pinterest.com'])
+        operator: str = 'greater_than_or_equal_to'
+        frequency: int = 1
+
+        def to_query(self) -> Dict:
+            LinkClick = {
+                'event': 'LinkClick',
+                'frequency': {
+                    self.operator: self.frequency
+                },
+                'where': {
+                    'and': [Query.values_to_condition(property='properties.dest_url', operator='contains', values=self.dest_urls),
+                            Query.values_to_condition(property='properties.client.url', operator='contains', values=self.keywords)]
+                }
+            }
+            return LinkClick
+
+    @dataclass
+    class SlotClickCondition:
+        values: List[Union[int, str]]
+        key_name: str = 'permutive'
+        operator: str = 'equal_to'
+        frequency: int = 1
+
+        def to_query(self) -> Dict[str, Any]:
+            slot_click = {
+                'event': 'GamLogSlotClicked',
+                'frequency': {
+                    self.operator: self.frequency
+                },
+                'where': {
+                    'condition': {
+                        'condition': {
+                            'equal_to': self.key_name
+                        },
+                        'function': 'any',
+                        'property': 'key',
+                        'where': Query.values_to_condition(property='value', operator='list_contains', values=[str(value) for value in self.values])
+                    },
+                    'property': 'properties.slot.targeting_keys'
+                }
+            }
+            return slot_click
+
+    @dataclass
+    class CohortTransitionCondition:
+        segment: int
+        transition_type: str = 'has_entered'
+        unit: str = 'days'
+        value: int = 0
+
+        def to_query(self) -> Dict[str, Any]:
+            condition = {'segment': self.segment}
+            if self.value > 0:
+                condition['during'] = {  # type: ignore
+                    'the_last': {
+                        'unit': self.unit,
+                        'value': self.value
+                    }
+                }
+
+            return {self.transition_type: condition}
+
+    @dataclass
+    class SecondPartyTransitionCondition:
+        provider: str
+        segment: str
+
+        def to_query(self) -> Dict[str, Any]:
+            return {
+                "in_second_party_segment":
+                    {'provider': self.provider,
+                     'segment': self.segment
+                     }
+            }
+
+    @dataclass
+    class ThirdPartyTransitionCondition:
+        @dataclass
+        class ThirdPartySegment:
+            provider: str
+            segment: str
+
+        third_party_segment: ThirdPartySegment
+        transition_type: str = 'in_third_party_segment'
+
+        def to_query(self) -> Dict[str, Any]:
+            return {
+                'in_third_party_segment':
+                    {'provider': self.third_party_segment.provider,
+                     'segment': self.third_party_segment.segment
+                     }
+            }
 
 # region permutive query dict
 
@@ -904,8 +1190,6 @@ class Workspace(FileHelper):
             q_provider_segments.second_party_segments.append(t_segment)
         q_provider_segments.sync(api_key=api_key)
 
-
-
     def sync_imports_segments(self):
         cohorts_list = self.CohortAPI.list(include_child_workspaces=True)
         for item in self.AudienceAPI.list_imports():
@@ -938,9 +1222,10 @@ class WorkspaceList(List[Workspace]):
             if workspace.isTopLevel:
                 return workspace
         raise ValueError("No Top WS")
-    
+
     def from_description(self):
-        cohorts_list = self.Masterworkspace.CohortAPI.list(include_child_workspaces=True)
+        cohorts_list = self.Masterworkspace.CohortAPI.list(
+            include_child_workspaces=True)
         for cohort in cohorts_list:
             if cohort.tags:
                 if "from_description" in cohort.tags and cohort.description:
