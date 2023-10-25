@@ -1292,7 +1292,7 @@ class CohortAPI(APIRequestHandler):
         logging.info(f"CohortAPI::list")
         url = self.api_endpoint
         if include_child_workspaces:
-            url = f"{self.gen_url(url)}include-child-workspaces=true"
+            url = f"{CohortAPI.gen_url_with_key(privateKey=self.api_key,url=url)}include-child-workspaces=true"
         response = self.getRequest(url)
         return [CohortAPI.Cohort(**cohort) for cohort in response.json()]
 
@@ -1436,6 +1436,7 @@ class AudienceAPI(APIRequestHandler):
         inheritance: Optional[str] = None
         segments: Optional[List['AudienceAPI.Segment']] = None
         updated_at: Optional[datetime] = datetime.now()
+        
 
         @dataclass
         class Source:
