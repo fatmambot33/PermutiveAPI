@@ -1,4 +1,4 @@
-from .CohortAPI import Cohort
+from .Cohort import Cohort
 from .Import import Import
 from .Segment import Segment
 from .User import User

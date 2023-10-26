@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import os
 
 from .Utils import FileHelper, ListHelper
-from .CohortAPI import Cohort
+from .Cohort import Cohort
 from .Query import Query
 from .Import import Import
 from .Segment import Segment

@@ -9,7 +9,7 @@ import urllib.parse
 
 from .Utils import FileHelper,ListHelper
 
-from .CohortAPI import Cohort
+from .Cohort import Cohort
 
 TAGS = ['#automatic', '#spireglobal']
 DEFAULT = {}
