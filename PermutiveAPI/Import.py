@@ -7,7 +7,7 @@ from .APIRequestHandler import APIRequestHandler
 from .Segment import Segment
 from .Utils import FileHelper
 
-_API_VERSION = "v2"
+_API_VERSION = "v1"
 _API_ENDPOINT = f'https://api.permutive.app/audience-api/{_API_VERSION}/imports'
 
 @dataclass

@@ -6,7 +6,7 @@ from datetime import datetime
 from .APIRequestHandler import APIRequestHandler
 from .Utils import FileHelper
 
-_API_VERSION = "v2"
+_API_VERSION = "v1"
 _API_ENDPOINT = f'https://api.permutive.app/audience-api/{_API_VERSION}/imports'
 _API_PAYLOAD = ['name', 'code', 'description', 'cpm', 'categories']
 
