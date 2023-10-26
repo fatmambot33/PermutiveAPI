@@ -27,9 +27,15 @@ class Workspace(FileHelper):
         return False
 
     def list_cohorts(self,
-                     include_child_workspaces: bool = False):
+                     include_child_workspaces: bool = False) -> List[Cohort]:
         return Cohort.list(include_child_workspaces=include_child_workspaces,
                            privateKey=self.privateKey)
+
+    def list_imports(self) -> List[Import]:
+        return Import.list(privateKey=self.privateKey)
+
+    def list_segments(self, import_id: str) -> List[Segment]:
+        return Segment.list(id=import_id, privateKey=self.privateKey)
 
     def sync_imports_cohorts(self,
                              import_detail: 'Import',
