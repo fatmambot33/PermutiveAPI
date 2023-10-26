@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from .APIRequestHandler import APIRequestHandler
-from .Audience import Segment
+from .Segment import Segment
 from .Utils import FileHelper
 
 _API_VERSION = "v2"

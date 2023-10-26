@@ -7,9 +7,8 @@ from .APIRequestHandler import APIRequestHandler
 from .Utils import FileHelper
 
 _API_VERSION = "v2"
-_API_PAYLOAD = ['name', 'code', 'description', 'cpm', 'categories']
 _API_ENDPOINT = f'https://api.permutive.app/audience-api/{_API_VERSION}/imports'
-
+_API_PAYLOAD = ['name', 'code', 'description', 'cpm', 'categories']
 
 @dataclass
 class Segment(FileHelper):
@@ -32,7 +31,7 @@ class Segment(FileHelper):
         :return: The created Segment.
         """
         logging.info(
-            f"AudienceAPI::create_segment::{self.import_id}::{self.name}")
+            f"SegmentAPI::create_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments"
         response = APIRequestHandler.postRequest_static(privateKey=privateKey,
                                                         url=url,
@@ -49,12 +48,12 @@ class Segment(FileHelper):
         https://api.permutive.app/audience-api/v1/imports/{importId}/segments/{segmentId}
         Updates a segment for an import. The segment is identified by its globally unique public ID.
         https://developer.permutive.com/reference/patchimportsimportidsegmentssegmentid
-        :param segment: AudienceAPI.Import.Segment to update
+        :param segment: SegmentAPI.Import.Segment to update
         :return: The updated Segment.
         """
 
         logging.info(
-            f"AudienceAPI::update_segment::{self.import_id}::{self.name}")
+            f"SegmentAPI::update_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
         response = APIRequestHandler.patchRequest_static(privateKey=privateKey,
                                                          url=url,
@@ -73,7 +72,7 @@ class Segment(FileHelper):
         :return: True if deletion was successful, otherwise False.
         """
         logging.info(
-            f"AudienceAPI::delete_segment::{self.import_id:}::{self.id}")
+            f"SegmentAPI::delete_segment::{self.import_id:}::{self.id}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
         response = APIRequestHandler.deleteRequest_static(privateKey=privateKey,
                                                           url=url)
@@ -91,7 +90,7 @@ class Segment(FileHelper):
         :return: The requested Segment.
         """
         logging.info(
-            f"AudienceAPI::get_segment_by_id::{import_id}::{segment_id}")
+            f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/{segment_id}"
         response = APIRequestHandler.getRequest_static(privateKey,
                                                        url=url)
@@ -100,7 +99,7 @@ class Segment(FileHelper):
         return Segment(**response.json())
 
     @staticmethod
-    def get_segment_by_code(
+    def get_by_code(
         import_id: str,
         segment_code: str,
             privateKey: str) -> 'Segment':
@@ -112,7 +111,7 @@ class Segment(FileHelper):
         :return: The requested Segment.
         """
         logging.info(
-            f"AudienceAPI::get_segment_by_code::{import_id}::{segment_code}")
+            f"SegmentAPI::get_segment_by_code::{import_id}::{segment_code}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/code/{segment_code}"
         response = APIRequestHandler.getRequest_static(url=url, privateKey=privateKey
                                                        )
@@ -128,24 +127,24 @@ class Segment(FileHelper):
         :param import_id: ID of the import.
         :return: The requested Segment.
         """
-        logging.info(f"AudienceAPI::get_segment:{id}")
+        logging.info(f"SegmentAPI::get_segment:{id}")
         url = f"{_API_ENDPOINT}/{id}"
         response = APIRequestHandler.getRequest_static(url=url,
                                                        privateKey=privateKey)
         if response is None:
-            raise ValueError('Unable to get_import')
+            raise ValueError('Unable to get_by_id')
         return Segment(**response.json())
 
     @staticmethod
-    def list(privateKey: str) -> List['Segment']:
+    def list(id:str,privateKey: str) -> List['Segment']:
         """
         Fetches all imports from the API.
 
         :return: List of all imports.
         """
-        logging.info(f"AudienceAPI::list_imports")
-        url = _API_ENDPOINT
+        logging.info(f"SegmentAPI::list")
+        url = f"{_API_ENDPOINT}/{id}"
         response = APIRequestHandler.getRequest_static(privateKey=privateKey,
                                                        url=url)
-        imports = response.json()
-        return [Segment(**item) for item in imports['items']]
+        segments = response.json()
+        return [Segment(**item) for item in segments['items']]
