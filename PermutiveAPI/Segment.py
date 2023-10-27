@@ -147,4 +147,4 @@ class Segment(FileHelper):
         response = APIRequestHandler.getRequest_static(privateKey=privateKey,
                                                        url=url)
         segments = response.json()
-        return [Segment(**item) for item in segments['items']]
+        return [Segment(**item) for item in segments.get('items',[])]
