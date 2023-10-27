@@ -6,3 +6,4 @@ __pycache__
 .benchmarks
 scratch
 data
+daily_cron.py

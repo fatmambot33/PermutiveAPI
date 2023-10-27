@@ -7,7 +7,7 @@ from .Utils import FileHelper
 
 _API_VERSION = "v2"
 _API_ENDPOINT = f'https://api.permutive.app/cohorts-api/{_API_VERSION}/cohorts/'
-_API_PAYLOAD = ["name", "query", "description", "tags"]
+_API_PAYLOAD = ["id","name", "query", "description", "tags"]
 
 
 @dataclass
@@ -108,7 +108,7 @@ class Cohort(FileHelper):
             logging.warning("id must be specified")
         url = f"{_API_ENDPOINT}{self.id}"
 
-        response = APIRequestHandler.postRequest_static(privateKey=privateKey,
+        response = APIRequestHandler.patchRequest_static(privateKey=privateKey,
                                                         url=url,
                                                         data=APIRequestHandler.to_payload_static(self, _API_PAYLOAD))
 
@@ -140,7 +140,7 @@ class Cohort(FileHelper):
         :return: Cohort object or None if not found.
         """
         logging.info(f"CohortAPI::get::{id}")
-        url = f"{_API_PAYLOAD}{id}"
+        url = f"{_API_ENDPOINT}{id}"
         response = APIRequestHandler.getRequest_static(privateKey=privateKey,
                                                        url=url)
 
