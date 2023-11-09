@@ -27,7 +27,7 @@ class Import(FileHelper):
     updated_at: Optional[datetime] = datetime.now()
 
     @dataclass
-    class Source:
+    class Source(FileHelper):
         """
         Dataclass for the Source entity in the Permutive ecosystem.
         """

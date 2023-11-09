@@ -1,13 +1,13 @@
 import logging
 import os
-from typing import Dict, List, Optional, Union,Any, Tuple
-from dataclasses import dataclass,field
+from typing import Dict, List, Optional, Union, Any, Tuple
+from dataclasses import dataclass, field
 
 from glob import glob
 import pandas as pd
 import urllib.parse
 
-from .Utils import FileHelper,ListHelper
+from .Utils import FileHelper, ListHelper
 
 from .Cohort import Cohort
 
@@ -19,7 +19,7 @@ ITEMS = {'ä': 'a',  'â': 'a', 'á': 'a', 'à': 'a', 'ã': 'a', 'ç': 'c', 'è'
 
 
 @dataclass
-class Query():
+class Query(FileHelper):
     name: str
     market: Optional[str] = "CN"
     id: Optional[str] = None
@@ -110,24 +110,25 @@ class Query():
         if self.keywords is not None or self.taxonomy is not None or self.urls is not None or self.obsidian_id is not None:
             if self.keywords:
                 slugify_keywords = Query.slugify_keywords(self.keywords)
-                q=Query.PageView(keywords=self.keywords,
-                               frequency_value=self.frequency_value,
-                               during_value=self.during_value)
+                q = Query.PageView(keywords=self.keywords,
+                                   frequency_value=self.frequency_value,
+                                   during_value=self.during_value)
                 query_list.append(q.to_query())
 
-                q=Query.VideoView(keywords=self.keywords)
+                q = Query.VideoView(keywords=self.keywords)
                 query_list.append(q.to_query())
                 if self.engaged_time:
-                    q=Query.EngagedTimeCondition(keywords=self.keywords)
+                    q = Query.EngagedTimeCondition(keywords=self.keywords)
                     query_list.append(q.to_query())
 
                 if self.engaged_completion:
-                    q=Query.EngagedCompletionCondition(keywords=self.keywords)
+                    q = Query.EngagedCompletionCondition(
+                        keywords=self.keywords)
                     query_list.append(q.to_query())
 
                 if self.link_click:
 
-                    q=Query.LinkClickCondition(self.keywords)
+                    q = Query.LinkClickCondition(self.keywords)
                     query_list.append(q.to_query())
 
         if self.slot_click:
@@ -136,19 +137,19 @@ class Query():
                 segments_list += self.segments
             if not self.number is None:
                 segments_list.append(self.number)
-            if len(segments_list)>0:
-                q=Query.SlotClickCondition(values=segments_list)
+            if len(segments_list) > 0:
+                q = Query.SlotClickCondition(values=segments_list)
                 query_list.append(q.to_query())
 
         if self.segments:
             for segment in self.segments:
-                q=Query.CohortTransitionCondition(segment=int(segment))
+                q = Query.CohortTransitionCondition(segment=int(segment))
                 query_list.append(q.to_query())
 
         if self.second_party_segments:
             for second_party_segment in self.second_party_segments:
-                q=Query.SecondPartyTransitionCondition(provider=second_party_segment[0],
-                                                       segment=second_party_segment[1])
+                q = Query.SecondPartyTransitionCondition(provider=second_party_segment[0],
+                                                         segment=second_party_segment[1])
                 query_list.append(q.to_query())
 
         query = {
@@ -158,6 +159,7 @@ class Query():
             query = {'and': [query, self.__create_cohort_domains()]}
 
         return query
+
     def to_query(self) -> Dict:
         query_list = []
         slugify_keywords = []
@@ -252,14 +254,6 @@ class Query():
                     self.third_party_segments, wrap_query.third_party_segments)
             else:
                 self.third_party_segments = wrap_query.third_party_segments
-
-    def to_json(self, filepath):
-        FileHelper.to_json(self, filepath=filepath)
-
-    @staticmethod
-    def from_json(filepath: str) -> 'Query':
-        definition = FileHelper.from_json(filepath)
-        return Query(**definition)
 
     @staticmethod
     def values_to_condition(property: str,
@@ -926,8 +920,9 @@ class Query():
 
         return ListHelper.merge_list(new_list)
 
+
 @dataclass
-class QueryList(List[Query]):
+class QueryList(List[Query], FileHelper):
     def to_dataframe(self):
         query_list = []
         for definition in self:
@@ -937,32 +932,6 @@ class QueryList(List[Query]):
     def __init__(self, queries: Optional[List[Query]]):
         if queries is not None:
             super().__init__(queries)
-
-    @staticmethod
-    def from_file(filepath: Optional[str] = None) -> 'QueryList':
-        folder_name = "query"
-        query_list = []
-        files = List[str]
-        if filepath is not None:
-            files = [filepath]
-        elif os.environ.get("DATA_PATH") is not None:
-            files = glob.glob(
-                f'{os.environ.get("DATA_PATH")}{folder_name}/*.json')
-            files.sort()
-        else:
-            files = None
-        if files is not None:
-            for file_path in files:
-                if file_path is not None and FileHelper.file_exists(file_path):
-                    definitions = FileHelper.from_json(file_path)
-                    if not isinstance(definitions, List):
-                        definitions = [definitions]
-                    for definition in definitions:
-                        if definition.get("market", "CN") is not None:
-                            query_list.append(Query(**definition))
-            return QueryList(query_list)
-        else:
-            raise ValueError(f"No file")
 
     def to_query(self):
         query_dict = {}
@@ -1026,9 +995,6 @@ class QueryList(List[Query]):
 
         return [query_dict[cohort_name]
                 for cohort_name in query_dict]
-
-    def to_file(self, filepath: str):
-        FileHelper.to_json(self, filepath)
 
     def filter_by_workspace_id(self, workspace_id: str) -> 'QueryList':
         filtered_queries = [

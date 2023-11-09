@@ -3,6 +3,7 @@ from typing import Dict, List
 from dataclasses import dataclass
 
 from .APIRequestHandler import APIRequestHandler
+from .Utils import FileHelper
 
 
 
@@ -11,7 +12,7 @@ class User(APIRequestHandler):
     USER_API_VERSION = 'v2.0'
 
     @dataclass
-    class Identity:
+    class Identity(FileHelper):
         """
         Dataclass for the Source entity in the Permutive ecosystem.
         """
@@ -19,7 +20,7 @@ class User(APIRequestHandler):
         aliases: List['User.Identity.Alias']
 
         @dataclass
-        class Alias():
+        class Alias(FileHelper):
             """
             Dataclass for the Alias entity in the Permutive ecosystem.
             """

@@ -6,7 +6,7 @@ import pathlib
 import re
 import unicodedata
 from glob import glob
-from typing import List, Optional, Union,Dict,Any
+from typing import List, Optional, Union, Dict, Any
 
 
 class FileHelper:
@@ -18,13 +18,11 @@ class FileHelper:
             return [FileHelper.json_default(item) for item in value]
         else:
             return value.__dict__
-    @staticmethod
-    def to_json(obj, filepath: str):
 
-
+    def to_json(self, filepath: str):
         FileHelper.check_filepath(filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(obj, f,
+            json.dump(self, f,
                       ensure_ascii=False, indent=4, default=FileHelper.json_default)
 
     @staticmethod
@@ -55,9 +53,9 @@ class FileHelper:
         file_path, file_name, file_extension = FileHelper.split_filepath(
             fullfilepath)
 
-        if len(glob(file_path+file_name + '-*' + file_extension) + glob(file_path+file_name + file_extension)) == 0:
-            return False
-        return True
+        if len(glob(f"{file_path}{file_name }-*{file_extension}") + glob(f"{file_path}{file_name}{file_extension}")) > 0:
+            return True
+        return False
 
 
 class StringHelper:
@@ -92,8 +90,9 @@ class ListHelper:
             return ast.literal_eval(val)
         else:
             return val
+
     @staticmethod
-    def compare_list(list1:List[str],list2:List[str]):
+    def compare_list(list1: List[str], list2: List[str]):
         return set(list1) == set(list2)
 
     @staticmethod
@@ -105,6 +104,7 @@ class ListHelper:
         lst = list(filter(None, list(dict.fromkeys(lst1+lst2))))
         lst.sort()
         return lst
+
 
 class RequestHelper:
 
