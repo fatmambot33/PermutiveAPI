@@ -13,7 +13,7 @@ from .Segment import Segment
 
 
 @dataclass
-class Workspace(FileHelper):
+class Workspace():
     """
     Dataclass for the Workspace entity in the Permutive ecosystem.
     """

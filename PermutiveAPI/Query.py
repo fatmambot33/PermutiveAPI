@@ -20,7 +20,7 @@ ITEMS = {'ä': 'a',  'â': 'a', 'á': 'a', 'à': 'a', 'ã': 'a', 'ç': 'c', 'è'
 
 
 @dataclass
-class Query(FileHelper):
+class Query():
     name: str
     market: Optional[str] = "CN"
     id: Optional[str] = None
