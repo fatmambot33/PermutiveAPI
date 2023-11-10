@@ -1,7 +1,9 @@
+import json
 import logging
 from typing import List, Optional
 from dataclasses import dataclass
 import os
+
 
 from .Utils import FileHelper, ListHelper
 from .Cohort import Cohort
@@ -77,7 +79,7 @@ class Workspace(FileHelper):
         else:
             q_provider_segments.tags = cohort_tags
         for import_segment in import_segments:
-            logging.info(
+            logging.debug(
                 f"AudienceAPI::sync_cohort::{import_detail.name}::{import_segment.name}")
             t_segment = (import_detail.code, import_segment.code)
 
@@ -150,7 +152,11 @@ class WorkspaceList(List[Workspace]):
                     query.sync(self.Masterworkspace.privateKey)
 
     def to_json(self, filepath: str):
-        FileHelper.to_json(self, filepath=filepath)
+        FileHelper.check_filepath(filepath)
+        with open(file=filepath, mode='w', encoding='utf-8') as f:
+            json.dump(self, f,
+                      ensure_ascii=False, indent=4, default=FileHelper.json_default)
+
 
     @staticmethod
     def from_json(filepath: Optional[str] = None) -> 'WorkspaceList':
@@ -161,7 +167,5 @@ class WorkspaceList(List[Workspace]):
                 'Unable to get PERMUTIVE_APPLICATION_CREDENTIALS from .env')
 
         workspace_list = FileHelper.from_json(filepath)
-        if not isinstance(workspace_list, list):
-            raise TypeError("Expected a list of workspaces from the JSON file")
-
         return WorkspaceList([Workspace(**workspace) for workspace in workspace_list])
+

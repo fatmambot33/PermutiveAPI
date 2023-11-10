@@ -1,7 +1,8 @@
 import logging
-from typing import Dict, List, Optional, Union
+from typing import List, Optional
 from dataclasses import dataclass
 from datetime import datetime
+import json
 
 from .APIRequestHandler import APIRequestHandler
 from .Utils import FileHelper
@@ -10,8 +11,9 @@ _API_VERSION = "v1"
 _API_ENDPOINT = f'https://api.permutive.app/audience-api/{_API_VERSION}/imports'
 _API_PAYLOAD = ['name', 'code', 'description', 'cpm', 'categories']
 
+
 @dataclass
-class Segment(FileHelper):
+class Segment():
     """
     Dataclass for the Segment entity in the Permutive ecosystem.
     """
@@ -30,7 +32,7 @@ class Segment(FileHelper):
 
         :return: The created Segment.
         """
-        logging.info(
+        logging.debug(
             f"SegmentAPI::create_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments"
         response = APIRequestHandler.postRequest_static(privateKey=privateKey,
@@ -52,7 +54,7 @@ class Segment(FileHelper):
         :return: The updated Segment.
         """
 
-        logging.info(
+        logging.debug(
             f"SegmentAPI::update_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
         response = APIRequestHandler.patchRequest_static(privateKey=privateKey,
@@ -71,7 +73,7 @@ class Segment(FileHelper):
         :param segment_id: ID of the segment.
         :return: True if deletion was successful, otherwise False.
         """
-        logging.info(
+        logging.debug(
             f"SegmentAPI::delete_segment::{self.import_id:}::{self.id}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
         response = APIRequestHandler.deleteRequest_static(privateKey=privateKey,
@@ -89,7 +91,7 @@ class Segment(FileHelper):
         :param segment_id: UUID of the segment.
         :return: The requested Segment.
         """
-        logging.info(
+        logging.debug(
             f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/{segment_id}"
         response = APIRequestHandler.getRequest_static(privateKey,
@@ -110,7 +112,7 @@ class Segment(FileHelper):
         :param segment_code: Public code of the segment.
         :return: The requested Segment.
         """
-        logging.info(
+        logging.debug(
             f"SegmentAPI::get_segment_by_code::{import_id}::{segment_code}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/code/{segment_code}"
         response = APIRequestHandler.getRequest_static(url=url, privateKey=privateKey
@@ -127,7 +129,7 @@ class Segment(FileHelper):
         :param import_id: ID of the import.
         :return: The requested Segment.
         """
-        logging.info(f"SegmentAPI::get_segment:{id}")
+        logging.debug(f"SegmentAPI::get_segment:{id}")
         url = f"{_API_ENDPOINT}/{id}"
         response = APIRequestHandler.getRequest_static(url=url,
                                                        privateKey=privateKey)
@@ -136,15 +138,26 @@ class Segment(FileHelper):
         return Segment(**response.json())
 
     @staticmethod
-    def list(id:str,privateKey: str) -> List['Segment']:
+    def list(id: str, privateKey: str) -> List['Segment']:
         """
         Fetches all imports from the API.
 
         :return: List of all imports.
         """
-        logging.info(f"SegmentAPI::list")
+        logging.debug(f"SegmentAPI::list")
         url = f"{_API_ENDPOINT}/{id}"
         response = APIRequestHandler.getRequest_static(privateKey=privateKey,
                                                        url=url)
         segments = response.json()
-        return [Segment(**item) for item in segments.get('items',[])]
+        return [Segment(**item) for item in segments.get('items', [])]
+
+    def to_json(self, filepath: str):
+        FileHelper.check_filepath(filepath)
+        with open(file=filepath, mode='w', encoding='utf-8') as f:
+            json.dump(self, f,
+                      ensure_ascii=False, indent=4, default=FileHelper.json_default)
+
+    @staticmethod
+    def from_json(filepath: str) -> 'Segment':
+        with open(file=filepath, mode='r') as json_file:
+            return Segment(**json.load(json_file))

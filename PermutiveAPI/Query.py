@@ -10,6 +10,7 @@ import urllib.parse
 from .Utils import FileHelper, ListHelper
 
 from .Cohort import Cohort
+import json
 
 TAGS = ['#automatic', '#spireglobal']
 DEFAULT = {}
@@ -59,7 +60,7 @@ class Query(FileHelper):
         if not self.name:
             raise ValueError("self.name is None")
 
-        logging.info('segment: ' + self.name)
+        logging.debug('segment: ' + self.name)
 
         cohort = Cohort.get_by_name(privateKey=api_key,
                                     name=self.name + " | Clickers")
@@ -78,7 +79,7 @@ class Query(FileHelper):
         if not self.name:
             raise ValueError("self.name is None")
 
-        logging.info('segment: ' + self.name)
+        logging.debug('segment: ' + self.name)
 
         cohort = Cohort(
             name=self.name, id=self.id, query=self.to_query(), tags=new_tags)
@@ -106,17 +107,15 @@ class Query(FileHelper):
 
     def to_query2(self) -> Dict:
         query_list = []
-        slugify_keywords = []
         if self.keywords is not None or self.taxonomy is not None or self.urls is not None or self.obsidian_id is not None:
             if self.keywords:
-                slugify_keywords = Query.slugify_keywords(self.keywords)
-                q = Query.PageView(keywords=self.keywords,
-                                   frequency_value=self.frequency_value,
-                                   during_value=self.during_value)
-                query_list.append(q.to_query())
+                q_PageView = Query.PageView(keywords=self.keywords,
+                                            frequency_value=self.frequency_value,
+                                            during_value=self.during_value)
+                query_list.append(q_PageView.to_query())
 
-                q = Query.VideoView(keywords=self.keywords)
-                query_list.append(q.to_query())
+                q_VideoView = Query.VideoView(keywords=self.keywords)
+                query_list.append(q_VideoView.to_query())
                 if self.engaged_time:
                     q = Query.EngagedTimeCondition(keywords=self.keywords)
                     query_list.append(q.to_query())
@@ -187,7 +186,10 @@ class Query(FileHelper):
             query_list = query_list + self.__create_cohort_transition()
 
         if self.second_party_segments:
-            query_list = query_list+self.__create_second_party_segments()
+            for second_party_segment in self.second_party_segments:
+                q = Query.SecondPartyTransitionCondition(provider=second_party_segment[0],
+                                                         segment=second_party_segment[1])
+                query_list.append(q.to_query())
 
         query = {
             'or': query_list
@@ -286,6 +288,19 @@ class Query(FileHelper):
                                                     operator='list_contains',
                                                     values=keywords))
         return conditions
+
+    def to_json(self, filepath: str):
+        FileHelper.check_filepath(filepath)
+        with open(file=filepath, mode='w', encoding='utf-8') as f:
+            json.dump(self, f,
+                      ensure_ascii=False, indent=4, default=FileHelper.json_default)
+
+    @staticmethod
+    def from_json(filepath: str) -> 'Query':
+        if not FileHelper.file_exists(filepath):
+            raise ValueError(f'{filepath} does not exist')
+        with open(file=filepath, mode='r') as json_file:
+            return Query(**json.load(json_file))
 
     @dataclass
     class PageView:
@@ -892,7 +907,7 @@ class Query(FileHelper):
 
     @ staticmethod
     def slugify_keywords(keywords: List[str]) -> List[str]:
-        logging.info("slugify_keywords")
+        logging.debug("slugify_keywords")
         new_list = []
         for keyword in keywords:
             if isinstance(keyword, str):
@@ -922,7 +937,7 @@ class Query(FileHelper):
 
 
 @dataclass
-class QueryList(List[Query], FileHelper):
+class QueryList(List[Query]):
     def to_dataframe(self):
         query_list = []
         for definition in self:
@@ -1000,3 +1015,14 @@ class QueryList(List[Query], FileHelper):
         filtered_queries = [
             query for query in self if query.workspace_id == workspace_id]
         return QueryList(filtered_queries)
+
+    def to_json(self, filepath: str):
+        FileHelper.check_filepath(filepath)
+        with open(file=filepath, mode='w', encoding='utf-8') as f:
+            json.dump(self, f,
+                      ensure_ascii=False, indent=4, default=FileHelper.json_default)
+
+    @staticmethod
+    def from_json(filepath: str) -> 'QueryList':
+        query_list = FileHelper.from_json(filepath)
+        return QueryList([Query(**query) for query in query_list])

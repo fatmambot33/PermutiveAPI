@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
@@ -5,13 +6,14 @@ from datetime import datetime
 from .APIRequestHandler import APIRequestHandler
 from .Utils import FileHelper
 
+
 _API_VERSION = "v2"
 _API_ENDPOINT = f'https://api.permutive.app/cohorts-api/{_API_VERSION}/cohorts/'
-_API_PAYLOAD = ["id","name", "query", "description", "tags"]
+_API_PAYLOAD = ["id", "name", "query", "description", "tags"]
 
 
 @dataclass
-class Cohort(FileHelper):
+class Cohort():
     """
     Represents a cohort entity in the Permutive ecosystem.
 
@@ -77,7 +79,7 @@ class Cohort(FileHelper):
         :param cohort: Cohort to be created.
         :return: Created cohort object.
         """
-        logging.info(f"CohortAPI::create::{self.name}")
+        logging.debug(f"CohortAPI::create::{self.name}")
         if not privateKey:
             raise ValueError("privateKey must be specified")
         if not self.query:
@@ -101,7 +103,7 @@ class Cohort(FileHelper):
         :param updated_cohort: Updated cohort data.
         :return: Updated cohort object.
         """
-        logging.info(f"CohortAPI::update::{self.name}")
+        logging.debug(f"CohortAPI::update::{self.name}")
         if not privateKey:
             raise ValueError("privateKey must be specified")
         if not self.id:
@@ -109,8 +111,8 @@ class Cohort(FileHelper):
         url = f"{_API_ENDPOINT}{self.id}"
 
         response = APIRequestHandler.patchRequest_static(privateKey=privateKey,
-                                                        url=url,
-                                                        data=APIRequestHandler.to_payload_static(self, _API_PAYLOAD))
+                                                         url=url,
+                                                         data=APIRequestHandler.to_payload_static(self, _API_PAYLOAD))
 
         return Cohort(**response.json())
 
@@ -121,7 +123,7 @@ class Cohort(FileHelper):
         :param cohort_id: ID of the cohort to be deleted.
         :return: None
         """
-        logging.info(f"CohortAPI::update::{self.name}")
+        logging.debug(f"CohortAPI::update::{self.name}")
         if not privateKey:
             raise ValueError("privateKey must be specified")
         if not self.id:
@@ -139,7 +141,7 @@ class Cohort(FileHelper):
         :param cohort_id: ID of the cohort.
         :return: Cohort object or None if not found.
         """
-        logging.info(f"CohortAPI::get::{id}")
+        logging.debug(f"CohortAPI::get::{id}")
         url = f"{_API_ENDPOINT}{id}"
         response = APIRequestHandler.getRequest_static(privateKey=privateKey,
                                                        url=url)
@@ -157,7 +159,7 @@ class Cohort(FileHelper):
             :param cohort_name: str Cohort Name. Required
             :return: Cohort object
         '''
-        logging.info(f"CohortAPI::get_by_name::{name}")
+        logging.debug(f"CohortAPI::get_by_name::{name}")
 
         for cohort in Cohort.list(include_child_workspaces=True,
                                   privateKey=privateKey):
@@ -177,7 +179,7 @@ class Cohort(FileHelper):
         '''
         if type(code) == str:
             code = int(code)
-        logging.info(f"CohortAPI::get_by_code::{code}")
+        logging.debug(f"CohortAPI::get_by_code::{code}")
         for cohort in Cohort.list(include_child_workspaces=True,
                                   privateKey=privateKey):
             if code == cohort.code and cohort.id:
@@ -192,7 +194,7 @@ class Cohort(FileHelper):
 
             :return: List of all cohorts.
         """
-        logging.info(f"CohortAPI::list")
+        logging.debug(f"CohortAPI::list")
 
         if not privateKey:
             raise ValueError("No Private Key")
@@ -203,3 +205,16 @@ class Cohort(FileHelper):
 
         response = APIRequestHandler.getRequest_static(privateKey, url)
         return [Cohort(**cohort) for cohort in response.json()]
+
+    def to_json(self, filepath: str):
+        FileHelper.check_filepath(filepath)
+        with open(file=filepath, mode='w', encoding='utf-8') as f:
+            json.dump(self, f,
+                      ensure_ascii=False, indent=4, default=FileHelper.json_default)
+
+    @staticmethod
+    def from_json(filepath: str)->'Cohort':
+        if not FileHelper.file_exists(filepath):
+            raise ValueError(f'{filepath} does not exist')
+        with open(file=filepath, mode='r') as json_file:
+            return Cohort(**json.load(json_file))
