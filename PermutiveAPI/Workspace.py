@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Optional
+from typing import List, Optional,Dict
 from dataclasses import dataclass
 import os
 
@@ -123,6 +123,15 @@ class WorkspaceList(List[Workspace]):
         self._id_map = {workspace.workspaceID: workspace for workspace in self}
         self._name_map = {workspace.name: workspace for workspace in self}
 
+    @property
+    def id_dictionary(self)->Dict[str,Workspace]:
+            return {workspace.workspaceID:workspace for workspace in self}
+    @property
+    def name_dictionary(self)->Dict[str,Workspace]:
+        return {workspace.name:workspace for workspace in self}
+    
+
+
     def get_by_id(self, workspaceID: str) -> Optional[Workspace]:
         return self._id_map.get(workspaceID, None)
 
@@ -156,7 +165,6 @@ class WorkspaceList(List[Workspace]):
         with open(file=filepath, mode='w', encoding='utf-8') as f:
             json.dump(self, f,
                       ensure_ascii=False, indent=4, default=FileHelper.json_default)
-
 
     @staticmethod
     def from_json(filepath: Optional[str] = None) -> 'WorkspaceList':

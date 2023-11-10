@@ -218,3 +218,23 @@ class Cohort():
             raise ValueError(f'{filepath} does not exist')
         with open(file=filepath, mode='r') as json_file:
             return Cohort(**json.load(json_file))
+
+
+@dataclass
+class CohortList(List[Cohort]):
+    @property
+    def id_dictionary(self)->Dict[str,Cohort]:
+        return {cohort.id:cohort for cohort in self if cohort.id}
+    @property
+    def name_dictionary(self)->Dict[str,Cohort]:
+        return {cohort.name:cohort for cohort in self}
+    @property
+    def tag_dictionary(self)->Dict[str,'CohortList']:
+        r={}
+        for cohort in self:
+            if cohort.tags:
+                for tag in cohort.tags:
+                    if not tag in r.keys():
+                        r[tag]=CohortList()
+                    r[tag].append(cohort)
+        return r

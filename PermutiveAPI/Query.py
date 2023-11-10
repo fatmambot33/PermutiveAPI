@@ -938,6 +938,20 @@ class Query():
 
 @dataclass
 class QueryList(List[Query]):
+    @property
+    def id_dictionary(self)->Dict[str,Query]:
+        return {query.id:query for query in self if query.id}
+    @property
+    def name_dictionary(self)->Dict[str,Query]:
+        return {query.name:query for query in self if query.name}
+    @property
+    def workspace_dictionary(self)->Dict[str,Query]:
+        return {query.workspace_id:query for query in self if query.workspace_id}
+    
+
+
+
+
     def to_dataframe(self):
         query_list = []
         for definition in self:

@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import List, Optional,Dict
 from dataclasses import dataclass
 from datetime import datetime
 import json
@@ -161,3 +161,12 @@ class Segment():
     def from_json(filepath: str) -> 'Segment':
         with open(file=filepath, mode='r') as json_file:
             return Segment(**json.load(json_file))
+
+@dataclass
+class SegmentList(List[Segment]):
+    @property
+    def id_dictionary(self)->Dict[str,Segment]:
+        return {cohort.id:cohort for cohort in self}
+    @property
+    def name_dictionary(self)->Dict[str,Segment]:
+        return {import_.name:import_ for import_ in self}

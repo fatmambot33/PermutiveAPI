@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from datetime import datetime
 import json
 
+
 from .APIRequestHandler import APIRequestHandler
-from .Segment import Segment
+from .Segment import SegmentList
 from .Utils import FileHelper
 
 _API_VERSION = "v1"
@@ -25,7 +26,7 @@ class Import():
     description: Optional[str] = None
     source: Optional['Source'] = None
     inheritance: Optional[str] = None
-    segments: Optional[List['Segment']] = None
+    segments: Optional['SegmentList'] = None
     updated_at: Optional[datetime] = datetime.now()
 
     @dataclass
@@ -92,3 +93,23 @@ class Import():
     def from_json(filepath: str) -> 'Import':
         with open(file=filepath, mode='r') as json_file:
             return Import(**json.load(json_file))
+
+
+
+@dataclass
+class ImportList(List[Import]):
+    @property
+    def id_dictionary(self)->Dict[str,Import]:
+        return {cohort.id:cohort for cohort in self}
+    @property
+    def name_dictionary(self)->Dict[str,Import]:
+        return {import_.name:import_ for import_ in self}
+    @property
+    def identifier_dictionary(self)->Dict[str,'ImportList']:
+        r={}
+        for import_ in self:
+            for identifier in import_.identifiers:
+                if not identifier in r.keys():
+                    r[identifier]=ImportList()
+                r[identifier].append(import_)
+        return r
