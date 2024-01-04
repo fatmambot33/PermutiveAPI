@@ -61,7 +61,7 @@ class User(APIRequestHandler):
     def identify(self,
                  identity: Identity):
 
-        logging.info(f"UserAPI::identify::{identity.user_id}")
+        loggingdebug(f"UserAPI::identify::{identity.user_id}")
 
         url = f"{self.api_endpoint}"
         aliases_name = [alias.tag for alias in identity.aliases]
