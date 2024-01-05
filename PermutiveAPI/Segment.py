@@ -138,14 +138,14 @@ class Segment():
         return Segment(**response.json())
 
     @staticmethod
-    def list(id: str, privateKey: str) -> List['Segment']:
+    def list(import_id: str, privateKey: str) -> List['Segment']:
         """
         Fetches all imports from the API.
 
         :return: List of all imports.
         """
         logging.debug(f"SegmentAPI::list")
-        url = f"{_API_ENDPOINT}/{id}"
+        url = f"{_API_ENDPOINT}/{import_id}/segments"
         response = APIRequestHandler.getRequest_static(privateKey=privateKey,
                                                        url=url)
         segments = response.json()

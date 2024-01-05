@@ -37,7 +37,7 @@ class Workspace():
         return Import.list(privateKey=self.privateKey)
 
     def list_segments(self, import_id: str) -> List[Segment]:
-        return Segment.list(id=import_id, privateKey=self.privateKey)
+        return Segment.list(import_id=import_id, privateKey=self.privateKey)
 
     def sync_imports_cohorts(self,
                              import_detail: 'Import',
@@ -57,7 +57,7 @@ class Workspace():
                             prefix: Optional[str] = None,
                             cohorts_list: Optional[List['Cohort']] = None,
                             masterKey: Optional[str] = None):
-        import_segments = Segment.list(id=import_detail.id,
+        import_segments = Segment.list(import_id=import_detail.id,
                                        privateKey=self.privateKey)
         if len(import_segments) == 0:
             return
