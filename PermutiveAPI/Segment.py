@@ -149,7 +149,7 @@ class Segment():
         response = APIRequestHandler.getRequest_static(privateKey=privateKey,
                                                        url=url)
         segments = response.json()
-        return [Segment(**item) for item in segments.get('items', [])]
+        return [Segment(**element) for element in segments.get('elements', [])]
 
     def to_json(self, filepath: str):
         FileHelper.check_filepath(filepath)
