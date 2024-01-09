@@ -14,6 +14,32 @@ _API_ENDPOINT = f'https://api.permutive.app/audience-api/{_API_VERSION}/imports'
 
 
 @dataclass
+class Source():
+    """
+    Dataclass for the Source entity in the Permutive ecosystem.
+    """
+    id: str
+    state: Dict
+    type: str
+    bucket: Optional[str] = None
+    permissions: Optional[Dict] = None
+    phase: Optional[str] = None
+    errors: Optional[List[str]] = None
+    advertiser_name: Optional[str] = None
+    organization_id: Optional[str] = None
+    version: Optional[str] = None
+
+    def to_json(self, filepath: str):
+        FileHelper.check_filepath(filepath)
+        with open(file=filepath, mode='w', encoding='utf-8') as f:
+            json.dump(self, f,
+                        ensure_ascii=False, indent=4, default=FileHelper.json_default)
+
+    @staticmethod
+    def from_json(filepath: str) -> 'Source':
+        with open(file=filepath, mode='r') as json_file:
+            return Source(**json.load(json_file))
+@dataclass
 class Import():
     """
     Dataclass for the Import in the Permutive ecosystem.
@@ -23,34 +49,13 @@ class Import():
     code: str
     relation: str
     identifiers: List[str]
+    source: 'Source'
     description: Optional[str] = None
-    source: Optional['Source'] = None
     inheritance: Optional[str] = None
     segments: Optional['SegmentList'] = None
     updated_at: Optional[datetime] = datetime.now()
 
-    @dataclass
-    class Source():
-        """
-        Dataclass for the Source entity in the Permutive ecosystem.
-        """
-        id: str
-        state: Dict
-        bucket: str
-        permissions: Dict
-        phase: str
-        type: str
 
-        def to_json(self, filepath: str):
-            FileHelper.check_filepath(filepath)
-            with open(file=filepath, mode='w', encoding='utf-8') as f:
-                json.dump(self, f,
-                          ensure_ascii=False, indent=4, default=FileHelper.json_default)
-
-        @staticmethod
-        def from_json(filepath: str) -> 'Import.Source':
-            with open(file=filepath, mode='r') as json_file:
-                return Import.Source(**json.load(json_file))
 
     @staticmethod
     def get_by_id(id: str,
@@ -71,17 +76,21 @@ class Import():
 
     @staticmethod
     def list(privateKey: str) -> List['Import']:
-        """
-        Fetches all imports from the API.
-
-        :return: List of all imports.
-        """
         logging.debug(f"AudienceAPI::list_imports")
         url = _API_ENDPOINT
-        response = APIRequestHandler.getRequest_static(privateKey=privateKey,
-                                                       url=url)
+        print(url)
+        print(privateKey)
+        response = APIRequestHandler.getRequest_static(privateKey=privateKey, url=url)
         imports = response.json()
-        return [Import(**item) for item in imports['items']]
+        
+        def create_import(item):
+            source_data = item.get('source')
+            if source_data:
+                source_instance = Source(**source_data)
+                item['source'] = source_instance
+            return Import(**item)
+
+        return [create_import(item) for item in imports['items']]
 
     def to_json(self, filepath: str):
         FileHelper.check_filepath(filepath)
