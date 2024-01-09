@@ -78,8 +78,6 @@ class Import():
     def list(privateKey: str) -> List['Import']:
         logging.debug(f"AudienceAPI::list_imports")
         url = _API_ENDPOINT
-        print(url)
-        print(privateKey)
         response = APIRequestHandler.getRequest_static(privateKey=privateKey, url=url)
         imports = response.json()
         
