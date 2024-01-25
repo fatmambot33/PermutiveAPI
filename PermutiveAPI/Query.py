@@ -12,7 +12,7 @@ from .Utils import FileHelper, ListHelper
 from .Cohort import Cohort
 import json
 
-TAGS = ['#automatic', '#spireglobal']
+TAGS = ['#automatic']
 DEFAULT = {}
 DEFAULT['NUM_OPERATOR'] = 'greater_than_or_equal_to'
 ITEMS = {'ä': 'a',  'â': 'a', 'á': 'a', 'à': 'a', 'ã': 'a', 'ç': 'c', 'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
@@ -22,12 +22,11 @@ ITEMS = {'ä': 'a',  'â': 'a', 'á': 'a', 'à': 'a', 'ã': 'a', 'ç': 'c', 'è'
 @dataclass
 class Query():
     name: str
-    market: Optional[str] = "CN"
+    workspace: Optional[str] = "CN"
     id: Optional[str] = None
     description: Optional[str] = None
     accurate_id: Optional[str] = None
     volume_id: Optional[str] = None
-    obsidian_id: Optional[str] = None
     keywords: Optional[List[str]] = None
     urls: Optional[List[str]] = None
     taxonomy: Optional[List[str]] = None
@@ -37,7 +36,6 @@ class Query():
     cohort_global: Optional[str] = None
     accurate_segments: Optional[List[str]] = None
     volume_segments: Optional[List[str]] = None
-    obsidian_segments: Optional[List[str]] = None
     domains: Optional[List[str]] = None
     number: Optional[str] = None
     during_value: int = 0
@@ -82,7 +80,7 @@ class Query():
         logging.debug('segment: ' + self.name)
 
         cohort = Cohort(
-            name=self.name, id=self.id, query=self.to_query(), tags=new_tags)
+            name=self.name, id=self.id,query=self.to_query(), tags=new_tags)
 
         if self.keywords is not None:
             cohort.description = ",".join(self.keywords)
@@ -107,7 +105,7 @@ class Query():
 
     def to_query2(self) -> Dict:
         query_list = []
-        if self.keywords is not None or self.taxonomy is not None or self.urls is not None or self.obsidian_id is not None:
+        if self.keywords is not None or self.taxonomy is not None or self.urls is not None:
             if self.keywords:
                 q_PageView = Query.PageView(keywords=self.keywords,
                                             frequency_value=self.frequency_value,
@@ -162,7 +160,7 @@ class Query():
     def to_query(self) -> Dict:
         query_list = []
         slugify_keywords = []
-        if self.keywords is not None or self.taxonomy is not None or self.urls is not None or self.obsidian_id is not None:
+        if self.keywords is not None or self.taxonomy is not None or self.urls is not None:
             if self.keywords:
                 slugify_keywords = Query.slugify_keywords(self.keywords)
                 query_list.append(
@@ -218,12 +216,7 @@ class Query():
             else:
                 self.volume_segments = ListHelper.merge_list(
                     self.volume_segments, wrap_query.volume_segments)
-        if wrap_query.obsidian_segments:
-            if self.obsidian_segments is None:
-                self.obsidian_segments = wrap_query.obsidian_segments
-            else:
-                self.obsidian_segments = ListHelper.merge_list(
-                    self.obsidian_segments, wrap_query.obsidian_segments)
+
         if wrap_query.keywords:
             if self.keywords is None:
                 self.keywords = wrap_query.keywords
@@ -559,12 +552,6 @@ class Query():
                     'list_contains': self.taxonomy
                 },
                 'property': 'properties.classifications_watson.taxonomy_labels'})
-        if self.obsidian_id is not None:
-            conditions.append({
-                'condition': {
-                    'list_contains': [self.obsidian_id.upper()]
-                },
-                'property': 'properties.context.sg'})
         if (self.urls is not None) or (self.keywords is not None):
             urls_list = []
             if self.urls is not None:
@@ -723,12 +710,7 @@ class Query():
                     'list_contains': self.taxonomy
                 },
                 'property': 'properties.classifications_watson.taxonomy_labels'})
-        if self.obsidian_id is not None:
-            conditions.append({
-                'condition': {
-                    'list_contains': [self.obsidian_id.upper()]
-                },
-                'property': 'properties.context.sg'})
+
         if (self.urls is not None) or (self.keywords is not None):
             urls_list = []
             if (self.urls is not None):
@@ -753,9 +735,9 @@ class Query():
     def __create_cohort_engaged_completion(self,  slugify_keywords: Optional[List[str]] = None) -> Dict:
 
         conditions = []
-        if self.keywords is None and self.taxonomy is None and self.obsidian_id is None and self.urls is None:
+        if self.keywords is None and self.taxonomy is None and self.urls is None:
             raise ValueError(
-                'self.keywords is None and self.taxonomy is None and self.obsidian_id is None and self.urls is None')
+                'self.keywords is None and self.taxonomy is None and self.urls is None')
         if self.keywords is not None:
             conditions.append({
                 'condition': {
@@ -789,12 +771,7 @@ class Query():
                     'list_contains': self.taxonomy
                 },
                 'property': 'properties.classifications_watson.taxonomy_labels'})
-        if self.obsidian_id is not None:
-            conditions.append({
-                'condition': {
-                    'list_contains': [self.obsidian_id.upper()]
-                },
-                'property': 'properties.context.sg'})
+
         if self.urls is not None or self.keywords is not None:
             urls_list = []
             if self.urls is not None:
@@ -939,18 +916,16 @@ class Query():
 @dataclass
 class QueryList(List[Query]):
     @property
-    def id_dictionary(self)->Dict[str,Query]:
-        return {query.id:query for query in self if query.id}
+    def id_dictionary(self) -> Dict[str, Query]:
+        return {query.id: query for query in self if query.id}
+
     @property
-    def name_dictionary(self)->Dict[str,Query]:
-        return {query.name:query for query in self if query.name}
+    def name_dictionary(self) -> Dict[str, Query]:
+        return {query.name: query for query in self if query.name}
+
     @property
-    def workspace_dictionary(self)->Dict[str,Query]:
-        return {query.workspace_id:query for query in self if query.workspace_id}
-    
-
-
-
+    def workspace_dictionary(self) -> Dict[str, Query]:
+        return {query.workspace_id: query for query in self if query.workspace_id}
 
     def to_dataframe(self):
         query_list = []
@@ -970,11 +945,11 @@ class QueryList(List[Query]):
                 if not hasattr(query_dict, query.cohort_global):
                     query_dict[query.cohort_global] = Query(
                         name=f"CN | {query.cohort_global} | Seed",
-                        market="CN",
+                        workspace="CN",
                         cohort_global=query.cohort_global,
                         segments=[],
                         accurate_segments=[],
-                        volume_segments=[], obsidian_segments=[])
+                        volume_segments=[])
                 cohort = query_dict[query.cohort_global]
                 # segments
                 children = []
@@ -986,7 +961,7 @@ class QueryList(List[Query]):
                                                                 query.segments)
 
                         children = [
-                            {"accurate_id": child.accurate_id, "volume_id": child.volume_id, "obsidian_id": child.obsidian_id} for child in self if str(child.number) in query.segments]
+                            {"accurate_id": child.accurate_id, "volume_id": child.volume_id} for child in self if str(child.number) in query.segments]
                         if len(children) > 0:
                             child_accurate = [child["accurate_id"] for child in children if child.get(
                                 "accurate_id", None) is not None]
@@ -994,8 +969,7 @@ class QueryList(List[Query]):
                                                                              [child["accurate_id"] for child in children if child.get("accurate_id", None) is not None])
                             cohort.volume_segments = ListHelper.merge_list(cohort.volume_segments,
                                                                            [child["volume_id"] for child in children if child.get("volume_id", None) is not None])
-                            cohort.obsidian_segments = ListHelper.merge_list(cohort.obsidian_segments,
-                                                                             [child["obsidian_id"] for child in children if child.get("obsidian_id", None) is not None])
+                            
                 # accurate_segments
                 if query.accurate_id is not None:
                     cohort.accurate_segments = ListHelper.merge_list(cohort.accurate_segments, [
@@ -1006,10 +980,6 @@ class QueryList(List[Query]):
                     cohort.volume_segments = ListHelper.merge_list(cohort.volume_segments, [
                         query.volume_id])
 
-                if query.obsidian_id is not None:
-                    cohort.obsidian_segments = ListHelper.merge_list(cohort.obsidian_segments, [
-                        query.obsidian_id])
-
                 if len(cohort.segments) == 0:
                     cohort.segments = None
 
@@ -1018,9 +988,6 @@ class QueryList(List[Query]):
 
                 if len(cohort.volume_segments) == 0:
                     cohort.volume_segments = None
-
-                if len(cohort.obsidian_segments) == 0:
-                    cohort.obsidian_segments = None
 
         return [query_dict[cohort_name]
                 for cohort_name in query_dict]
