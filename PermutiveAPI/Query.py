@@ -3,8 +3,7 @@ import os
 from typing import Dict, List, Optional, Union, Any, Tuple
 from dataclasses import dataclass, field
 
-from glob import glob
-import pandas as pd
+
 import urllib.parse
 
 from .Utils import FileHelper, ListHelper
@@ -13,8 +12,6 @@ from .Cohort import Cohort
 import json
 
 TAGS = ['#automatic']
-DEFAULT = {}
-DEFAULT['NUM_OPERATOR'] = 'greater_than_or_equal_to'
 ITEMS = {'ä': 'a',  'â': 'a', 'á': 'a', 'à': 'a', 'ã': 'a', 'ç': 'c', 'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
          'í': 'i',  'ï': 'i', 'ò': 'o', 'ó': 'o', 'õ': 'o', 'ô': 'o', 'ñ': 'n', 'ù': 'u', 'ú': 'u', 'ü': 'u'}
 
@@ -48,6 +45,36 @@ class Query():
     workspace_id: Optional[str] = None
     tags: Optional[List[str]] = None
 
+    @property
+    def keyword_slugs(self) -> Optional[List[str]]:
+        new_list = list()
+        if self.keywords:
+            for keyword in self.keywords:
+                if isinstance(keyword, str):
+                    if len(keyword) > 0:
+                        if keyword[0] != '/':
+                            keyword_verso = keyword.strip()
+                            keyword_verso = keyword_verso.lower()
+                            keyword_verso = keyword_verso.replace('  ', ' ')
+                            brut = urllib.parse.quote(keyword_verso)
+                            if brut[0] != '-':
+                                brut = '-'+brut
+                            if brut[-1] != '-':
+                                brut = brut+'-'
+                            new_list.append(brut)
+                            keyword_verso = keyword_verso.replace(' ', '-')
+                            for items_in in ITEMS:
+                                keyword_verso = keyword_verso.replace(
+                                    items_in, ITEMS[items_in])
+                            keyword_verso = urllib.parse.quote(keyword_verso)
+                            if keyword_verso[0] != '-':
+                                keyword_verso = '-'+keyword_verso
+                            if keyword_verso[-1] != '-':
+                                keyword_verso = keyword_verso+'-'
+                            new_list.append(keyword_verso)
+            return ListHelper.merge_list(new_list)  # type: ignore
+        return None
+
     def __getitem__(self, key):
         return getattr(self, key)
 
@@ -80,7 +107,7 @@ class Query():
         logging.debug('segment: ' + self.name)
 
         cohort = Cohort(
-            name=self.name, id=self.id,query=self.to_query(), tags=new_tags)
+            name=self.name, id=self.id, query=self.to_query(), tags=new_tags)
 
         if self.keywords is not None:
             cohort.description = ",".join(self.keywords)
@@ -105,15 +132,18 @@ class Query():
 
     def to_query2(self) -> Dict:
         query_list = []
-        if self.keywords is not None or self.taxonomy is not None or self.urls is not None:
+        if self.keywords or self.taxonomy or self.urls:
+            q_PageView = Query.PageView(keywords=self.keywords,
+                                        keyword_slugs=self.keyword_slugs,
+                                        taxonomy=self.taxonomy,
+                                        frequency_value=self.frequency_value,
+                                        during_value=self.during_value)
+            query_list.append(q_PageView.to_query())
             if self.keywords:
-                q_PageView = Query.PageView(keywords=self.keywords,
-                                            frequency_value=self.frequency_value,
-                                            during_value=self.during_value)
-                query_list.append(q_PageView.to_query())
 
                 q_VideoView = Query.VideoView(keywords=self.keywords)
                 query_list.append(q_VideoView.to_query())
+
                 if self.engaged_time:
                     q = Query.EngagedTimeCondition(keywords=self.keywords)
                     query_list.append(q.to_query())
@@ -124,15 +154,14 @@ class Query():
                     query_list.append(q.to_query())
 
                 if self.link_click:
-
                     q = Query.LinkClickCondition(self.keywords)
                     query_list.append(q.to_query())
 
         if self.slot_click:
             segments_list = []
-            if not self.segments is None:
+            if self.segments:
                 segments_list += self.segments
-            if not self.number is None:
+            if self.number:
                 segments_list.append(self.number)
             if len(segments_list) > 0:
                 q = Query.SlotClickCondition(values=segments_list)
@@ -163,8 +192,9 @@ class Query():
         if self.keywords is not None or self.taxonomy is not None or self.urls is not None:
             if self.keywords:
                 slugify_keywords = Query.slugify_keywords(self.keywords)
-                query_list.append(
-                    self.__create_cohort_pageview(slugify_keywords=slugify_keywords))
+
+                query_list.append(self.__create_cohort_pageview(
+                    slugify_keywords=slugify_keywords))
                 query_list.append(
                     self.__create_cohort_videoview(slugify_keywords=slugify_keywords))
             if self.engaged_time:
@@ -280,6 +310,7 @@ class Query():
         conditions.append(Query.values_to_condition(property='properties.article.tags',
                                                     operator='list_contains',
                                                     values=keywords))
+
         return conditions
 
     def to_json(self, filepath: str):
@@ -297,16 +328,40 @@ class Query():
 
     @dataclass
     class PageView:
-        keywords: List[str]
-
+        keywords: Optional[List[str]] = None
+        taxonomy: Optional[List[str]] = None
+        urls: Optional[List[str]] = None
+        keyword_slugs: Optional[List[str]] = None
         frequency_value: int = 1
-        frequency_operator: str = "equal_to"
-        during_value: int = 0
-        during_the_last_unit: str = 'str'
+        frequency_operator: str = "greater_than_or_equal_to"
+        during_value: int = 90
+        during_the_last_unit: str = 'days'
 
         def to_query(self) -> Dict:
+            conditions = []
+            if self.keywords:
+                conditions = Query.to_article_conditions(self.keywords)
+            if self.taxonomy:
+                conditions.append({
+                    'condition': {
+                        'list_contains': self.taxonomy
+                    },
+                    'property': 'properties.classifications_watson.taxonomy_labels'})
+            if self.urls or self.keyword_slugs:
+                urls_list = []
+                if self.urls:
+                    urls_list = self.urls.copy()
+                if self.keyword_slugs:
+                    urls_list = ListHelper.merge_list(
+                        urls_list, self.keyword_slugs)
+                urls_list = ListHelper.merge_list(urls_list)
+                urls_list.sort()
 
-            conditions = Query.to_article_conditions(self.keywords)
+                conditions.append({
+                    'condition': {
+                        'contains': urls_list
+                    },
+                    'property': 'properties.client.url'})
 
             page_view_query = {
                 'event': 'Pageview',
@@ -455,12 +510,13 @@ class Query():
         def to_query(self) -> Dict[str, Any]:
             condition = {'segment': self.segment}
             if self.value > 0:
-                condition['during'] = {  # type: ignore
+                condition['during'] = {   # type: ignore
                     'the_last': {
                         'unit': self.unit,
                         'value': self.value
                     }
                 }
+            return condition
 
             return {self.transition_type: condition}
 
@@ -485,7 +541,6 @@ class Query():
             segment: str
 
         third_party_segment: ThirdPartySegment
-        transition_type: str = 'in_third_party_segment'
 
         def to_query(self) -> Dict[str, Any]:
             return {
@@ -927,70 +982,9 @@ class QueryList(List[Query]):
     def workspace_dictionary(self) -> Dict[str, Query]:
         return {query.workspace_id: query for query in self if query.workspace_id}
 
-    def to_dataframe(self):
-        query_list = []
-        for definition in self:
-            query_list.append(Query(**definition))  # type: ignore
-        return pd.DataFrame(query_list)
-
     def __init__(self, queries: Optional[List[Query]]):
         if queries is not None:
             super().__init__(queries)
-
-    def to_query(self):
-        query_dict = {}
-        for query in self:
-
-            if query.cohort_global is not None:
-                if not hasattr(query_dict, query.cohort_global):
-                    query_dict[query.cohort_global] = Query(
-                        name=f"CN | {query.cohort_global} | Seed",
-                        workspace="CN",
-                        cohort_global=query.cohort_global,
-                        segments=[],
-                        accurate_segments=[],
-                        volume_segments=[])
-                cohort = query_dict[query.cohort_global]
-                # segments
-                children = []
-                if query.number is not None:
-                    cohort.segments = ListHelper.merge_list(cohort.segments,
-                                                            str(query.number))
-                    if isinstance(query.segments, list):
-                        cohort.segments = ListHelper.merge_list(cohort.segments,
-                                                                query.segments)
-
-                        children = [
-                            {"accurate_id": child.accurate_id, "volume_id": child.volume_id} for child in self if str(child.number) in query.segments]
-                        if len(children) > 0:
-                            child_accurate = [child["accurate_id"] for child in children if child.get(
-                                "accurate_id", None) is not None]
-                            cohort.accurate_segments = ListHelper.merge_list(cohort.accurate_segments,
-                                                                             [child["accurate_id"] for child in children if child.get("accurate_id", None) is not None])
-                            cohort.volume_segments = ListHelper.merge_list(cohort.volume_segments,
-                                                                           [child["volume_id"] for child in children if child.get("volume_id", None) is not None])
-                            
-                # accurate_segments
-                if query.accurate_id is not None:
-                    cohort.accurate_segments = ListHelper.merge_list(cohort.accurate_segments, [
-                        query.accurate_id])
-
-                # volume_segments
-                if query.volume_id is not None:
-                    cohort.volume_segments = ListHelper.merge_list(cohort.volume_segments, [
-                        query.volume_id])
-
-                if len(cohort.segments) == 0:
-                    cohort.segments = None
-
-                if len(cohort.accurate_segments) == 0:
-                    cohort.accurate_segments = None
-
-                if len(cohort.volume_segments) == 0:
-                    cohort.volume_segments = None
-
-        return [query_dict[cohort_name]
-                for cohort_name in query_dict]
 
     def filter_by_workspace_id(self, workspace_id: str) -> 'QueryList':
         filtered_queries = [
