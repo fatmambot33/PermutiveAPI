@@ -191,7 +191,7 @@ class Cohort():
 
     @staticmethod
     def list(include_child_workspaces=False,
-             privateKey: Optional[str] = None) -> List['Cohort']:
+             privateKey: Optional[str] = None) -> 'CohortList':
         """
             Fetches all cohorts from the API.
 
@@ -207,7 +207,8 @@ class Cohort():
             url = f"{url}&include-child-workspaces=true"
 
         response = APIRequestHandler.getRequest_static(privateKey, url)
-        return [Cohort(**cohort) for cohort in response.json()]
+        cohort_list =CohortList([Cohort(**cohort) for cohort in response.json()])
+        return cohort_list
 
     def to_json(self, filepath: str):
         FileHelper.check_filepath(filepath)
@@ -235,6 +236,12 @@ class CohortList(List[Cohort]):
     _workspace_dictionary_cache: Dict[str, 'CohortList'] = field(
         default_factory=dict, init=False)
 
+    def __init__(self, cohorts: Optional[List[Cohort]] = None):
+        """Initializes the CohortList with an optional list of Cohort objects."""
+        super().__init__(cohorts if cohorts is not None else [])
+        self.rebuild_cache()
+
+
     def rebuild_cache(self):
         """Rebuilds all caches based on the current state of the list."""
         self._id_dictionary_cache = {
@@ -251,15 +258,6 @@ class CohortList(List[Cohort]):
                 self._workspace_dictionary_cache[cohort.workspace_id].append(
                     cohort)
 
-    def append(self, cohort: Cohort):
-        """Appends a Cohort to the list and updates the caches."""
-        super().append(cohort)
-        self.rebuild_cache()
-
-    def extend(self, cohorts: Iterable[Cohort]):
-        """Extends the list with an iterable of Cohorts and updates the caches."""
-        super().extend(cohorts)
-        self.rebuild_cache()
 
     @property
     def id_dictionary(self) -> Dict[str, Cohort]:
@@ -288,11 +286,6 @@ class CohortList(List[Cohort]):
         if not self._workspace_dictionary_cache:
             self.rebuild_cache()
         return self._workspace_dictionary_cache
-
-    def __init__(self, cohorts: Optional[List[Cohort]] = None):
-        """Initializes the CohortList with an optional list of Cohort objects."""
-        if cohorts is not None:
-            super().__init__(cohorts)
 
     def to_json(self, filepath: str):
         """Saves the CohortList to a JSON file at the specified filepath."""

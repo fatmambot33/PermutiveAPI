@@ -115,6 +115,11 @@ class ImportList(List[Import]):
     _identifier_dictionary_cache: Dict[str, 'ImportList'] = field(
         default_factory=dict, init=False)
 
+    def __init__(self, imports: Optional[List[Import]] = None):
+        """Initializes the ImportList with an optional list of Import objects."""
+        super().__init__(imports if imports is not None else [])
+        self.rebuild_cache()
+
     def rebuild_cache(self):
         """Rebuilds all caches based on the current state of the list."""
         self._id_dictionary_cache = {
@@ -125,16 +130,6 @@ class ImportList(List[Import]):
         for import_ in self:
             for identifier in import_.identifiers:
                 self._identifier_dictionary_cache[identifier].append(import_)
-
-    def append(self, import_: Import):
-        """Appends an Import to the list and updates the caches."""
-        super().append(import_)
-        self.rebuild_cache()
-
-    def extend(self, imports: Iterable[Import]):
-        """Extends the list with an iterable of Imports and updates the caches."""
-        super().extend(imports)
-        self.rebuild_cache()
 
     @property
     def id_dictionary(self) -> Dict[str, Import]:
@@ -156,8 +151,3 @@ class ImportList(List[Import]):
         if not self._identifier_dictionary_cache:
             self.rebuild_cache()
         return self._identifier_dictionary_cache
-
-    def __init__(self, imports: Optional[List[Import]] = None):
-        """Initializes the ImportList with an optional list of Import objects."""
-        if imports is not None:
-            super().__init__(imports)

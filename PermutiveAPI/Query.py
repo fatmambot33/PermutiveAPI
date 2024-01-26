@@ -31,7 +31,7 @@ class Query():
     segments: Optional[List[str]] = None
     second_party_segments: Optional[List[Tuple[str, str]]] = None
     third_party_segments: Optional[List[int]] = None
-    cohort_global: Optional[str] = None
+    cohort_wrap: Optional[str] = None
     accurate_segments: Optional[List[str]] = None
     volume_segments: Optional[List[str]] = None
     domains: Optional[List[str]] = None
@@ -82,7 +82,7 @@ class Query():
     def __setitem__(self, key, value):
         setattr(self, key, value)
 
-    def sync_clickers(self, api_key, new_tags: List[str] = TAGS,  override_tags: bool = False):
+    def sync_clickers(self, api_key):
         if not self.name:
             raise ValueError("self.name is None")
 
@@ -92,23 +92,23 @@ class Query():
                                     name=self.name + " | Clickers")
         if cohort is None:
             cohort = Cohort(
-                name=self.name + " | Clickers", query=self.__create_cohort_query_clickers(), tags=new_tags)
+                name=self.name + " | Clickers", query=self.__create_cohort_query_clickers(), tags=["clickers"]+TAGS)
             cohort.create(privateKey=api_key)
         else:
             cohort.query = self.__create_cohort_query_clickers()
-            if not override_tags:
-                new_tags = ListHelper.merge_list(new_tags, cohort.tags)
-            cohort.tags = new_tags
+            cohort.tags = ListHelper.merge_list(["clickers"]+TAGS, cohort.tags)
             cohort.update(privateKey=api_key)
 
-    def sync(self, api_key: str, new_tags: List[str] = TAGS,  override_tags: bool = False):
-        if not self.name:
-            raise ValueError("self.name is None")
+    def sync(self, api_key: str):
 
         logging.debug('segment: ' + self.name)
 
         cohort = Cohort(
-            name=self.name, id=self.id, query=self.to_query(), tags=new_tags)
+            name=self.name,
+            id=self.id,
+            description=self.description,
+            query=self.to_query(),
+            tags=self.tags)
 
         if self.keywords is not None:
             cohort.description = ",".join(self.keywords)
@@ -118,17 +118,8 @@ class Query():
             else:
                 cohort.tags = TAGS
             cohort.create(privateKey=api_key)
-            if cohort is not None:
-                self.id = cohort.id
-                self.number = cohort.code
+            self.id = cohort.id
         else:
-            if not override_tags:
-                old_cohort = Cohort.get_by_id(id=self.id,
-                                              privateKey=api_key)
-                if old_cohort is not None:
-                    if old_cohort.tags is not None:
-                        cohort.tags = ListHelper.merge_list(
-                            new_tags+old_cohort.tags)
             cohort.update(privateKey=api_key)
 
     def to_query2(self) -> Dict:

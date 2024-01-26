@@ -1,6 +1,6 @@
 import logging
-from typing import List, Optional,Dict
-from dataclasses import dataclass,field
+from typing import List, Optional, Dict
+from dataclasses import dataclass, field
 from datetime import datetime
 import json
 from collections.abc import Iterable
@@ -165,17 +165,25 @@ class Segment():
             return Segment(**json.load(json_file))
 
 
-
 @dataclass
 class SegmentList(List[Segment]):
     # Cache for each dictionary to avoid rebuilding
-    _id_dictionary_cache: Dict[str, Segment] = field(default_factory=dict, init=False)
-    _name_dictionary_cache: Dict[str, Segment] = field(default_factory=dict, init=False)
+    _id_dictionary_cache: Dict[str, Segment] = field(
+        default_factory=dict, init=False)
+    _name_dictionary_cache: Dict[str, Segment] = field(
+        default_factory=dict, init=False)
+
+    def __init__(self, segments: Optional[List[Segment]] = None):
+        """Initializes the SegmentList with an optional list of Segment objects."""
+        super().__init__(segments if segments is not None else [])
+        self.rebuild_cache()
 
     def rebuild_cache(self):
         """Rebuilds all caches based on the current state of the list."""
-        self._id_dictionary_cache = {segment.id: segment for segment in self if segment.id}
-        self._name_dictionary_cache = {segment.name: segment for segment in self if segment.name}
+        self._id_dictionary_cache = {
+            segment.id: segment for segment in self if segment.id}
+        self._name_dictionary_cache = {
+            segment.name: segment for segment in self if segment.name}
 
     def append(self, segment: Segment):
         """Appends a Segment to the list and updates the caches."""
@@ -200,8 +208,3 @@ class SegmentList(List[Segment]):
         if not self._name_dictionary_cache:
             self.rebuild_cache()
         return self._name_dictionary_cache
-
-    def __init__(self, segments: Optional[List[Segment]] = None):
-        """Initializes the SegmentList with an optional list of Segment objects."""
-        if segments is not None:
-            super().__init__(segments)
