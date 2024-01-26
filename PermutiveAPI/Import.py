@@ -1,8 +1,10 @@
 import logging
 from typing import Dict, List, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 import json
+from collections import defaultdict
+from collections.abc import Iterable
 
 
 from .APIRequestHandler import APIRequestHandler
@@ -33,12 +35,14 @@ class Source():
         FileHelper.check_filepath(filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
             json.dump(self, f,
-                        ensure_ascii=False, indent=4, default=FileHelper.json_default)
+                      ensure_ascii=False, indent=4, default=FileHelper.json_default)
 
     @staticmethod
     def from_json(filepath: str) -> 'Source':
         with open(file=filepath, mode='r') as json_file:
             return Source(**json.load(json_file))
+
+
 @dataclass
 class Import():
     """
@@ -54,8 +58,6 @@ class Import():
     inheritance: Optional[str] = None
     segments: Optional['SegmentList'] = None
     updated_at: Optional[datetime] = datetime.now()
-
-
 
     @staticmethod
     def get_by_id(id: str,
@@ -78,9 +80,10 @@ class Import():
     def list(privateKey: str) -> List['Import']:
         logging.debug(f"AudienceAPI::list_imports")
         url = _API_ENDPOINT
-        response = APIRequestHandler.getRequest_static(privateKey=privateKey, url=url)
+        response = APIRequestHandler.getRequest_static(
+            privateKey=privateKey, url=url)
         imports = response.json()
-        
+
         def create_import(item):
             source_data = item.get('source')
             if source_data:
@@ -102,21 +105,59 @@ class Import():
             return Import(**json.load(json_file))
 
 
-
 @dataclass
 class ImportList(List[Import]):
-    @property
-    def id_dictionary(self)->Dict[str,Import]:
-        return {cohort.id:cohort for cohort in self}
-    @property
-    def name_dictionary(self)->Dict[str,Import]:
-        return {import_.name:import_ for import_ in self}
-    @property
-    def identifier_dictionary(self)->Dict[str,'ImportList']:
-        r={}
+    # Cache for each dictionary to avoid rebuilding
+    _id_dictionary_cache: Dict[str, Import] = field(
+        default_factory=dict, init=False)
+    _name_dictionary_cache: Dict[str, Import] = field(
+        default_factory=dict, init=False)
+    _identifier_dictionary_cache: Dict[str, 'ImportList'] = field(
+        default_factory=dict, init=False)
+
+    def rebuild_cache(self):
+        """Rebuilds all caches based on the current state of the list."""
+        self._id_dictionary_cache = {
+            import_.id: import_ for import_ in self if import_.id}
+        self._name_dictionary_cache = {
+            import_.name: import_ for import_ in self if import_.name}
+        self._identifier_dictionary_cache = defaultdict(ImportList)
         for import_ in self:
             for identifier in import_.identifiers:
-                if not identifier in r.keys():
-                    r[identifier]=ImportList()
-                r[identifier].append(import_)
-        return r
+                self._identifier_dictionary_cache[identifier].append(import_)
+
+    def append(self, import_: Import):
+        """Appends an Import to the list and updates the caches."""
+        super().append(import_)
+        self.rebuild_cache()
+
+    def extend(self, imports: Iterable[Import]):
+        """Extends the list with an iterable of Imports and updates the caches."""
+        super().extend(imports)
+        self.rebuild_cache()
+
+    @property
+    def id_dictionary(self) -> Dict[str, Import]:
+        """Returns a dictionary of imports indexed by their IDs."""
+        if not self._id_dictionary_cache:
+            self.rebuild_cache()
+        return self._id_dictionary_cache
+
+    @property
+    def name_dictionary(self) -> Dict[str, Import]:
+        """Returns a dictionary of imports indexed by their names."""
+        if not self._name_dictionary_cache:
+            self.rebuild_cache()
+        return self._name_dictionary_cache
+
+    @property
+    def identifier_dictionary(self) -> Dict[str, 'ImportList']:
+        """Returns a dictionary of imports indexed by their identifiers."""
+        if not self._identifier_dictionary_cache:
+            self.rebuild_cache()
+        return self._identifier_dictionary_cache
+
+    def __init__(self, imports: Optional[List[Import]] = None):
+        """Initializes the ImportList with an optional list of Import objects."""
+        if imports is not None:
+            super().__init__(imports)

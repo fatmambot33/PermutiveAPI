@@ -1,9 +1,10 @@
 import logging
-import os
+
 from typing import Dict, List, Optional, Union, Any, Tuple
 from dataclasses import dataclass, field
 
-
+from collections import defaultdict
+from collections.abc import Iterable
 import urllib.parse
 
 from .Utils import FileHelper, ListHelper
@@ -970,34 +971,94 @@ class Query():
 
 @dataclass
 class QueryList(List[Query]):
+    # Cache for each dictionary to avoid rebuilding
+    _id_dictionary_cache: Dict[str, Query] = field(
+        default_factory=dict, init=False)
+    _name_dictionary_cache: Dict[str, Query] = field(
+        default_factory=dict, init=False)
+    _tag_dictionary_cache: Dict[str, 'QueryList'] = field(
+        default_factory=dict, init=False)
+    _workspace_dictionary_cache: Dict[str, 'QueryList'] = field(
+        default_factory=dict, init=False)
+
+    def rebuild_cache(self):
+        """Rebuilds all caches based on the current state of the list."""
+        self._id_dictionary_cache = {
+            query.id: query for query in self if query.id}
+        self._name_dictionary_cache = {
+            query.name: query for query in self if query.name}
+        self._tag_dictionary_cache = defaultdict(QueryList)
+        self._workspace_dictionary_cache = defaultdict(QueryList)
+        for query in self:
+            if query.tags:
+                for tag in query.tags:
+                    self._tag_dictionary_cache[tag].append(query)
+            if query.workspace:
+                self._workspace_dictionary_cache[query.workspace].append(query)
+
+    def append(self, query: Query):
+        """Appends a Query to the list and updates the caches."""
+        super().append(query)
+        self.rebuild_cache()
+
+    def extend(self, queries: Iterable[Query]):
+        """Extends the list with an iterable of Queries and updates the caches."""
+        super().extend(queries)
+        self.rebuild_cache()
+
     @property
     def id_dictionary(self) -> Dict[str, Query]:
-        return {query.id: query for query in self if query.id}
+        # Check if the cache already has the id dictionary
+        if not self._id_dictionary_cache:
+            self._id_dictionary_cache = {
+                query.id: query for query in self if query.id}
+        return self._id_dictionary_cache
 
     @property
     def name_dictionary(self) -> Dict[str, Query]:
-        return {query.name: query for query in self if query.name}
+        # Check if the cache already has the name dictionary
+        if not self._name_dictionary_cache:
+            self._name_dictionary_cache = {
+                query.name: query for query in self if query.name}
+        return self._name_dictionary_cache
 
     @property
-    def workspace_dictionary(self) -> Dict[str, Query]:
-        return {query.workspace_id: query for query in self if query.workspace_id}
+    def tag_dictionary(self) -> Dict[str, 'QueryList']:
+        # Check if the cache already has the tag dictionary
+        if not self._tag_dictionary_cache:
+            r = defaultdict(QueryList)
+            for query in self:
+                if query.tags:
+                    for tag in query.tags:
+                        r[tag].append(query)
+            self._tag_dictionary_cache = dict(r)
+        return self._tag_dictionary_cache
 
-    def __init__(self, queries: Optional[List[Query]]):
+    @property
+    def workspace_dictionary(self) -> Dict[str, 'QueryList']:
+        # Check if the cache already has the workspace dictionary
+        if not self._workspace_dictionary_cache:
+            r = defaultdict(QueryList)
+            for query in self:
+                if query.workspace:
+                    r[query.workspace].append(query)
+            self._workspace_dictionary_cache = dict(r)
+        return self._workspace_dictionary_cache
+
+    def __init__(self, queries: Optional[List[Query]] = None):
+        """Initializes the QueryList with an optional list of Query objects."""
         if queries is not None:
             super().__init__(queries)
 
-    def filter_by_workspace_id(self, workspace_id: str) -> 'QueryList':
-        filtered_queries = [
-            query for query in self if query.workspace_id == workspace_id]
-        return QueryList(filtered_queries)
-
     def to_json(self, filepath: str):
+        """Saves the QueryList to a JSON file at the specified filepath."""
         FileHelper.check_filepath(filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(self, f,
-                      ensure_ascii=False, indent=4, default=FileHelper.json_default)
+            json.dump(self, f, ensure_ascii=False, indent=4,
+                      default=FileHelper.json_default)
 
     @staticmethod
     def from_json(filepath: str) -> 'QueryList':
+        """Creates a new QueryList from a JSON file at the specified filepath."""
         query_list = FileHelper.from_json(filepath)
         return QueryList([Query(**query) for query in query_list])

@@ -1,3 +1,6 @@
+from typing import Dict, List, Optional
+from collections.abc import Iterable
+from dataclasses import dataclass, field
 import json
 import logging
 from typing import Dict, List, Optional, Union
@@ -5,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from .APIRequestHandler import APIRequestHandler
 from .Utils import FileHelper
-
+from collections import defaultdict
 
 _API_VERSION = "v2"
 _API_ENDPOINT = f'https://api.permutive.app/cohorts-api/{_API_VERSION}/cohorts/'
@@ -213,7 +216,7 @@ class Cohort():
                       ensure_ascii=False, indent=4, default=FileHelper.json_default)
 
     @staticmethod
-    def from_json(filepath: str)->'Cohort':
+    def from_json(filepath: str) -> 'Cohort':
         if not FileHelper.file_exists(filepath):
             raise ValueError(f'{filepath} does not exist')
         with open(file=filepath, mode='r') as json_file:
@@ -222,19 +225,84 @@ class Cohort():
 
 @dataclass
 class CohortList(List[Cohort]):
-    @property
-    def id_dictionary(self)->Dict[str,Cohort]:
-        return {cohort.id:cohort for cohort in self if cohort.id}
-    @property
-    def name_dictionary(self)->Dict[str,Cohort]:
-        return {cohort.name:cohort for cohort in self}
-    @property
-    def tag_dictionary(self)->Dict[str,'CohortList']:
-        r={}
+    # Cache for each dictionary to avoid rebuilding
+    _id_dictionary_cache: Dict[str, Cohort] = field(
+        default_factory=dict, init=False)
+    _name_dictionary_cache: Dict[str, Cohort] = field(
+        default_factory=dict, init=False)
+    _tag_dictionary_cache: Dict[str, 'CohortList'] = field(
+        default_factory=dict, init=False)
+    _workspace_dictionary_cache: Dict[str, 'CohortList'] = field(
+        default_factory=dict, init=False)
+
+    def rebuild_cache(self):
+        """Rebuilds all caches based on the current state of the list."""
+        self._id_dictionary_cache = {
+            cohort.id: cohort for cohort in self if cohort.id}
+        self._name_dictionary_cache = {
+            cohort.name: cohort for cohort in self if cohort.name}
+        self._tag_dictionary_cache = defaultdict(CohortList)
+        self._workspace_dictionary_cache = defaultdict(CohortList)
         for cohort in self:
             if cohort.tags:
                 for tag in cohort.tags:
-                    if not tag in r.keys():
-                        r[tag]=CohortList()
-                    r[tag].append(cohort)
-        return r
+                    self._tag_dictionary_cache[tag].append(cohort)
+            if cohort.workspace_id:
+                self._workspace_dictionary_cache[cohort.workspace_id].append(
+                    cohort)
+
+    def append(self, cohort: Cohort):
+        """Appends a Cohort to the list and updates the caches."""
+        super().append(cohort)
+        self.rebuild_cache()
+
+    def extend(self, cohorts: Iterable[Cohort]):
+        """Extends the list with an iterable of Cohorts and updates the caches."""
+        super().extend(cohorts)
+        self.rebuild_cache()
+
+    @property
+    def id_dictionary(self) -> Dict[str, Cohort]:
+        """Returns a dictionary of cohorts indexed by their IDs."""
+        if not self._id_dictionary_cache:
+            self.rebuild_cache()
+        return self._id_dictionary_cache
+
+    @property
+    def name_dictionary(self) -> Dict[str, Cohort]:
+        """Returns a dictionary of cohorts indexed by their names."""
+        if not self._name_dictionary_cache:
+            self.rebuild_cache()
+        return self._name_dictionary_cache
+
+    @property
+    def tag_dictionary(self) -> Dict[str, 'CohortList']:
+        """Returns a dictionary of cohorts indexed by their tags."""
+        if not self._tag_dictionary_cache:
+            self.rebuild_cache()
+        return self._tag_dictionary_cache
+
+    @property
+    def workspace_dictionary(self) -> Dict[str, 'CohortList']:
+        """Returns a dictionary of cohorts indexed by their workspace IDs."""
+        if not self._workspace_dictionary_cache:
+            self.rebuild_cache()
+        return self._workspace_dictionary_cache
+
+    def __init__(self, cohorts: Optional[List[Cohort]] = None):
+        """Initializes the CohortList with an optional list of Cohort objects."""
+        if cohorts is not None:
+            super().__init__(cohorts)
+
+    def to_json(self, filepath: str):
+        """Saves the CohortList to a JSON file at the specified filepath."""
+        FileHelper.check_filepath(filepath)
+        with open(file=filepath, mode='w', encoding='utf-8') as f:
+            json.dump(self, f, ensure_ascii=False, indent=4,
+                      default=FileHelper.json_default)
+
+    @staticmethod
+    def from_json(filepath: str) -> 'CohortList':
+        """Creates a new CohortList from a JSON file at the specified filepath."""
+        cohort_list = FileHelper.from_json(filepath)
+        return CohortList([Cohort(**cohort) for cohort in cohort_list])

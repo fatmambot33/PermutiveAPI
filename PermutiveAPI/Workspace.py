@@ -115,64 +115,77 @@ class Workspace():
                                      cohorts_list=cohorts_list)
 
 
+from dataclasses import dataclass, field
+from collections.abc import Iterable
+from typing import Dict, List, Optional
+import os
+import json
+
 @dataclass
 class WorkspaceList(List[Workspace]):
+    # Cache for each dictionary to avoid rebuilding
+    _id_dictionary_cache: Dict[str, Workspace] = field(default_factory=dict, init=False)
+    _name_dictionary_cache: Dict[str, Workspace] = field(default_factory=dict, init=False)
+
+    def rebuild_cache(self):
+        """Rebuilds all caches based on the current state of the list."""
+        self._id_dictionary_cache = {workspace.workspaceID: workspace for workspace in self if workspace.workspaceID}
+        self._name_dictionary_cache = {workspace.name: workspace for workspace in self if workspace.name}
+
+    def append(self, workspace: Workspace):
+        """Appends a Workspace to the list and updates the caches."""
+        super().append(workspace)
+        self.rebuild_cache()
+
+    def extend(self, workspaces: Iterable[Workspace]):
+        """Extends the list with an iterable of Workspaces and updates the caches."""
+        super().extend(workspaces)
+        self.rebuild_cache()
+
+    @property
+    def id_dictionary(self) -> Dict[str, Workspace]:
+        """Returns a dictionary of workspaces indexed by their IDs."""
+        if not self._id_dictionary_cache:
+            self.rebuild_cache()
+        return self._id_dictionary_cache
+
+    @property
+    def name_dictionary(self) -> Dict[str, Workspace]:
+        """Returns a dictionary of workspaces indexed by their names."""
+        if not self._name_dictionary_cache:
+            self.rebuild_cache()
+        return self._name_dictionary_cache
 
     def __init__(self, workspaces: Optional[List[Workspace]] = None):
+        """Initializes the WorkspaceList with an optional list of Workspace objects."""
         super().__init__(workspaces if workspaces is not None else [])
-        self._id_map = {workspace.workspaceID: workspace for workspace in self}
-        self._name_map = {workspace.name: workspace for workspace in self}
-
-    @property
-    def id_dictionary(self)->Dict[str,Workspace]:
-            return {workspace.workspaceID:workspace for workspace in self}
-    @property
-    def name_dictionary(self)->Dict[str,Workspace]:
-        return {workspace.name:workspace for workspace in self}
-    
-
-
-    def get_by_id(self, workspaceID: str) -> Optional[Workspace]:
-        return self._id_map.get(workspaceID, None)
-
-    def get_by_name(self, name: str) -> Optional[Workspace]:
-        return self._name_map.get(name, None)
 
     def sync_imports_segments(self):
+        """Syncs imports and segments for each workspace in the list."""
         for ws in self:
             ws.sync_imports_segments()
 
     @property
     def Masterworkspace(self) -> Workspace:
+        """Returns the top-level workspace."""
         for workspace in self:
             if workspace.isTopLevel:
                 return workspace
-        raise ValueError("No Top WS")
-
-    def from_description(self):
-        cohorts_list = Cohort.list(include_child_workspaces=True,
-                                   privateKey=self.Masterworkspace.privateKey)
-        for cohort in cohorts_list:
-            if cohort.tags:
-                if "from_description" in cohort.tags and cohort.description:
-                    keywords = cohort.description.split(",")
-                    query = Query(name=cohort.name, id=cohort.id,
-                                  keywords=keywords)
-                    query.sync(self.Masterworkspace.privateKey)
+        raise ValueError("No Top-Level Workspace found")
 
     def to_json(self, filepath: str):
+        """Saves the WorkspaceList to a JSON file at the specified filepath."""
         FileHelper.check_filepath(filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(self, f,
-                      ensure_ascii=False, indent=4, default=FileHelper.json_default)
+            json.dump(self, f, ensure_ascii=False, indent=4, default=FileHelper.json_default)
 
     @staticmethod
     def from_json(filepath: Optional[str] = None) -> 'WorkspaceList':
-        if filepath is None:
+        """Creates a new WorkspaceList from a JSON file at the specified filepath."""
+        if not filepath:
             filepath = os.environ.get("PERMUTIVE_APPLICATION_CREDENTIALS")
-        if filepath is None:
-            raise ValueError(
-                'Unable to get PERMUTIVE_APPLICATION_CREDENTIALS from .env')
+        if not filepath:
+            raise ValueError('Unable to get PERMUTIVE_APPLICATION_CREDENTIALS from .env')
 
         workspace_list = FileHelper.from_json(filepath)
         return WorkspaceList([Workspace(**workspace) for workspace in workspace_list])
