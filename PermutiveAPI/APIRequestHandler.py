@@ -2,7 +2,7 @@
 
 import logging
 
-from typing import Dict, List, Optional, Any,Union
+from typing import Dict, List, Optional, Any, Union
 from dataclasses import asdict
 
 import requests
@@ -22,37 +22,41 @@ class APIRequestHandler:
         'Accept': 'application/json',
         'Content-Type': 'application/json'
     }
-    api_key:str
-    api_endpoint:str
-    payload_keys:Optional[List[str]]=None
+    api_key: str
+    api_endpoint: str
+    payload_keys: Optional[List[str]] = None
 
     def __init__(self,
-                 api_key:str,
-                 api_endpoint:str,
-                payload_keys:Optional[List[str]]=None) -> None:
-        self.api_key=api_key
-        self.api_endpoint=api_endpoint
-        self.payload_keys=payload_keys
+                 api_key: str,
+                 api_endpoint: str,
+                 payload_keys: Optional[List[str]] = None) -> None:
+        self.api_key = api_key
+        self.api_endpoint = api_endpoint
+        self.payload_keys = payload_keys
+
     @staticmethod
-    def gen_url_with_key(url,privateKey):
+    def gen_url_with_key(url, privateKey):
         if "?" in url:
             return f"{url}&k={privateKey}"
         else:
             return f"{url}?k={privateKey}"
+
     @staticmethod
-    def getRequest_static(privateKey:str,url:str)-> Response:
+    def getRequest_static(privateKey: str, url: str) -> Response:
         response = None
-        url = APIRequestHandler.gen_url_with_key(url,privateKey)
+        url = APIRequestHandler.gen_url_with_key(url, privateKey)
         try:
-            response = requests.get(url, headers=APIRequestHandler.DEFAULT_HEADERS)
+            response = requests.get(
+                url, headers=APIRequestHandler.DEFAULT_HEADERS)
             response.raise_for_status()
         except RequestException as e:
             return APIRequestHandler.handle_exception(response, e)
         return response
+
     @staticmethod
-    def postRequest_static(privateKey:str,
-            url:str,
-            data: dict) -> Response:
+    def postRequest_static(privateKey: str,
+                           url: str,
+                           data: dict) -> Response:
         """
             Send an HTTP POST request to the specified URL with JSON data.
 
@@ -66,19 +70,20 @@ class APIRequestHandler:
 
         """
         response = None
-        url = APIRequestHandler.gen_url_with_key(url,privateKey)
+        url = APIRequestHandler.gen_url_with_key(url, privateKey)
         try:
             response = requests.post(url,
-                                    headers=APIRequestHandler.DEFAULT_HEADERS,
-                                    json=data)
+                                     headers=APIRequestHandler.DEFAULT_HEADERS,
+                                     json=data)
             response.raise_for_status()
         except RequestException as e:
             return APIRequestHandler.handle_exception(response, e)
         return response
+
     @staticmethod
-    def patchRequest_static(privateKey:str,
-                     url:str,
-              data: dict) -> Response:
+    def patchRequest_static(privateKey: str,
+                            url: str,
+                            data: dict) -> Response:
         """
             Send an HTTP PATCH request to the specified URL with JSON data.
 
@@ -90,20 +95,21 @@ class APIRequestHandler:
             Returns:
                 Response: The HTTP response object.
 
-        """        
+        """
         response = None
         url = APIRequestHandler.gen_url_with_key(url=url,
                                                  privateKey=privateKey)
         try:
-            response = requests.patch(url, 
-                                      headers=APIRequestHandler.DEFAULT_HEADERS, 
+            response = requests.patch(url,
+                                      headers=APIRequestHandler.DEFAULT_HEADERS,
                                       json=data)
             response.raise_for_status()
         except RequestException as e:
             return APIRequestHandler.handle_exception(response, e)
         return response
+
     @staticmethod
-    def deleteRequest_static(privateKey:str,url:str) -> Response:
+    def deleteRequest_static(privateKey: str, url: str) -> Response:
         """
             Send an HTTP DELETE request to the specified URL.
 
@@ -114,31 +120,33 @@ class APIRequestHandler:
             Returns:
                 Response: The HTTP response object.
 
-        """        
+        """
         response = None
-        url = APIRequestHandler.gen_url_with_key(url=url,privateKey=privateKey)
+        url = APIRequestHandler.gen_url_with_key(
+            url=url, privateKey=privateKey)
         try:
-            response = requests.delete(url, 
+            response = requests.delete(url,
                                        headers=APIRequestHandler.DEFAULT_HEADERS)
             response.raise_for_status()
         except RequestException as e:
             return APIRequestHandler.handle_exception(response, e)
         return response
-    
+
     def getRequest(self,
-                   url)-> Response:
+                   url) -> Response:
         response = None
-        url = APIRequestHandler.gen_url_with_key(url=url,privateKey=self.api_key)
+        url = APIRequestHandler.gen_url_with_key(
+            url=url, privateKey=self.api_key)
         try:
             response = requests.get(url, headers=self.DEFAULT_HEADERS)
             response.raise_for_status()
         except RequestException as e:
             return APIRequestHandler.handle_exception(response, e)
         return response
- 
+
     def postRequest(self,
-            url:str,
-            data: dict) -> Response:
+                    url: str,
+                    data: dict) -> Response:
         """
             Send an HTTP POST request to the specified URL with JSON data.
 
@@ -152,20 +160,20 @@ class APIRequestHandler:
 
         """
         response = None
-        url =APIRequestHandler.gen_url_with_key(url=url,privateKey=self.api_key)
+        url = APIRequestHandler.gen_url_with_key(
+            url=url, privateKey=self.api_key)
         try:
             response = requests.post(url,
-                                    headers=self.DEFAULT_HEADERS,
-                                    json=data)
+                                     headers=self.DEFAULT_HEADERS,
+                                     json=data)
             response.raise_for_status()
         except RequestException as e:
             return APIRequestHandler.handle_exception(response, e)
         return response
 
-
     def patchRequest(self,
-                     url:str,
-              data: dict) -> Response:
+                     url: str,
+                     data: dict) -> Response:
         """
             Send an HTTP PATCH request to the specified URL with JSON data.
 
@@ -177,20 +185,20 @@ class APIRequestHandler:
             Returns:
                 Response: The HTTP response object.
 
-        """        
+        """
         response = None
-        url = APIRequestHandler.gen_url_with_key(url=url,privateKey=self.api_key)
+        url = APIRequestHandler.gen_url_with_key(
+            url=url, privateKey=self.api_key)
         try:
-            response = requests.patch(url, 
-                                      headers=self.DEFAULT_HEADERS, 
+            response = requests.patch(url,
+                                      headers=self.DEFAULT_HEADERS,
                                       json=data)
             response.raise_for_status()
         except RequestException as e:
             return APIRequestHandler.handle_exception(response, e)
         return response
 
-
-    def deleteRequest(self,url:str) -> Response:
+    def deleteRequest(self, url: str) -> Response:
         """
             Send an HTTP DELETE request to the specified URL.
 
@@ -201,51 +209,56 @@ class APIRequestHandler:
             Returns:
                 Response: The HTTP response object.
 
-        """        
+        """
         response = None
-        url = APIRequestHandler.gen_url_with_key(url=url,privateKey=self.api_key)
+        url = APIRequestHandler.gen_url_with_key(
+            url=url, privateKey=self.api_key)
         try:
             response = requests.delete(url, headers=self.DEFAULT_HEADERS)
             response.raise_for_status()
         except RequestException as e:
             return APIRequestHandler.handle_exception(response, e)
         return response
+
     @staticmethod
-    def to_payload_static(dataclass_obj: Any,api_payload:List[str]) -> Dict[str, Any]:
-                """
-                Convert a data class object to a dictionary payload.
-                
-                Args:
-                    dataclass_obj (Any): The data class object to be converted.
+    def to_payload_static(dataclass_obj: Any, api_payload: List[str]) -> Dict[str, Any]:
+        """
+        Convert a data class object to a dictionary payload.
 
-                Returns:
-                    Dict[str, Any]: The dictionary payload.
-                """
-                full_payload = asdict(dataclass_obj)
+        Args:
+            dataclass_obj (Any): The data class object to be converted.
 
-                if api_payload:
-                    payload = {key: value for key, value in full_payload.items() if value is not None and key in api_payload}
-                    return payload
+        Returns:
+            Dict[str, Any]: The dictionary payload.
+        """
+        full_payload = asdict(dataclass_obj)
 
-                return {key: value for key, value in full_payload.items() if value is not None}
-    
+        if api_payload:
+            payload = {key: value for key, value in full_payload.items(
+            ) if value and key in api_payload}
+            return payload
+
+        return {key: value for key, value in full_payload.items() if value}
+
     def to_payload(self, dataclass_obj: Any) -> Dict[str, Any]:
-            """
-            Convert a data class object to a dictionary payload.
-            
-            Args:
-                dataclass_obj (Any): The data class object to be converted.
+        """
+        Convert a data class object to a dictionary payload.
 
-            Returns:
-                Dict[str, Any]: The dictionary payload.
-            """
-            full_payload = asdict(dataclass_obj)
+        Args:
+            dataclass_obj (Any): The data class object to be converted.
 
-            if self.payload_keys:
-                payload = {key: value for key, value in full_payload.items() if value is not None and key in self.payload_keys}
-                return payload
+        Returns:
+            Dict[str, Any]: The dictionary payload.
+        """
+        full_payload = asdict(dataclass_obj)
 
-            return {key: value for key, value in full_payload.items() if value is not None}
+        if self.payload_keys:
+            payload = {key: value for key, value in full_payload.items(
+            ) if value and key in self.payload_keys}
+            return payload
+
+        return {key: value for key, value in full_payload.items() if value}
+
     @staticmethod
     def handle_exception(response: Optional[Response], e: Exception):
         """
@@ -261,7 +274,7 @@ class APIRequestHandler:
                 Response: The HTTP response object if it's successful or a 400 Bad Request response. Otherwise, it raises the original exception.
 
         """
-        if response is not None:
+        if response:
             if 200 <= response.status_code <= 300:
                 return response
             elif response.status_code == 400:

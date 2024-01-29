@@ -10,7 +10,7 @@ if os.path.exists(requirements_file):
         requirements = f.read().splitlines()
 setup(
     name='PermutiveAPI',
-    version='v3.4.7',
+    version='v3.4.8',
     packages=find_packages(),
     install_requires=requirements,
     long_description=open('README.md').read(),

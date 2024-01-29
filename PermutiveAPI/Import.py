@@ -72,7 +72,7 @@ class Import():
         url = f"{_API_ENDPOINT}/{id}"
         response = APIRequestHandler.getRequest_static(url=url,
                                                        privateKey=privateKey)
-        if response is None:
+        if not response:
             raise ValueError('Unable to get_import')
         return Import(**response.json())
 

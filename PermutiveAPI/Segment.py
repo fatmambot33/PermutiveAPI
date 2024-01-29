@@ -41,7 +41,7 @@ class Segment():
                                                         url=url,
                                                         data=APIRequestHandler.to_payload_static(dataclass_obj=self,
                                                                                                  api_payload=_API_PAYLOAD))
-        if response is None:
+        if not response:
             raise ValueError('Unable to create_segment')
 
         self = Segment(**response.json())
@@ -63,7 +63,7 @@ class Segment():
                                                          url=url,
                                                          data=APIRequestHandler.to_payload_static(dataclass_obj=self,
                                                                                                   api_payload=_API_PAYLOAD))
-        if response is None:
+        if not response:
             raise ValueError('Unable to update_segment')
         self = Segment(**response.json())
 
@@ -98,7 +98,7 @@ class Segment():
         url = f"{_API_ENDPOINT}/{import_id}/segments/{segment_id}"
         response = APIRequestHandler.getRequest_static(privateKey,
                                                        url=url)
-        if response is None:
+        if not response:
             raise ValueError('Unable to get_segment')
         return Segment(**response.json())
 
@@ -119,7 +119,7 @@ class Segment():
         url = f"{_API_ENDPOINT}/{import_id}/segments/code/{segment_code}"
         response = APIRequestHandler.getRequest_static(url=url, privateKey=privateKey
                                                        )
-        if response is None:
+        if not response:
             raise ValueError('Unable to get_segment')
         return Segment(**response.json())
 
@@ -135,7 +135,7 @@ class Segment():
         url = f"{_API_ENDPOINT}/{id}"
         response = APIRequestHandler.getRequest_static(url=url,
                                                        privateKey=privateKey)
-        if response is None:
+        if not response:
             raise ValueError('Unable to get_by_id')
         return Segment(**response.json())
 

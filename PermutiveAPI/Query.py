@@ -12,7 +12,6 @@ from .Utils import FileHelper, ListHelper
 from .Cohort import Cohort
 import json
 
-TAGS = ['#automatic']
 ITEMS = {'ä': 'a',  'â': 'a', 'á': 'a', 'à': 'a', 'ã': 'a', 'ç': 'c', 'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
          'í': 'i',  'ï': 'i', 'ò': 'o', 'ó': 'o', 'õ': 'o', 'ô': 'o', 'ñ': 'n', 'ù': 'u', 'ú': 'u', 'ü': 'u'}
 
@@ -90,14 +89,14 @@ class Query():
 
         cohort = Cohort.get_by_name(privateKey=api_key,
                                     name=self.name + " | Clickers")
-        if cohort is None:
-            cohort = Cohort(
-                name=self.name + " | Clickers", query=self.__create_cohort_query_clickers(), tags=["clickers"]+TAGS)
-            cohort.create(privateKey=api_key)
-        else:
+        if cohort:
             cohort.query = self.__create_cohort_query_clickers()
-            cohort.tags = ListHelper.merge_list(["clickers"]+TAGS, cohort.tags)
             cohort.update(privateKey=api_key)
+
+        else:
+            cohort = Cohort(
+                name=self.name + " | Clickers", query=self.__create_cohort_query_clickers())
+            cohort.create(privateKey=api_key)
 
     def sync(self, api_key: str):
 
@@ -110,17 +109,13 @@ class Query():
             query=self.to_query(),
             tags=self.tags)
 
-        if self.keywords is not None:
+        if self.keywords:
             cohort.description = ",".join(self.keywords)
-        if self.id is None:
-            if cohort.tags is not None:
-                cohort.tags = ListHelper.merge_list(cohort.tags, TAGS)
-            else:
-                cohort.tags = TAGS
+        if self.id:
+            cohort.update(privateKey=api_key)
+        else:
             cohort.create(privateKey=api_key)
             self.id = cohort.id
-        else:
-            cohort.update(privateKey=api_key)
 
     def to_query2(self) -> Dict:
         query_list = []
@@ -173,7 +168,7 @@ class Query():
         query = {
             'or': query_list
         }
-        if self.domains is not None:
+        if self.domains:
             query = {'and': [query, self.__create_cohort_domains()]}
 
         return query
@@ -181,10 +176,9 @@ class Query():
     def to_query(self) -> Dict:
         query_list = []
         slugify_keywords = []
-        if self.keywords is not None or self.taxonomy is not None or self.urls is not None:
+        if self.keywords or self.taxonomy or self.urls:
             if self.keywords:
                 slugify_keywords = Query.slugify_keywords(self.keywords)
-
                 query_list.append(self.__create_cohort_pageview(
                     slugify_keywords=slugify_keywords))
                 query_list.append(
@@ -214,49 +208,53 @@ class Query():
         query = {
             'or': query_list
         }
-        if self.domains is not None:
+        if self.domains:
             query = {'and': [query, self.__create_cohort_domains()]}
 
         return query
 
     def merge(self, wrap_query: 'Query'):
         if wrap_query.segments:
-            if self.segments is None:
-                self.segments = wrap_query.segments
-            else:
+            if self.segments:
                 self.segments = ListHelper.merge_list(
                     self.segments, wrap_query.segments)
-        if wrap_query.accurate_segments:
-            if self.accurate_segments is None:
-                self.accurate_segments = wrap_query.accurate_segments
             else:
+                self.segments = wrap_query.segments
+
+        if wrap_query.accurate_segments:
+            if self.accurate_segments:
                 self.accurate_segments = ListHelper.merge_list(
                     self.accurate_segments, wrap_query.accurate_segments)
-        if wrap_query.volume_segments:
-            if self.volume_segments is None:
-                self.volume_segments = wrap_query.volume_segments
             else:
+                self.accurate_segments = wrap_query.accurate_segments
+
+        if wrap_query.volume_segments:
+            if self.volume_segments:
                 self.volume_segments = ListHelper.merge_list(
                     self.volume_segments, wrap_query.volume_segments)
-
-        if wrap_query.keywords:
-            if self.keywords is None:
-                self.keywords = wrap_query.keywords
             else:
+                self.volume_segments = wrap_query.volume_segments
+        if wrap_query.keywords:
+            if self.keywords:
                 self.keywords = ListHelper.merge_list(
                     self.keywords, wrap_query.keywords)
-        if wrap_query.taxonomy:
-            if self.taxonomy is None:
-                self.taxonomy = wrap_query.taxonomy
+
             else:
+                self.keywords = wrap_query.keywords
+        if wrap_query.taxonomy:
+            if self.taxonomy:
                 self.taxonomy = ListHelper.merge_list(
                     self.taxonomy, wrap_query.taxonomy)
-        if wrap_query.urls:
-            if not self.urls:
-                self.urls = wrap_query.urls
+
             else:
+                self.taxonomy = wrap_query.taxonomy
+        if wrap_query.urls:
+            if self.urls:
                 self.urls = ListHelper.merge_list(
                     self.urls, wrap_query.urls)
+
+            else:
+                self.urls = wrap_query.urls
 
         if wrap_query.second_party_segments:
             if self.second_party_segments:
@@ -557,10 +555,10 @@ class Query():
     def __create_cohort_pageview(self, slugify_keywords: Optional[List[str]] = None) -> Dict:
 
         conditions = []
-        if slugify_keywords is None:
+        if not slugify_keywords:
             slugify_keywords = []
         contains = []
-        if self.keywords is not None:
+        if self.keywords:
             for keyword in self.keywords:
                 if " " in keyword or "-" in keyword or len(keyword) > 7:
                     contains.append(keyword)
@@ -593,7 +591,7 @@ class Query():
                 },
                 'property': 'properties.article.tags'})
 
-        if self.taxonomy is not None:
+        if self.taxonomy:
             conditions.append({
                 'condition': {
                     'list_contains': self.taxonomy
@@ -601,9 +599,9 @@ class Query():
                 'property': 'properties.classifications_watson.taxonomy_labels'})
         if (self.urls is not None) or (self.keywords is not None):
             urls_list = []
-            if self.urls is not None:
+            if self.urls:
                 urls_list = self.urls.copy()
-            if self.keywords is not None:
+            if self.keywords:
                 urls_list = urls_list + slugify_keywords
             urls_list = ListHelper.merge_list(urls_list)
             urls_list.sort()
@@ -645,10 +643,10 @@ class Query():
     def __create_cohort_videoview(self, slugify_keywords: Optional[List[str]] = None) -> Dict:
 
         conditions = []
-        if slugify_keywords is None:
+        if not slugify_keywords:
             slugify_keywords = []
         contains = []
-        if self.keywords is not None:
+        if self.keywords:
             for keyword in self.keywords:
                 if " " in keyword or "-" in keyword or len(keyword) > 7:
                     contains.append(keyword)
@@ -692,9 +690,9 @@ class Query():
 
     def __create_cohort_link_click(self,  slugify_keywords: Optional[List[str]] = None, dest_urls: List[str] = ['facebook.com', 'instagram.com', 'pinterest.com'],) -> Dict:
         keyword_slugs = []
-        if slugify_keywords is not None:
+        if slugify_keywords:
             keyword_slugs = slugify_keywords
-        if self.urls is not None:
+        if self.urls:
             keyword_slugs = list(
                 dict.fromkeys(keyword_slugs + self.urls))
         LinkClick = {
@@ -724,7 +722,7 @@ class Query():
     def __create_cohort_engaged_time(self,  slugify_keywords: Optional[List[str]] = None) -> Dict:
 
         conditions = []
-        if self.keywords is not None:
+        if self.keywords:
             conditions.append({
                 'condition': {
                     'contains': [f' {keyword} ' for keyword in self.keywords]
@@ -751,7 +749,7 @@ class Query():
                 },
                 'property': 'properties.article.tags'})
 
-        if self.taxonomy is not None:
+        if self.taxonomy:
             conditions.append({
                 'condition': {
                     'list_contains': self.taxonomy
@@ -782,10 +780,10 @@ class Query():
     def __create_cohort_engaged_completion(self,  slugify_keywords: Optional[List[str]] = None) -> Dict:
 
         conditions = []
-        if self.keywords is None and self.taxonomy is None and self.urls is None:
+        if not self.keywords and not self.taxonomy and not self.urls:
             raise ValueError(
                 'self.keywords is None and self.taxonomy is None and self.urls is None')
-        if self.keywords is not None:
+        if self.keywords:
             conditions.append({
                 'condition': {
                     'contains': [f' {keyword} ' for keyword in self.keywords]
@@ -812,18 +810,18 @@ class Query():
                 },
                 'property': 'properties.article.tags'})
 
-        if self.taxonomy is not None:
+        if self.taxonomy:
             conditions.append({
                 'condition': {
                     'list_contains': self.taxonomy
                 },
                 'property': 'properties.classifications_watson.taxonomy_labels'})
 
-        if self.urls is not None or self.keywords is not None:
+        if self.urls is not None or self.keywords:
             urls_list = []
-            if self.urls is not None:
+            if self.urls:
                 urls_list = self.urls.copy()
-            if slugify_keywords is not None:
+            if slugify_keywords:
                 urls_list = urls_list + slugify_keywords
             urls_list = ListHelper.merge_list(urls_list)
             urls_list.sort()
@@ -840,10 +838,10 @@ class Query():
         return engaged_completion
 
     def __create_cohort_slot_click(self) -> Dict:
-        if self.segments is None:
-            segments_list = []
-        else:
+        if self.segments:
             segments_list = self.segments.copy()
+        else:
+            segments_list = []
 
         segments_list.append(str(self.number))
         slot_click = {
@@ -872,7 +870,7 @@ class Query():
 
     def __create_cohort_transition(self) -> List[Dict]:
         transitions = []
-        if self.segments is None:
+        if not self.segments:
             raise ValueError('self.segments is None')
         for segment in self.segments:
             segment_int = None
@@ -896,13 +894,13 @@ class Query():
                     'segment': segment_int
                 }
             }
-            if segment_int is not None:
+            if segment_int:
                 transitions.append(transition)
         return transitions
 
     def __create_second_party_segments(self) -> List[Dict]:
         second_party_condition = []
-        if self.second_party_segments is None:
+        if not self.second_party_segments:
             raise ValueError('self.second_party_segments is None')
         for segment in self.second_party_segments:
 
@@ -1038,7 +1036,7 @@ class QueryList(List[Query]):
 
     def __init__(self, queries: Optional[List[Query]] = None):
         """Initializes the QueryList with an optional list of Query objects."""
-        if queries is not None:
+        if queries:
             super().__init__(queries)
 
     def to_json(self, filepath: str):

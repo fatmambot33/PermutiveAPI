@@ -99,7 +99,7 @@ class ListHelper:
     def merge_list(lst1: List, lst2: Optional[Union[int, str, List]] = None) -> List:
         if isinstance(lst2, str) or isinstance(lst2, int):
             lst2 = [lst2]
-        if lst2 is None:
+        if not lst2:
             lst2 = []
         lst = list(filter(None, list(dict.fromkeys(lst1+lst2))))
         lst.sort()

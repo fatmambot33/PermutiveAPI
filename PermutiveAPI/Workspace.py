@@ -64,13 +64,14 @@ class Workspace():
                             masterKey: Optional[str] = None):
         import_segments = Segment.list(import_id=import_detail.id,
                                        privateKey=self.privateKey)
-        if len(import_segments) == 0:
+        if not import_segments:
+            logging.warning("Import has no segment")
             return
         if not cohorts_list:
             cohorts_list = Cohort.list(include_child_workspaces=True,
                                        privateKey=self.privateKey)
         api_key = masterKey if masterKey is not None else self.privateKey
-        cohort_tags=ListHelper.merge_list(TAGS,import_detail.name)
+        cohort_tags = ListHelper.merge_list(TAGS, import_detail.name)
         provider_query = Query(name=f"{prefix or ''}{import_detail.name}",
                                     tags=cohort_tags,
                                     second_party_segments=[])
@@ -132,6 +133,7 @@ class WorkspaceList(List[Workspace]):
         """Initializes the WorkspaceList with an optional list of Workspace objects."""
         super().__init__(workspaces if workspaces is not None else [])
         self.rebuild_cache()
+
     def rebuild_cache(self):
         """Rebuilds all caches based on the current state of the list."""
         self._id_dictionary_cache = {
@@ -152,8 +154,6 @@ class WorkspaceList(List[Workspace]):
         if not self._name_dictionary_cache:
             self.rebuild_cache()
         return self._name_dictionary_cache
-
-
 
     def sync_imports_segments(self):
         """Syncs imports and segments for each workspace in the list."""
