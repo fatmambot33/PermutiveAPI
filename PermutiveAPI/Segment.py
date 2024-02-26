@@ -19,10 +19,11 @@ class Segment():
     """
     Dataclass for the Segment entity in the Permutive ecosystem.
     """
-    id: str
+
     code: str
     name: str
     import_id: str
+    id: Optional[str] = None
     description: Optional[str] = None
     cpm: Optional[float] = 0.0
     categories: Optional[List[str]] = None
@@ -81,6 +82,12 @@ class Segment():
         response = APIRequestHandler.deleteRequest_static(privateKey=privateKey,
                                                           url=url)
         return response.status_code == 204
+
+    def sync(self,privateKey:str):
+        if self.id:
+            self.update(privateKey=privateKey)
+        else:
+            self.create(privateKey=privateKey)
 
     @staticmethod
     def get(import_id: str,
