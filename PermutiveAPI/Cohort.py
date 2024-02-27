@@ -1,5 +1,4 @@
 from typing import Dict, List, Optional
-from collections.abc import Iterable
 from dataclasses import dataclass, field
 import json
 import logging

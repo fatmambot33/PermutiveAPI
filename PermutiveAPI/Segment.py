@@ -3,7 +3,6 @@ from typing import List, Optional, Dict
 from dataclasses import dataclass, field
 from datetime import datetime
 import json
-from collections.abc import Iterable
 
 
 from .APIRequestHandler import APIRequestHandler
@@ -82,12 +81,6 @@ class Segment():
         response = APIRequestHandler.deleteRequest_static(privateKey=privateKey,
                                                           url=url)
         return response.status_code == 204
-
-    def sync(self,privateKey:str):
-        if self.id:
-            self.update(privateKey=privateKey)
-        else:
-            self.create(privateKey=privateKey)
 
     @staticmethod
     def get(import_id: str,
@@ -179,6 +172,8 @@ class SegmentList(List[Segment]):
         default_factory=dict, init=False)
     _name_dictionary_cache: Dict[str, Segment] = field(
         default_factory=dict, init=False)
+    _code_dictionary_cache: Dict[str, Segment] = field(
+        default_factory=dict, init=False)
 
     def __init__(self, segments: Optional[List[Segment]] = None):
         """Initializes the SegmentList with an optional list of Segment objects."""
@@ -191,16 +186,8 @@ class SegmentList(List[Segment]):
             segment.id: segment for segment in self if segment.id}
         self._name_dictionary_cache = {
             segment.name: segment for segment in self if segment.name}
-
-    def append(self, segment: Segment):
-        """Appends a Segment to the list and updates the caches."""
-        super().append(segment)
-        self.rebuild_cache()
-
-    def extend(self, segments: Iterable[Segment]):
-        """Extends the list with an iterable of Segments and updates the caches."""
-        super().extend(segments)
-        self.rebuild_cache()
+        self._code_dictionary_cache = {
+            segment.code: segment for segment in self if segment.name}
 
     @property
     def id_dictionary(self) -> Dict[str, Segment]:
@@ -215,3 +202,10 @@ class SegmentList(List[Segment]):
         if not self._name_dictionary_cache:
             self.rebuild_cache()
         return self._name_dictionary_cache
+
+    @property
+    def code_dictionary(self) -> Dict[str, Segment]:
+        """Returns a dictionary of segments indexed by their codes."""
+        if not self._code_dictionary_cache:
+            self.rebuild_cache()
+        return self._code_dictionary_cache
