@@ -1,3 +1,8 @@
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+[project]
+name='PermutiveAPI'
+version='v3.5.2'
+readme = "README.md"
+requires-python=">=3.7"
