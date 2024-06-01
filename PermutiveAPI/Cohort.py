@@ -5,8 +5,7 @@ import logging
 from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
 from datetime import datetime
-from .APIRequestHandler import APIRequestHandler
-from .Utils import FileHelper
+from .. import RequestHelper, FileHelper
 from collections import defaultdict
 
 _API_VERSION = "v2"
@@ -81,7 +80,9 @@ class Cohort():
         :param cohort: Cohort to be created.
         :return: Created cohort object.
         """
-        logging.debug(f"CohortAPI::create::{self.name}")
+        logging.log
+        logging.debug(f"{datetime.now()}::CohortAPI::create::{self.name}")
+        logging.debug(f"{datetime.now()}::CohortAPI::create::{self.name}")
         if not privateKey:
             raise ValueError("privateKey must be specified")
         if not self.query:
@@ -89,9 +90,9 @@ class Cohort():
         if self.id:
             logging.warning("id is specified")
         url = f"{_API_ENDPOINT}"
-        response = APIRequestHandler.postRequest_static(privateKey=privateKey,
+        response = RequestHelper.postRequest_static(privateKey=privateKey,
                                                         url=url,
-                                                        data=APIRequestHandler.to_payload_static(self, _API_PAYLOAD))
+                                                        data=RequestHelper.to_payload_static(self, _API_PAYLOAD))
         created = Cohort(**response.json())
         self.id = created.id
         self.code = created.code
@@ -105,16 +106,16 @@ class Cohort():
         :param updated_cohort: Updated cohort data.
         :return: Updated cohort object.
         """
-        logging.debug(f"CohortAPI::update::{self.name}")
+        logging.debug(f"{datetime.now()}::CohortAPI::update::{self.name}")
         if not privateKey:
             raise ValueError("privateKey must be specified")
         if not self.id:
             logging.warning("id must be specified")
         url = f"{_API_ENDPOINT}{self.id}"
 
-        response = APIRequestHandler.patchRequest_static(privateKey=privateKey,
+        response = RequestHelper.patchRequest_static(privateKey=privateKey,
                                                          url=url,
-                                                         data=APIRequestHandler.to_payload_static(self, _API_PAYLOAD))
+                                                         data=RequestHelper.to_payload_static(self, _API_PAYLOAD))
 
         return Cohort(**response.json())
 
@@ -125,13 +126,13 @@ class Cohort():
         :param cohort_id: ID of the cohort to be deleted.
         :return: None
         """
-        logging.debug(f"CohortAPI::update::{self.name}")
+        logging.debug(f"{datetime.now()}::CohortAPI::update::{self.name}")
         if not privateKey:
             raise ValueError("privateKey must be specified")
         if not self.id:
             logging.warning("id must be specified")
         url = f"{_API_ENDPOINT}{self.id}"
-        APIRequestHandler.deleteRequest_static(privateKey=privateKey,
+        RequestHelper.deleteRequest_static(privateKey=privateKey,
                                                url=url)
 
     @staticmethod
@@ -143,9 +144,9 @@ class Cohort():
         :param cohort_id: ID of the cohort.
         :return: Cohort object or None if not found.
         """
-        logging.debug(f"CohortAPI::get::{id}")
+        logging.debug(f"{datetime.now()}::CohortAPI::get::{id}")
         url = f"{_API_ENDPOINT}{id}"
-        response = APIRequestHandler.getRequest_static(privateKey=privateKey,
+        response = RequestHelper.getRequest_static(privateKey=privateKey,
                                                        url=url)
 
         return Cohort(**response.json())
@@ -161,7 +162,7 @@ class Cohort():
             :param cohort_name: str Cohort Name. Required
             :return: Cohort object
         '''
-        logging.debug(f"CohortAPI::get_by_name::{name}")
+        logging.debug(f"{datetime.now()}::CohortAPI::get_by_name::{name}")
 
         for cohort in Cohort.list(include_child_workspaces=True,
                                   privateKey=privateKey):
@@ -181,7 +182,7 @@ class Cohort():
         '''
         if type(code) == str:
             code = int(code)
-        logging.debug(f"CohortAPI::get_by_code::{code}")
+        logging.debug(f"{datetime.now()}::CohortAPI::get_by_code::{code}")
         for cohort in Cohort.list(include_child_workspaces=True,
                                   privateKey=privateKey):
             if code == cohort.code and cohort.id:
@@ -201,12 +202,13 @@ class Cohort():
         if not privateKey:
             raise ValueError("No Private Key")
 
-        url = APIRequestHandler.gen_url_with_key(_API_ENDPOINT, privateKey)
+        url = RequestHelper.gen_url_with_key(_API_ENDPOINT, privateKey)
         if include_child_workspaces:
             url = f"{url}&include-child-workspaces=true"
 
-        response = APIRequestHandler.getRequest_static(privateKey, url)
-        cohort_list =CohortList([Cohort(**cohort) for cohort in response.json()])
+        response = RequestHelper.getRequest_static(privateKey, url)
+        cohort_list = CohortList([Cohort(**cohort)
+                                 for cohort in response.json()])
         return cohort_list
 
     def to_json(self, filepath: str):
@@ -240,7 +242,6 @@ class CohortList(List[Cohort]):
         super().__init__(cohorts if cohorts is not None else [])
         self.rebuild_cache()
 
-
     def rebuild_cache(self):
         """Rebuilds all caches based on the current state of the list."""
         self._id_dictionary_cache = {
@@ -256,7 +257,6 @@ class CohortList(List[Cohort]):
             if cohort.workspace_id:
                 self._workspace_dictionary_cache[cohort.workspace_id].append(
                     cohort)
-
 
     @property
     def id_dictionary(self) -> Dict[str, Cohort]:

@@ -1,5 +1,5 @@
 import logging
-
+import json
 from typing import Dict, List, Optional, Union, Any, Tuple
 from dataclasses import dataclass, field
 
@@ -7,10 +7,9 @@ from collections import defaultdict
 from collections.abc import Iterable
 import urllib.parse
 
-from .Utils import FileHelper, ListHelper
-
+from .. import FileHelper, ListHelper
 from .Cohort import Cohort
-import json
+
 
 ITEMS = {'ä': 'a',  'â': 'a', 'á': 'a', 'à': 'a', 'ã': 'a', 'ç': 'c', 'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
          'í': 'i',  'ï': 'i', 'ò': 'o', 'ó': 'o', 'õ': 'o', 'ô': 'o', 'ñ': 'n', 'ù': 'u', 'ú': 'u', 'ü': 'u'}
