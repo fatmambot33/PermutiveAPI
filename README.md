@@ -1,2 +1,3 @@
 # PermutiveAPI
-python repo to interact with the Permutive API
+pypi package to interact with the Permutive API
+pip install PermutiveAPI --upgrade
