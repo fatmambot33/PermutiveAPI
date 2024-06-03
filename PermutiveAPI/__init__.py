@@ -227,27 +227,6 @@ class RequestHelper:
         return response
 
     @staticmethod
-    def to_payload_static2s(dataclass_obj: Any, api_payload: List[str]) -> Dict[str, Any]:
-        """
-        Convert a data class object to a dictionary payload.
-
-        Args:
-            dataclass_obj (Any): The data class object to be converted.
-
-        Returns:
-            Dict[str, Any]: The dictionary payload.
-        """
-        from dataclasses import asdict
-        full_payload = asdict(dataclass_obj)
-
-        if api_payload:
-            payload = {key: value for key, value in full_payload.items(
-            ) if value and key in api_payload}
-            return payload
-
-        return {key: value for key, value in full_payload.items() if value}
-
-    @staticmethod
     def to_payload_static(dataclass_obj: Any, api_payload: Optional[List[str]] = None) -> Dict[str, Any]:
         """
             Convert a data class object to a dictionary payload.
@@ -379,7 +358,7 @@ class ListHelper:
 
 from .Cohort import Cohort, CohortList
 from .Import import Import, ImportList,Segment, SegmentList
-from .User import User
+from .User import Identify
 from .Query import Query, QueryList
 
 
@@ -558,4 +537,4 @@ class WorkspaceList(List[Workspace]):
 
 
 __all__ = ["Cohort", "CohortList", "Import", "ImportList", "Segment", "SegmentList",
-           "Workspace", "WorkspaceList", "Query", "QueryList", "User"]
+           "Workspace", "WorkspaceList", "Query", "QueryList", "Identify"]
