@@ -2,9 +2,9 @@ import logging
 import json
 from typing import List
 from dataclasses import dataclass
-import datetime
+from datetime import datetime
 
-from .. import RequestHelper, FileHelper
+from . import RequestHelper, FileHelper
 
 _API_VERSION = 'v2.0'
 _API_ENDPOINT = f'https://api.permutive.com/{_API_VERSION}/identify'
@@ -87,7 +87,7 @@ class User(RequestHelper):
 
         return self.postRequest(
             url=url,
-            data=self.to_payload(identity))
+            data=self.to_payload_static(identity))
     @staticmethod
     def identify_static(
                     identity: Identity,

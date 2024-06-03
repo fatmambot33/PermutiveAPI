@@ -7,7 +7,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 import urllib.parse
 
-from .. import FileHelper, ListHelper
+from . import FileHelper, ListHelper
 from .Cohort import Cohort
 
 

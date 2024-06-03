@@ -5,7 +5,7 @@ import logging
 from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
 from datetime import datetime
-from .. import RequestHelper, FileHelper
+from . import RequestHelper, FileHelper
 from collections import defaultdict
 
 _API_VERSION = "v2"
