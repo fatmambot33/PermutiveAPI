@@ -70,7 +70,7 @@ def Identify(
     logging.debug(
         f"{datetime.now()}::UserAPI::identify::{identity.user_id}")
 
-    url = f"{_API_ENDPOINT}/{id}"
+    url = f"{_API_ENDPOINT}"
 
     aliases_name = [alias.tag for alias in identity.aliases]
     if "email_sha256" in aliases_name and "uID" not in aliases_name:
@@ -89,4 +89,5 @@ def Identify(
 
     return RequestHelper.postRequest_static(privateKey=privateKey,
                                             url=url,
-                                            data=RequestHelper.to_payload_static(identity))
+                                            data=RequestHelper.to_payload_static(identity,
+                                                                                 _API_PAYLOAD))

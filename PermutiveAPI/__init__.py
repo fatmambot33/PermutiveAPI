@@ -1,5 +1,3 @@
-
-
 import logging
 import os
 from typing import Dict, List, Optional, Any, Union
@@ -104,7 +102,7 @@ class RequestHelper:
         """
         response = None
         url = RequestHelper.gen_url_with_key(url=url,
-                                                 privateKey=privateKey)
+                                             privateKey=privateKey)
         try:
             response = requests.patch(url,
                                       headers=RequestHelper.DEFAULT_HEADERS,
@@ -242,10 +240,13 @@ class RequestHelper:
 
         """
         dataclass_dict = vars(dataclass_obj)
-        if api_payload:
-            return {key: value for key, value in dataclass_dict.items() if value and key in api_payload}
-        return {key: value for key, value in dataclass_dict.items() if value}
+        filtered_dict = {key: value for key, value in dataclass_dict.items(
+        ) if value and (api_payload is None or key in api_payload)}
 
+        # Serialize using the custom serializer
+        final_dict = json.loads(json.dumps(
+            filtered_dict, default=FileHelper.json_default))
+        return final_dict
 
     @staticmethod
     def handle_exception(response: Optional[Response], e: Exception):
@@ -356,12 +357,11 @@ class ListHelper:
         return lst
 
 
-from .Cohort import Cohort, CohortList
-from .Import import Import, ImportList,Segment, SegmentList
-from .User import Identify
+
+from .Import import Import, ImportList, Segment, SegmentList
 from .Query import Query, QueryList
-
-
+from .User import Identify
+from .Cohort import Cohort, CohortList
 TAGS = ['#automatic', '#imports']
 
 
@@ -534,6 +534,8 @@ class WorkspaceList(List[Workspace]):
 
         workspace_list = FileHelper.from_json(filepath)
         return WorkspaceList([Workspace(**workspace) for workspace in workspace_list])
+
+
 
 
 __all__ = ["Cohort", "CohortList", "Import", "ImportList", "Segment", "SegmentList",
