@@ -61,6 +61,35 @@ class Identity():
             raise ValueError(f'{filepath} does not exist')
         with open(file=filepath, mode='r') as json_file:
             return Identity(**json.load(json_file))
+    
+    def Identify(
+        self,
+        privateKey: str):
+
+        logging.debug(
+            f"{datetime.now()}::UserAPI::identify::{self.user_id}")
+
+        url = f"{_API_ENDPOINT}"
+
+        aliases_name = [alias.tag for alias in self.aliases]
+        if "email_sha256" in aliases_name and "uID" not in aliases_name:
+            alias_id = next(
+                (alias.id for alias in self.aliases if alias.tag == "email_sha256"), "")
+            alias = Alias(id=alias_id,
+                        tag="uID")
+            self.aliases.append(alias)
+        if "email_sha256" not in aliases_name and "uID" in aliases_name:
+            tag = "uID"
+            alias_id = next(
+                (alias.id for alias in self.aliases if alias.tag == tag), "")
+            alias = Alias(id=alias_id,
+                            tag="email_sha256")
+            self.aliases.append(alias)
+
+        return RequestHelper.postRequest_static(privateKey=privateKey,
+                                                url=url,
+                                                data=RequestHelper.to_payload_static(self,
+                                                                                    _API_PAYLOAD))
 
 
 def Identify(
