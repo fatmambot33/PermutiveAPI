@@ -376,10 +376,6 @@ class ListHelper:
         lst.sort()
         return lst
 
-from dataclasses import dataclass, field
-import os
-import json
-import logging
 
 from .Cohort import Cohort, CohortList
 from .Import import Import, ImportList,Segment, SegmentList
@@ -431,7 +427,7 @@ class Workspace():
                                          masterKey=masterKey)
 
     def sync_import_cohorts(self,
-                            import_detail: 'Import',
+                            import_detail: Import,
                             prefix: Optional[str] = None,
                             cohorts_list: Optional[CohortList] = None,
                             masterKey: Optional[str] = None):
