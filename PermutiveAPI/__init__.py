@@ -360,7 +360,7 @@ class ListHelper:
 
 from .Import import Import, ImportList, Segment, SegmentList
 from .Query import Query, QueryList
-from .User import Identify
+from .User import Identity,AliasList,Alias,Identify
 from .Cohort import Cohort, CohortList
 TAGS = ['#automatic', '#imports']
 
@@ -539,4 +539,4 @@ class WorkspaceList(List[Workspace]):
 
 
 __all__ = ["Cohort", "CohortList", "Import", "ImportList", "Segment", "SegmentList",
-           "Workspace", "WorkspaceList", "Query", "QueryList", "Identify"]
+           "Workspace", "WorkspaceList", "Query", "QueryList","Identity","AliasList","Alias", "Identify"]
