@@ -21,17 +21,12 @@ class Query():
     workspace: Optional[str] = "CN"
     id: Optional[str] = None
     description: Optional[str] = None
-    accurate_id: Optional[str] = None
-    volume_id: Optional[str] = None
     keywords: Optional[List[str]] = None
     urls: Optional[List[str]] = None
     taxonomy: Optional[List[str]] = None
     segments: Optional[List[str]] = None
     second_party_segments: Optional[List[Tuple[str, str]]] = None
     third_party_segments: Optional[List[int]] = None
-    cohort_wrap: Optional[str] = None
-    accurate_segments: Optional[List[str]] = None
-    volume_segments: Optional[List[str]] = None
     domains: Optional[List[str]] = None
     number: Optional[str] = None
     during_value: int = 0
@@ -44,58 +39,11 @@ class Query():
     workspace_id: Optional[str] = None
     tags: Optional[List[str]] = None
 
-    @property
-    def keyword_slugs(self) -> Optional[List[str]]:
-        new_list = list()
-        if self.keywords:
-            for keyword in self.keywords:
-                if isinstance(keyword, str):
-                    if len(keyword) > 0:
-                        if keyword[0] != '/':
-                            keyword_verso = keyword.strip()
-                            keyword_verso = keyword_verso.lower()
-                            keyword_verso = keyword_verso.replace('  ', ' ')
-                            brut = urllib.parse.quote(keyword_verso)
-                            if brut[0] != '-':
-                                brut = '-'+brut
-                            if brut[-1] != '-':
-                                brut = brut+'-'
-                            new_list.append(brut)
-                            keyword_verso = keyword_verso.replace(' ', '-')
-                            for items_in in ITEMS:
-                                keyword_verso = keyword_verso.replace(
-                                    items_in, ITEMS[items_in])
-                            keyword_verso = urllib.parse.quote(keyword_verso)
-                            if keyword_verso[0] != '-':
-                                keyword_verso = '-'+keyword_verso
-                            if keyword_verso[-1] != '-':
-                                keyword_verso = keyword_verso+'-'
-                            new_list.append(keyword_verso)
-            return ListHelper.merge_list(new_list)  # type: ignore
-        return None
-
     def __getitem__(self, key):
         return getattr(self, key)
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
-
-    def sync_clickers(self, api_key):
-        if not self.name:
-            raise ValueError("self.name is None")
-
-        logging.debug('segment: ' + self.name)
-
-        cohort = Cohort.get_by_name(privateKey=api_key,
-                                    name=self.name + " | Clickers")
-        if cohort:
-            cohort.query = self.__create_cohort_query_clickers()
-            cohort.update(privateKey=api_key)
-
-        else:
-            cohort = Cohort(
-                name=self.name + " | Clickers", query=self.__create_cohort_query_clickers())
-            cohort.create(privateKey=api_key)
 
     def sync(self, api_key: str):
 
@@ -105,7 +53,7 @@ class Query():
             name=self.name,
             id=self.id,
             description=self.description,
-            query=self.to_query(),
+            query=self.to_permutive_query(),
             tags=self.tags)
 
         if self.keywords:
@@ -116,11 +64,10 @@ class Query():
             cohort.create(privateKey=api_key)
             self.id = cohort.id
 
-    def to_query2(self) -> Dict:
+    def to_permutive_query(self) -> Dict:
         query_list = []
         if self.keywords or self.taxonomy or self.urls:
             q_PageView = Query.PageView(keywords=self.keywords,
-                                        keyword_slugs=self.keyword_slugs,
                                         taxonomy=self.taxonomy,
                                         frequency_value=self.frequency_value,
                                         during_value=self.during_value)
@@ -168,106 +115,72 @@ class Query():
             'or': query_list
         }
         if self.domains:
-            query = {'and': [query, self.__create_cohort_domains()]}
+            domain_condition = {
+                'event': 'Pageview',
+                'frequency': {
+                    'greater_than_or_equal_to': 1
+                },
+                'where': {
+                    'condition': {
+                        'contains': self.domains
+                    },
+                    'property': 'properties.client.domain'
+                }
+            }
+            query = {'and': [query, domain_condition]}
 
         return query
 
-    def to_query(self) -> Dict:
-        query_list = []
-        slugify_keywords = []
-        if self.keywords or self.taxonomy or self.urls:
-            if self.keywords:
-                slugify_keywords = Query.slugify_keywords(self.keywords)
-                query_list.append(self.__create_cohort_pageview(
-                    slugify_keywords=slugify_keywords))
-                query_list.append(
-                    self.__create_cohort_videoview(slugify_keywords=slugify_keywords))
-            if self.engaged_time:
-                query_list.append(
-                    self.__create_cohort_engaged_time(slugify_keywords=slugify_keywords))
-            if self.engaged_completion:
-                query_list.append(
-                    self.__create_cohort_engaged_completion(slugify_keywords=slugify_keywords))
-            if self.link_click:
-                query_list.append(
-                    self.__create_cohort_link_click(slugify_keywords=slugify_keywords))
-
-        if self.slot_click:
-            query_list.append(self.__create_cohort_slot_click())
-
-        if self.segments:
-            query_list = query_list + self.__create_cohort_transition()
-
-        if self.second_party_segments:
-            for second_party_segment in self.second_party_segments:
-                q = Query.SecondPartyTransitionCondition(provider=second_party_segment[0],
-                                                         segment=second_party_segment[1])
-                query_list.append(q.to_query())
-
-        query = {
-            'or': query_list
-        }
-        if self.domains:
-            query = {'and': [query, self.__create_cohort_domains()]}
-
-        return query
-
-    def merge(self, wrap_query: 'Query'):
-        if wrap_query.segments:
+    def merge(self, second_query: 'Query'):
+        if second_query.segments:
             if self.segments:
                 self.segments = ListHelper.merge_list(
-                    self.segments, wrap_query.segments)
+                    self.segments, second_query.segments)
             else:
-                self.segments = wrap_query.segments
+                self.segments = second_query.segments
 
-        if wrap_query.accurate_segments:
-            if self.accurate_segments:
-                self.accurate_segments = ListHelper.merge_list(
-                    self.accurate_segments, wrap_query.accurate_segments)
-            else:
-                self.accurate_segments = wrap_query.accurate_segments
-
-        if wrap_query.volume_segments:
-            if self.volume_segments:
-                self.volume_segments = ListHelper.merge_list(
-                    self.volume_segments, wrap_query.volume_segments)
-            else:
-                self.volume_segments = wrap_query.volume_segments
-        if wrap_query.keywords:
+        if second_query.keywords:
             if self.keywords:
                 self.keywords = ListHelper.merge_list(
-                    self.keywords, wrap_query.keywords)
+                    self.keywords, second_query.keywords)
 
             else:
-                self.keywords = wrap_query.keywords
-        if wrap_query.taxonomy:
+                self.keywords = second_query.keywords
+        if second_query.taxonomy:
             if self.taxonomy:
                 self.taxonomy = ListHelper.merge_list(
-                    self.taxonomy, wrap_query.taxonomy)
+                    self.taxonomy, second_query.taxonomy)
 
             else:
-                self.taxonomy = wrap_query.taxonomy
-        if wrap_query.urls:
+                self.taxonomy = second_query.taxonomy
+        if second_query.urls:
             if self.urls:
                 self.urls = ListHelper.merge_list(
-                    self.urls, wrap_query.urls)
+                    self.urls, second_query.urls)
 
             else:
-                self.urls = wrap_query.urls
+                self.urls = second_query.urls
 
-        if wrap_query.second_party_segments:
+        if second_query.second_party_segments:
             if self.second_party_segments:
                 self.second_party_segments = ListHelper.merge_list(
-                    self.second_party_segments, wrap_query.second_party_segments)
+                    self.second_party_segments, second_query.second_party_segments)
             else:
-                self.second_party_segments = wrap_query.second_party_segments
+                self.second_party_segments = second_query.second_party_segments
 
-        if wrap_query.third_party_segments:
+        if second_query.third_party_segments:
             if self.third_party_segments:
                 self.third_party_segments = ListHelper.merge_list(
-                    self.third_party_segments, wrap_query.third_party_segments)
+                    self.third_party_segments, second_query.third_party_segments)
             else:
-                self.third_party_segments = wrap_query.third_party_segments
+                self.third_party_segments = second_query.third_party_segments
+
+        if second_query.domains:
+            if self.domains:
+                self.third_party_segments = ListHelper.merge_list(
+                    self.domains, second_query.domains)
+            else:
+                self.domains = second_query.domains
 
     @staticmethod
     def values_to_condition(property: str,
@@ -538,423 +451,6 @@ class Query():
                      'segment': self.third_party_segment.segment
                      }
             }
-
-# region permutive query dict
-
-    def __create_cohort_query_clickers(self) -> Dict:
-        query_list = []
-        query_list.append(self.__create_cohort_slot_click())
-
-        query = {
-            'or': query_list
-        }
-
-        return query
-
-    def __create_cohort_pageview(self, slugify_keywords: Optional[List[str]] = None) -> Dict:
-
-        conditions = []
-        if not slugify_keywords:
-            slugify_keywords = []
-        contains = []
-        if self.keywords:
-            for keyword in self.keywords:
-                if " " in keyword or "-" in keyword or len(keyword) > 7:
-                    contains.append(keyword)
-                else:
-                    contains.append(f' {keyword} ')
-
-            conditions.append({
-                'condition': {
-                    'contains': contains
-                },
-                'property': 'properties.article.title'})
-            conditions.append({
-                'condition': {
-                    'contains': contains
-                },
-                'property': 'properties.article.description'})
-            conditions.append({
-                'condition': {
-                    'equal_to': self.keywords
-                },
-                'property': 'properties.article.category'})
-            conditions.append({
-                'condition': {
-                    'equal_to': self.keywords
-                },
-                'property': 'properties.article.subcategory'})
-            conditions.append({
-                'condition': {
-                    'list_contains': self.keywords
-                },
-                'property': 'properties.article.tags'})
-
-        if self.taxonomy:
-            conditions.append({
-                'condition': {
-                    'list_contains': self.taxonomy
-                },
-                'property': 'properties.classifications_watson.taxonomy_labels'})
-        if (self.urls is not None) or (self.keywords is not None):
-            urls_list = []
-            if self.urls:
-                urls_list = self.urls.copy()
-            if self.keywords:
-                urls_list = urls_list + slugify_keywords
-            urls_list = ListHelper.merge_list(urls_list)
-            urls_list.sort()
-
-            conditions.append({
-                'condition': {
-                    'contains': urls_list
-                },
-                'property': 'properties.client.url'})
-        if self.during_value is not None and self.during_value > 0:
-
-            pv = {
-                'during': {
-                    'the_last': {
-                        'unit': 'days',
-                                'value': self.during_value
-                    }
-                },
-                'event': 'Pageview',
-                'frequency': {
-                    'greater_than_or_equal_to': self.frequency_value
-                },
-                'where': {
-                    'or': conditions
-                }
-            }
-        else:
-            pv = {
-                'event': 'Pageview',
-                'frequency': {
-                    'greater_than_or_equal_to': self.frequency_value
-                },
-                'where': {
-                    'or': conditions
-                }
-            }
-        return pv
-
-    def __create_cohort_videoview(self, slugify_keywords: Optional[List[str]] = None) -> Dict:
-
-        conditions = []
-        if not slugify_keywords:
-            slugify_keywords = []
-        contains = []
-        if self.keywords:
-            for keyword in self.keywords:
-                if " " in keyword or "-" in keyword or len(keyword) > 7:
-                    contains.append(keyword)
-                else:
-                    contains.append(f' {keyword} ')
-
-            conditions.append({
-                'condition': {
-                    'contains': contains
-                },
-                'property': 'properties.videoTitle'})
-
-        if self.during_value is not None and self.during_value > 0:
-
-            vv = {
-                'during': {
-                    'the_last': {
-                        'unit': 'days',
-                                'value': self.during_value
-                    }
-                },
-                'event': 'videoViews',
-                'frequency': {
-                    'greater_than_or_equal_to': self.frequency_value
-                },
-                'where': {
-                    'or': conditions
-                }
-            }
-        else:
-            vv = {
-                'event': 'videoViews',
-                'frequency': {
-                    'greater_than_or_equal_to': self.frequency_value
-                },
-                'where': {
-                    'or': conditions
-                }
-            }
-        return vv
-
-    def __create_cohort_link_click(self,  slugify_keywords: Optional[List[str]] = None, dest_urls: List[str] = ['facebook.com', 'instagram.com', 'pinterest.com'],) -> Dict:
-        keyword_slugs = []
-        if slugify_keywords:
-            keyword_slugs = slugify_keywords
-        if self.urls:
-            keyword_slugs = list(
-                dict.fromkeys(keyword_slugs + self.urls))
-        LinkClick = {
-            'event': 'LinkClick',
-            'frequency': {
-                'greater_than_or_equal_to': 1
-            },
-            'where': {
-                'and': [
-                    {
-                        'condition': {
-                            'contains': dest_urls
-                        },
-                        'property': 'properties.dest_url'
-                    },
-                    {
-                        'condition': {
-                            'contains': keyword_slugs
-                        },
-                        'property': 'properties.client.url'
-                    }
-                ]
-            }
-        }
-        return LinkClick
-
-    def __create_cohort_engaged_time(self,  slugify_keywords: Optional[List[str]] = None) -> Dict:
-
-        conditions = []
-        if self.keywords:
-            conditions.append({
-                'condition': {
-                    'contains': [f' {keyword} ' for keyword in self.keywords]
-                },
-                'property': 'properties.article.title'})
-            conditions.append({
-                'condition': {
-                    'contains': [f' {keyword} ' for keyword in self.keywords]
-                },
-                'property': 'properties.article.description'})
-            conditions.append({
-                'condition': {
-                    'equal_to': self.keywords
-                },
-                'property': 'properties.article.category'})
-            conditions.append({
-                'condition': {
-                    'equal_to': self.keywords
-                },
-                'property': 'properties.article.subcategory'})
-            conditions.append({
-                'condition': {
-                    'list_contains': self.keywords
-                },
-                'property': 'properties.article.tags'})
-
-        if self.taxonomy:
-            conditions.append({
-                'condition': {
-                    'list_contains': self.taxonomy
-                },
-                'property': 'properties.classifications_watson.taxonomy_labels'})
-
-        if (self.urls is not None) or (self.keywords is not None):
-            urls_list = []
-            if (self.urls is not None):
-                urls_list = self.urls.copy()
-            if (slugify_keywords is not None):
-                urls_list = urls_list + slugify_keywords
-            urls_list = ListHelper.merge_list(urls_list)
-            urls_list.sort()
-
-            conditions.append({
-                'condition': {
-                    'contains': urls_list
-                },
-                'property': 'properties.client.url'})
-
-        engaged_time = {'engaged_time': {
-            'seconds': {'greater_than': 30},
-            'where': {'or': conditions}}
-        }
-        return engaged_time
-
-    def __create_cohort_engaged_completion(self,  slugify_keywords: Optional[List[str]] = None) -> Dict:
-
-        conditions = []
-        if not self.keywords and not self.taxonomy and not self.urls:
-            raise ValueError(
-                'self.keywords is None and self.taxonomy is None and self.urls is None')
-        if self.keywords:
-            conditions.append({
-                'condition': {
-                    'contains': [f' {keyword} ' for keyword in self.keywords]
-                },
-                'property': 'properties.article.title'})
-            conditions.append({
-                'condition': {
-                    'contains': [f' {keyword} ' for keyword in self.keywords]
-                },
-                'property': 'properties.article.description'})
-            conditions.append({
-                'condition': {
-                    'equal_to': self.keywords
-                },
-                'property': 'properties.article.category'})
-            conditions.append({
-                'condition': {
-                    'equal_to': self.keywords
-                },
-                'property': 'properties.article.subcategory'})
-            conditions.append({
-                'condition': {
-                    'list_contains': self.keywords
-                },
-                'property': 'properties.article.tags'})
-
-        if self.taxonomy:
-            conditions.append({
-                'condition': {
-                    'list_contains': self.taxonomy
-                },
-                'property': 'properties.classifications_watson.taxonomy_labels'})
-
-        if self.urls is not None or self.keywords:
-            urls_list = []
-            if self.urls:
-                urls_list = self.urls.copy()
-            if slugify_keywords:
-                urls_list = urls_list + slugify_keywords
-            urls_list = ListHelper.merge_list(urls_list)
-            urls_list.sort()
-
-            conditions.append({
-                'condition': {
-                    'contains': urls_list
-                },
-                'property': 'properties.client.url'})
-
-        engaged_completion = {'engaged_completion':
-                              {'completion': {'greater_than': 0.6},
-                               'where': {'or': conditions}}}
-        return engaged_completion
-
-    def __create_cohort_slot_click(self) -> Dict:
-        if self.segments:
-            segments_list = self.segments.copy()
-        else:
-            segments_list = []
-
-        segments_list.append(str(self.number))
-        slot_click = {
-            'event': 'GamLogSlotClicked',
-            'frequency': {
-                'greater_than_or_equal_to': 1
-            },
-            'where': {
-                'condition': {
-                    'condition': {
-                        'equal_to': 'permutive'
-                    },
-                    'function': 'any',
-                    'property': 'key',
-                    'where': {
-                        'condition': {
-                                'list_contains': [str(segment) for segment in segments_list]
-                        },
-                        'property': 'value'
-                    }
-                },
-                'property': 'properties.slot.targeting_keys'
-            }
-        }
-        return slot_click
-
-    def __create_cohort_transition(self) -> List[Dict]:
-        transitions = []
-        if not self.segments:
-            raise ValueError('self.segments is None')
-        for segment in self.segments:
-            segment_int = None
-            if isinstance(segment, str):
-                try:
-                    segment_int = int(segment)
-                except ValueError:
-                    # If the value cannot be converted to an integer, skip to the next iteration
-                    continue
-            elif isinstance(segment, int):
-                segment_int = segment
-
-            transition = {
-                'has_entered': {
-                    'during': {
-                        'the_last': {
-                            'unit': 'days',
-                                    'value': 30
-                        }
-                    },
-                    'segment': segment_int
-                }
-            }
-            if segment_int:
-                transitions.append(transition)
-        return transitions
-
-    def __create_second_party_segments(self) -> List[Dict]:
-        second_party_condition = []
-        if not self.second_party_segments:
-            raise ValueError('self.second_party_segments is None')
-        for segment in self.second_party_segments:
-
-            second_party = {"in_second_party_segment": {
-                "provider": segment[0],
-                "segment": segment[1]
-            }}
-            second_party_condition.append(second_party)
-        return second_party_condition
-
-    def __create_cohort_domains(self) -> Dict:
-        domain_condition = {
-            'event': 'Pageview',
-            'frequency': {
-                'greater_than_or_equal_to': 1
-            },
-            'where': {
-                'condition': {
-                    'contains': self.domains
-                },
-                'property': 'properties.client.domain'
-            }
-        }
-        return domain_condition
-# endregion
-
-    @ staticmethod
-    def slugify_keywords(keywords: List[str]) -> List[str]:
-        logging.debug("slugify_keywords")
-        new_list = []
-        for keyword in keywords:
-            if isinstance(keyword, str):
-                if len(keyword) > 0:
-                    if keyword[0] != '/':
-                        keyword_verso = keyword.strip()
-                        keyword_verso = keyword_verso.lower()
-                        keyword_verso = keyword_verso.replace('  ', ' ')
-                        brut = urllib.parse.quote(keyword_verso)
-                        if brut[0] != '-':
-                            brut = '-'+brut
-                        if brut[-1] != '-':
-                            brut = brut+'-'
-                        new_list.append(brut)
-                        keyword_verso = keyword_verso.replace(' ', '-')
-                        for items_in in ITEMS:
-                            keyword_verso = keyword_verso.replace(
-                                items_in, ITEMS[items_in])
-                        keyword_verso = urllib.parse.quote(keyword_verso)
-                        if keyword_verso[0] != '-':
-                            keyword_verso = '-'+keyword_verso
-                        if keyword_verso[-1] != '-':
-                            keyword_verso = keyword_verso+'-'
-                        new_list.append(keyword_verso)
-
-        return ListHelper.merge_list(new_list)
 
 
 @dataclass
