@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 
 from collections import defaultdict
 from collections.abc import Iterable
-import urllib.parse
 
 from . import FileHelper, ListHelper
 from .Cohort import Cohort
@@ -418,7 +417,6 @@ class Query():
                         'value': self.value
                     }
                 }
-            return condition
 
             return {self.transition_type: condition}
 
