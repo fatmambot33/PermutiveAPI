@@ -6,7 +6,7 @@ import json
 from collections import defaultdict
 
 
-from . import RequestHelper, FileHelper
+from .Utils import RequestHelper, FileHelper
 
 
 
