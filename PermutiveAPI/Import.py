@@ -1,13 +1,12 @@
 import logging
 from typing import Dict, List, Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 import json
 from collections import defaultdict
 
 
 from .Utils import RequestHelper, FileHelper
-
 
 
 _API_VERSION = "v1"
@@ -96,7 +95,7 @@ class Import():
     def to_json(self, filepath: str):
         FileHelper.check_filepath(filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(self, f,
+            json.dump(asdict(self), f,
                       ensure_ascii=False, indent=4, default=FileHelper.json_default)
 
     @staticmethod
@@ -105,18 +104,8 @@ class Import():
             return Import(**json.load(json_file))
 
 
-@dataclass
 class ImportList(List[Import]):
-    # Cache for each dictionary to avoid rebuilding
-    _id_dictionary_cache: Dict[str, Import] = field(
-        default_factory=dict, init=False)
-    _name_dictionary_cache: Dict[str, Import] = field(
-        default_factory=dict, init=False)
-    _identifier_dictionary_cache: Dict[str, 'ImportList'] = field(
-        default_factory=dict, init=False)
-
     def __init__(self, imports: Optional[List[Import]] = None):
-        """Initializes the ImportList with an optional list of Import objects."""
         super().__init__(imports if imports is not None else [])
         self.rebuild_cache()
 
@@ -166,7 +155,7 @@ class Segment():
     description: Optional[str] = None
     cpm: Optional[float] = 0.0
     categories: Optional[List[str]] = None
-    updated_at: Optional[datetime] = datetime.now()
+    updated_at: Optional[datetime] = field(default_factory=datetime.now)
 
     def create(self, privateKey: str):
         """
@@ -305,15 +294,7 @@ class Segment():
             return Segment(**json.load(json_file))
 
 
-@dataclass
 class SegmentList(List[Segment]):
-    # Cache for each dictionary to avoid rebuilding
-    _id_dictionary_cache: Dict[str, Segment] = field(
-        default_factory=dict, init=False)
-    _name_dictionary_cache: Dict[str, Segment] = field(
-        default_factory=dict, init=False)
-    _code_dictionary_cache: Dict[str, Segment] = field(
-        default_factory=dict, init=False)
 
     def __init__(self, segments: Optional[List[Segment]] = None):
         """Initializes the SegmentList with an optional list of Segment objects."""

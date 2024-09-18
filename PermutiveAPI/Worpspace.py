@@ -1,12 +1,11 @@
 import logging
 import os
 from typing import Dict, List, Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field,asdict
 import json
 
 
-from . import ListHelper, FileHelper
-from .Query import Query
+from .Utils import FileHelper
 from .Import import Import, Segment
 from .Cohort import Cohort, CohortList
 
@@ -24,10 +23,9 @@ class Workspace():
     privateKey: str
 
     @property
-    def isTopLevel(self):
-        if self.organizationID == self.workspaceID:
-            return True
-        return False
+    def isTopLevel(self) -> bool:
+        """Determines if the workspace is the top-level workspace."""
+        return self.organizationID == self.workspaceID
 
     def list_cohorts(self,
                      include_child_workspaces: bool = False) -> CohortList:
@@ -40,100 +38,13 @@ class Workspace():
     def list_segments(self, import_id: str) -> List[Segment]:
         return Segment.list(import_id=import_id, privateKey=self.privateKey)
 
-    def sync_imports_cohorts(self,
-                             import_detail: 'Import',
-                             prefix: Optional[str] = None,
-                             inheritance: bool = False,
-                             masterKey: Optional[str] = None):
-        cohorts_list = self.list_cohorts(include_child_workspaces=True)
-        for import_detail in Import.list(privateKey=self.privateKey):
-            if (inheritance and import_detail.inheritance) or (not inheritance and not import_detail.inheritance):
-                self.sync_import_cohorts(import_detail=import_detail,
-                                         prefix=prefix,
-                                         cohorts_list=cohorts_list,
-                                         masterKey=masterKey)
 
-    def sync_import_cohorts(self,
-                            import_detail: Import,
-                            prefix: Optional[str] = None,
-                            cohorts_list: Optional[CohortList] = None,
-                            masterKey: Optional[str] = None):
-        logging.debug(
-                f"AudienceAPI::sync_import_cohorts")
-        import_segments = Segment.list(import_id=import_detail.id,
-                                       privateKey=self.privateKey)
-        if not import_segments:
-            logging.warning("Import has no segment")
-            return
-        if not cohorts_list:
-            cohorts_list = Cohort.list(include_child_workspaces=True,
-                                       privateKey=self.privateKey)
-        api_key = masterKey if masterKey is not None else self.privateKey
-        import_tags=TAGS.copy()
-        import_tags.append('#import')
-        cohort_tags = ListHelper.merge_list(import_tags, import_detail.name)
-        provider_query = Query(name=f"{prefix or ''}{import_detail.name}",
-                                    tags=cohort_tags,
-                                    second_party_segments=[])
-
-        provider_cohort = cohorts_list.name_dictionary.get(provider_query.name)
-
-        provider_query.id = provider_cohort.id if provider_cohort is not None else None
-
-        if provider_cohort:
-            if provider_query.tags:
-                provider_query.tags = ListHelper.merge_list(
-                    provider_query.tags, provider_cohort.tags)
-            else:
-                provider_query.tags = provider_cohort.tags
-        for import_segment in import_segments:
-            logging.debug(
-                f"AudienceAPI::sync_cohort::{import_detail.name}::{import_segment.name}")
-            t_segment = (import_detail.code, import_segment.code)
-
-            import_segment_query = Query(name=f"{prefix or ''}{import_detail.name} | {import_segment.name}",
-                                         description=f'{import_detail.name} ({import_detail.id})::{import_segment.code}::{import_segment.name} ({import_segment.id})',
-                                         tags=cohort_tags,
-                                         second_party_segments=[t_segment],
-                                         workspace_id=self.workspaceID)
-            import_segment_cohort = cohorts_list.name_dictionary.get(
-                import_segment_query .name)
-            import_segment_query.id = import_segment_cohort.id if import_segment_cohort is not None else None
-
-            if import_segment_cohort:
-                if import_segment_query.tags:
-                    import_segment_query.tags = ListHelper.merge_list(
-                        import_segment_query.tags, import_segment_cohort.tags)
-                else:
-                    import_segment_query.tags = import_segment_cohort.tags
-            import_segment_query.sync(api_key=api_key)
-            if not provider_query.second_party_segments:
-                provider_query.second_party_segments = []
-            provider_query.second_party_segments.append(t_segment)
-        provider_query.sync(api_key=api_key)
-
-    def sync_imports_segments(self):
-        logging.debug(
-                f"AudienceAPI::sync_imports_segments::{self.organizationID}")
-        cohorts_list = Cohort.list(include_child_workspaces=True,
-                                   privateKey=self.privateKey)
-        for item in Import.list(privateKey=self.privateKey):
-            self.sync_import_cohorts(import_detail=item,
-                                     prefix=f"{self.name} | Import | ",
-                                     cohorts_list=cohorts_list)
-
-
-@dataclass
 class WorkspaceList(List[Workspace]):
-    # Cache for each dictionary to avoid rebuilding
-    _id_dictionary_cache: Dict[str, Workspace] = field(
-        default_factory=dict, init=False)
-    _name_dictionary_cache: Dict[str, Workspace] = field(
-        default_factory=dict, init=False)
-
     def __init__(self, workspaces: Optional[List[Workspace]] = None):
         """Initializes the WorkspaceList with an optional list of Workspace objects."""
         super().__init__(workspaces if workspaces is not None else [])
+        self._id_dictionary_cache: Dict[str, Workspace] = {}
+        self._name_dictionary_cache: Dict[str, Workspace] = {}
         self.rebuild_cache()
 
     def rebuild_cache(self):
@@ -157,11 +68,6 @@ class WorkspaceList(List[Workspace]):
             self.rebuild_cache()
         return self._name_dictionary_cache
 
-    def sync_imports_segments(self):
-        """Syncs imports and segments for each workspace in the list."""
-        for ws in self:
-            ws.sync_imports_segments()
-
     @property
     def Masterworkspace(self) -> Workspace:
         """Returns the top-level workspace."""
@@ -174,7 +80,7 @@ class WorkspaceList(List[Workspace]):
         """Saves the WorkspaceList to a JSON file at the specified filepath."""
         FileHelper.check_filepath(filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(self, f, ensure_ascii=False, indent=4,
+            json.dump([asdict(ws) for ws in self], f, ensure_ascii=False, indent=4,
                       default=FileHelper.json_default)
 
     @staticmethod

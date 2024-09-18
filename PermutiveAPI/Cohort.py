@@ -1,11 +1,10 @@
-from typing import Dict, List, Optional
-from dataclasses import dataclass, field
+
 import json
 import logging
 from typing import Dict, List, Optional, Union
-from dataclasses import dataclass
-from datetime import datetime,timedelta
-from . import RequestHelper, FileHelper
+from dataclasses import dataclass, field,asdict
+from datetime import datetime, timedelta
+from .Utils import RequestHelper, FileHelper
 from collections import defaultdict
 
 _API_VERSION = "v2"
@@ -66,39 +65,35 @@ class Cohort():
     state: Optional[str] = None
     segment_type: Optional[str] = None
     live_audience_size: Optional[int] = 0
-    created_at: Optional[datetime] = datetime.now()
-    last_updated_at: Optional[datetime] = datetime.now()
+    created_at: Optional[datetime] = field(default_factory=datetime.now)
+    last_updated_at: Optional[datetime] = field(default_factory=datetime.now)
     workspace_id: Optional[str] = None
     request_id: Optional[str] = None
     error: Optional[str] = None
 
     def create(self,
-               privateKey: Optional[str] = None):
+               privateKey: str):
         """
         Creates a new cohort.
 
         :param cohort: Cohort to be created.
         :return: Created cohort object.
         """
-        logging.log
         logging.debug(f"{datetime.now()}::CohortAPI::create::{self.name}")
-        logging.debug(f"{datetime.now()}::CohortAPI::create::{self.name}")
-        if not privateKey:
-            raise ValueError("privateKey must be specified")
         if not self.query:
             raise ValueError('query must be specified')
         if self.id:
             logging.warning("id is specified")
         url = f"{_API_ENDPOINT}"
         response = RequestHelper.postRequest_static(privateKey=privateKey,
-                                                        url=url,
-                                                        data=RequestHelper.to_payload_static(self, _API_PAYLOAD))
+                                                    url=url,
+                                                    data=RequestHelper.to_payload_static(self, _API_PAYLOAD))
         created = Cohort(**response.json())
         self.id = created.id
         self.code = created.code
 
     def update(self,
-               privateKey: Optional[str] = None):
+               privateKey: str):
         """
         Updates an existing cohort.
 
@@ -107,33 +102,29 @@ class Cohort():
         :return: Updated cohort object.
         """
         logging.debug(f"{datetime.now()}::CohortAPI::update::{self.name}")
-        if not privateKey:
-            raise ValueError("privateKey must be specified")
         if not self.id:
-            logging.warning("id must be specified")
+            raise ValueError("Cohort ID must be specified for update.")
         url = f"{_API_ENDPOINT}{self.id}"
 
         response = RequestHelper.patchRequest_static(privateKey=privateKey,
-                                                         url=url,
-                                                         data=RequestHelper.to_payload_static(self, _API_PAYLOAD))
+                                                     url=url,
+                                                     data=RequestHelper.to_payload_static(self, _API_PAYLOAD))
 
         return Cohort(**response.json())
 
     def delete(self,
-               privateKey: Optional[str] = None) -> None:
+               privateKey) -> None:
         """
         Deletes a specific cohort.
         :param cohort_id: ID of the cohort to be deleted.
         :return: None
         """
-        logging.debug(f"{datetime.now()}::CohortAPI::update::{self.name}")
-        if not privateKey:
-            raise ValueError("privateKey must be specified")
+        logging.debug(f"{datetime.now()}::CohortAPI::delete::{self.name}")
         if not self.id:
-            logging.warning("id must be specified")
+            raise ValueError("Cohort ID must be specified for deletion.")
         url = f"{_API_ENDPOINT}{self.id}"
         RequestHelper.deleteRequest_static(privateKey=privateKey,
-                                               url=url)
+                                           url=url)
 
     @staticmethod
     def get_by_id(id: str,
@@ -147,7 +138,7 @@ class Cohort():
         logging.debug(f"{datetime.now()}::CohortAPI::get::{id}")
         url = f"{_API_ENDPOINT}{id}"
         response = RequestHelper.getRequest_static(privateKey=privateKey,
-                                                       url=url)
+                                                   url=url)
 
         return Cohort(**response.json())
 
@@ -180,8 +171,6 @@ class Cohort():
         :param cohort_code: Union[int, str] Cohort Code. Required
         :return: Cohort object
         '''
-        if type(code) == str:
-            code = int(code)
         logging.debug(f"{datetime.now()}::CohortAPI::get_by_code::{code}")
         for cohort in Cohort.list(include_child_workspaces=True,
                                   privateKey=privateKey):
@@ -190,17 +179,13 @@ class Cohort():
                                         privateKey=privateKey)
 
     @staticmethod
-    def list(include_child_workspaces=False,
-             privateKey: Optional[str] = None) -> 'CohortList':
+    def list(privateKey: str, include_child_workspaces=False) -> 'CohortList':
         """
             Fetches all cohorts from the API.
 
             :return: List of all cohorts.
         """
         logging.debug(f"CohortAPI::list")
-
-        if not privateKey:
-            raise ValueError("No Private Key")
 
         url = RequestHelper.gen_url_with_key(_API_ENDPOINT, privateKey)
         if include_child_workspaces:
@@ -214,7 +199,7 @@ class Cohort():
     def to_json(self, filepath: str):
         FileHelper.check_filepath(filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(self, f,
+            json.dump(asdict(self), f,
                       ensure_ascii=False, indent=4, default=FileHelper.json_default)
 
     @staticmethod
@@ -224,11 +209,11 @@ class Cohort():
         with open(file=filepath, mode='r') as json_file:
             return Cohort(**json.load(json_file))
 
-    def dict_to_sql_databricks(self, table_mapping, 
-                           start_date:datetime=datetime.now() - timedelta(days=31), 
-                           end_date:datetime=datetime.now() - timedelta(days=1)):
+    def dict_to_sql_databricks(self, table_mapping,
+                               start_date: datetime = datetime.now() - timedelta(days=31),
+                               end_date: datetime = datetime.now() - timedelta(days=1)):
 
-        def condition_to_sql(condition:Dict[str,Union[str,list]], property_name:str)->Optional[str]:
+        def condition_to_sql(condition: Dict[str, Union[str, list]], property_name: str) -> Optional[str]:
             # Remove 'properties.' prefix
             property_name = property_name.replace('properties.', '')
             sql_parts = []
@@ -237,22 +222,26 @@ class Cohort():
                 if isinstance(values, str):
                     values = [values]
                 for value in values:
-                    sql_parts.append("{} LIKE '%{}%'".format(property_name, value))
+                    sql_parts.append(
+                        "{} LIKE '%{}%'".format(property_name, value))
             elif 'equal_to' in condition:
                 values = condition['equal_to']
                 if isinstance(values, list):
-                    sql_parts.append("{} IN ({})".format(property_name, ', '.join("'{}'".format(v) for v in values)))
+                    sql_parts.append("{} IN ({})".format(
+                        property_name, ', '.join("'{}'".format(v) for v in values)))
                 else:
                     sql_parts.append("{} = '{}'".format(property_name, values))
             elif 'list_contains' in condition:
                 values = condition['list_contains']
                 if isinstance(values, list):
-                    sql_parts.append("ARRAYS_OVERLAP({}, ARRAY({}))".format(property_name, ', '.join("'{}'".format(v) for v in values)))
+                    sql_parts.append("ARRAYS_OVERLAP({}, ARRAY({}))".format(
+                        property_name, ', '.join("'{}'".format(v) for v in values)))
                 else:
-                    sql_parts.append("ARRAYS_OVERLAP({}, ARRAY('{}'))".format(property_name, values))
+                    sql_parts.append(
+                        "ARRAYS_OVERLAP({}, ARRAY('{}'))".format(property_name, values))
             elif 'condition' in condition:
-                print(condition)
-            if len(sql_parts)>0:
+                logging.debug(f"Condition: {condition}")
+            if len(sql_parts) > 0:
                 return " OR ".join(sql_parts)
 
         def parse_where(where_clause):
@@ -271,11 +260,11 @@ class Cohort():
             else:
                 print(where_clause)
 
-        def parse_event(event, table_name)->Optional[str]:
-            start_d=start_date.strftime('%Y-%m-%d')
-            end_d=end_date.strftime('%Y-%m-%d')
+        def parse_event(event, table_name) -> Optional[str]:
+            start_d = start_date.strftime('%Y-%m-%d')
+            end_d = end_date.strftime('%Y-%m-%d')
             event_conditions = [f"dt BETWEEN '{start_d}' AND '{end_d}'"]
-            where_sql=None
+            where_sql = None
             if 'where' in event:
                 where_sql = parse_where(event['where'])
                 event_conditions.append(f"({where_sql})")
@@ -303,7 +292,7 @@ class Cohort():
                         queries.append(parsed_query)
                 if len(queries) == 0:
                     return None
-                sqlquery=" UNION ".join(queries)
+                sqlquery = " UNION ".join(queries)
                 return f"({sqlquery})"
             elif 'and' in query:
                 queries = []
@@ -313,7 +302,7 @@ class Cohort():
                         queries.append(parsed_query)
                 if len(queries) == 0:
                     return None
-                sqlquery=" INTERSECT ".join(queries)
+                sqlquery = " INTERSECT ".join(queries)
                 return f"({sqlquery})"
             elif 'event' in query:
                 event_name = query['event']
@@ -329,21 +318,14 @@ class Cohort():
         return parse_query(self.query)
 
 
-@dataclass
 class CohortList(List[Cohort]):
-    # Cache for each dictionary to avoid rebuilding
-    _id_dictionary_cache: Dict[str, Cohort] = field(
-        default_factory=dict, init=False)
-    _name_dictionary_cache: Dict[str, Cohort] = field(
-        default_factory=dict, init=False)
-    _tag_dictionary_cache: Dict[str, 'CohortList'] = field(
-        default_factory=dict, init=False)
-    _workspace_dictionary_cache: Dict[str, 'CohortList'] = field(
-        default_factory=dict, init=False)
 
     def __init__(self, cohorts: Optional[List[Cohort]] = None):
-        """Initializes the CohortList with an optional list of Cohort objects."""
         super().__init__(cohorts if cohorts is not None else [])
+        self._id_dictionary_cache: Dict[str, Cohort] = {}
+        self._name_dictionary_cache: Dict[str, Cohort] = {}
+        self._tag_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(list)
+        self._workspace_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(list)
         self.rebuild_cache()
 
     def rebuild_cache(self):
@@ -377,14 +359,14 @@ class CohortList(List[Cohort]):
         return self._name_dictionary_cache
 
     @property
-    def tag_dictionary(self) -> Dict[str, 'CohortList']:
+    def tag_dictionary(self) -> Dict[str, List[Cohort]]:
         """Returns a dictionary of cohorts indexed by their tags."""
         if not self._tag_dictionary_cache:
             self.rebuild_cache()
         return self._tag_dictionary_cache
 
     @property
-    def workspace_dictionary(self) -> Dict[str, 'CohortList']:
+    def workspace_dictionary(self) -> Dict[str, List[Cohort]]:
         """Returns a dictionary of cohorts indexed by their workspace IDs."""
         if not self._workspace_dictionary_cache:
             self.rebuild_cache()
@@ -394,7 +376,7 @@ class CohortList(List[Cohort]):
         """Saves the CohortList to a JSON file at the specified filepath."""
         FileHelper.check_filepath(filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(self, f, ensure_ascii=False, indent=4,
+            json.dump([asdict(cohort) for cohort in self], f, ensure_ascii=False, indent=4,
                       default=FileHelper.json_default)
 
     @staticmethod
