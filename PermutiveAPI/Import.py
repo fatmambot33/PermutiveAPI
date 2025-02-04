@@ -22,6 +22,8 @@ class Source():
     id: str
     state: Dict
     type: str
+    schema_id: Optional[str] = None
+    cohorts: Optional[List[str]] = None
     bucket: Optional[str] = None
     permissions: Optional[Dict] = None
     phase: Optional[str] = None
