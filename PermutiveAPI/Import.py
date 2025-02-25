@@ -273,16 +273,34 @@ class Segment():
     @staticmethod
     def list(import_id: str, privateKey: str) -> List['Segment']:
         """
-        Fetches all imports from the API.
+        Fetches all segments from the API, handling pagination.
 
-        :return: List of all imports.
+        :param import_id: The ID of the import.
+        :param privateKey: The authentication key.
+        :return: List of all segments.
         """
         logging.debug(f"{datetime.now()}::SegmentAPI::list")
-        url = f"{_API_ENDPOINT}/{import_id}/segments"
-        response = RequestHelper.getRequest_static(privateKey=privateKey,
-                                                   url=url)
-        segments = response.json()
-        return [Segment(**element) for element in segments.get('elements', [])]
+
+        base_url = f"{_API_ENDPOINT}/{import_id}/segments"
+        all_segments = []
+        next_token = None
+
+        while True:
+            # Construct the URL with the pagination token
+            url = f"{base_url}?pagination_token={next_token}" if next_token else base_url
+            response = RequestHelper.getRequest_static(privateKey=privateKey, url=url)
+            data = response.json()
+
+            # Extract elements and add them to the list
+            all_segments.extend([Segment(**element) for element in data.get('elements', [])])
+
+            # Check for next_token in the pagination metadata
+            next_token = data.get('pagination', {}).get('next_token')
+
+            if not next_token:
+                break  # Stop when there are no more pages
+
+        return all_segments
 
     def to_json(self, filepath: str):
         FileHelper.check_filepath(filepath)
