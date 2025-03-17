@@ -1,10 +1,10 @@
 import logging
-import json
-from typing import List, Optional
-from dataclasses import dataclass, asdict
+from typing import List
+from dataclasses import dataclass
 from datetime import datetime
 
-from .Utils import RequestHelper, FileHelper
+from PermutiveAPI.Utils import RequestHelper, JSONSerializable
+
 
 _API_VERSION = 'v2.0'
 _API_ENDPOINT = f'https://api.permutive.com/{_API_VERSION}/identify'
@@ -12,60 +12,47 @@ _API_PAYLOAD = ["user_id", "aliases"]
 
 
 @dataclass
-class Alias():
+class Alias(JSONSerializable):
     """
     Dataclass for the Alias entity in the Permutive ecosystem.
     """
     id: str
-    tag: str 
-    priority: int 
-
-    def to_json(self, filepath: str):
-        FileHelper.check_filepath(filepath)
-        with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(asdict(self), f, ensure_ascii=False, indent=4)
-
-    @staticmethod
-    def from_json(filepath: str) -> 'Alias':
-        if not FileHelper.file_exists(filepath):
-            raise ValueError(f'{filepath} does not exist')
-        with open(file=filepath, mode='r') as json_file:
-            return Alias(**json.load(json_file))
-
-
+    tag: str
+    priority: int
 
 
 @dataclass
-class Identity():
+class Identity(JSONSerializable):
     """
     Dataclass for the Source entity in the Permutive ecosystem.
     """
     user_id: str
     aliases: List[Alias]
 
-    def to_json(self, filepath: str):
-        FileHelper.check_filepath(filepath)
-        with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(asdict(self), f, ensure_ascii=False, indent=4)
+    def to_json(self) -> dict:
+        return {
+            "user_id": self.user_id,
+            "aliases": [alias.to_json() for alias in self.aliases] if self.aliases else None
+        }
 
-    @staticmethod
-    def from_json(filepath: str) -> "Identity":
-        if not FileHelper.file_exists(filepath):
-            raise ValueError(f'{filepath} does not exist')
-        with open(file=filepath, mode='r') as json_file:
-            return Identity(**json.load(json_file))
-    
-    def Identify(
-        self,
-        privateKey: str):
+    @classmethod
+    def from_json(cls, 
+                  data: dict) -> 'Identity':
+        aliases_data = data.get('aliases')
+        if aliases_data:
+            data['segments'] = [Alias.from_json(
+                alias) for alias in aliases_data]
+        return super().from_json(data)
+
+    def Identify(self,
+                 privateKey: str):
 
         logging.debug(
             f"{datetime.now()}::UserAPI::identify::{self.user_id}")
 
         url = f"{_API_ENDPOINT}"
 
-        return RequestHelper.postRequest_static(privateKey=privateKey,
+        return RequestHelper.post_static(api_key=privateKey,
                                                 url=url,
                                                 data=RequestHelper.to_payload_static(self,
-                                                                                    _API_PAYLOAD))
-
+                                                                                     _API_PAYLOAD))

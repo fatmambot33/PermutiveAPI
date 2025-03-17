@@ -1,46 +1,52 @@
-import logging
-import os
 from typing import Dict, List, Optional
-from dataclasses import dataclass, field,asdict
-import json
+from dataclasses import dataclass
 
-
-from .Utils import FileHelper
-from .Import import Import, Segment
-from .Cohort import Cohort, CohortList
-
-TAGS = ['#automatic']
+from PermutiveAPI.Utils import JSONSerializable
+from PermutiveAPI.Import import Import, Segment
+from PermutiveAPI.Cohort import Cohort, CohortList
 
 
 @dataclass
-class Workspace():
+class Workspace(JSONSerializable):
     """
     Dataclass for the Workspace entity in the Permutive ecosystem.
     """
     name: str
-    organizationID: str
-    workspaceID: str
-    privateKey: str
+    organization_id: str
+    workspace_id: str
+    api_key: str
 
     @property
     def isTopLevel(self) -> bool:
         """Determines if the workspace is the top-level workspace."""
-        return self.organizationID == self.workspaceID
+        return self.organization_id == self.workspace_id
+
+    @property
+    def cohorts(self) -> CohortList:
+        if not hasattr(self, '_cohort_cache'):
+            self._cohort_cache = Cohort.list(
+                include_child_workspaces=False, api_key=self.api_key)
+        return self._cohort_cache
 
     def list_cohorts(self,
                      include_child_workspaces: bool = False) -> CohortList:
         return Cohort.list(include_child_workspaces=include_child_workspaces,
-                           privateKey=self.privateKey)
+                           api_key=self.api_key)
 
-    def list_imports(self) -> List[Import]:
-        return Import.list(privateKey=self.privateKey)
+    @property
+    def imports(self) -> List[Import]:
+        if not hasattr(self, '_import_cache'):
+            self._import_cache = Import.list(privateKey=self.api_key)
+        return self._import_cache
 
-    def list_segments(self, import_id: str) -> List[Segment]:
-        return Segment.list(import_id=import_id, privateKey=self.privateKey)
+    def list_segments(self,
+                      import_id: str) -> List[Segment]:
+        return Segment.list(import_id=import_id, privateKey=self.api_key)
 
 
-class WorkspaceList(List[Workspace]):
-    def __init__(self, workspaces: Optional[List[Workspace]] = None):
+class WorkspaceList(List[Workspace], JSONSerializable):
+    def __init__(self,
+                 workspaces: Optional[List[Workspace]] = None):
         """Initializes the WorkspaceList with an optional list of Workspace objects."""
         super().__init__(workspaces if workspaces is not None else [])
         self._id_dictionary_cache: Dict[str, Workspace] = {}
@@ -50,7 +56,7 @@ class WorkspaceList(List[Workspace]):
     def rebuild_cache(self):
         """Rebuilds all caches based on the current state of the list."""
         self._id_dictionary_cache = {
-            workspace.workspaceID: workspace for workspace in self if workspace.workspaceID}
+            workspace.workspace_id: workspace for workspace in self if workspace.workspace_id}
         self._name_dictionary_cache = {
             workspace.name: workspace for workspace in self if workspace.name}
 
@@ -76,21 +82,11 @@ class WorkspaceList(List[Workspace]):
                 return workspace
         raise ValueError("No Top-Level Workspace found")
 
-    def to_json(self, filepath: str):
-        """Saves the WorkspaceList to a JSON file at the specified filepath."""
-        FileHelper.check_filepath(filepath)
-        with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump([asdict(ws) for ws in self], f, ensure_ascii=False, indent=4,
-                      default=FileHelper.json_default)
+    def to_json(self) -> List[dict]:
+        return [ws.to_json() for ws in self]
 
-    @staticmethod
-    def from_json(filepath: Optional[str] = None) -> 'WorkspaceList':
-        """Creates a new WorkspaceList from a JSON file at the specified filepath."""
-        if not filepath:
-            filepath = os.environ.get("PERMUTIVE_APPLICATION_CREDENTIALS")
-        if not filepath:
-            raise ValueError(
-                'Unable to get PERMUTIVE_APPLICATION_CREDENTIALS from .env')
-
-        workspace_list = FileHelper.from_json(filepath)
-        return WorkspaceList([Workspace(**workspace) for workspace in workspace_list])
+    @classmethod
+    def from_json(cls,
+                  data: List[dict]) -> 'WorkspaceList':
+        workspaces = [Workspace.from_json(item) for item in data]
+        return cls(workspaces)

@@ -6,9 +6,11 @@ import datetime
 import pathlib
 from glob import glob
 import ast
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any, Union, Type, TypeVar
 import logging
 import os
+import json
+from dataclasses import asdict
 
 
 class RequestHelper:
@@ -35,116 +37,28 @@ class RequestHelper:
         self.payload_keys = payload_keys
 
     @staticmethod
-    def gen_url_with_key(url, privateKey):
+    def generate_url_with_key(url, api_key):
         if "?" in url:
-            return f"{url}&k={privateKey}"
+            return f"{url}&k={api_key}"
         else:
-            return f"{url}?k={privateKey}"
+            return f"{url}?k={api_key}"
 
     @staticmethod
-    def getRequest_static(privateKey: str, url: str) -> Response:
+    def get_static(api_key: str,
+                   url: str) -> Response:
         response = None
-        url = RequestHelper.gen_url_with_key(url, privateKey)
+        url = RequestHelper.generate_url_with_key(url, api_key)
         try:
             response = requests.get(
                 url, headers=RequestHelper.DEFAULT_HEADERS)
             response.raise_for_status()
         except RequestException as e:
-            return RequestHelper.handle_exception(response, e)
+            return RequestHelper.handle_exception(e=e,
+                                                  response=response)
         return response
 
     @staticmethod
-    def postRequest_static(privateKey: str,
-                           url: str,
-                           data: dict) -> Response:
-        """
-            Send an HTTP POST request to the specified URL with JSON data.
-
-            Args:
-                url (str): The URL to send the POST request to.
-                data (dict): The JSON data to include in the request body.
-                headers (Optional[Dict[str, str]]): Custom headers to include in the request. Defaults to None.
-
-            Returns:
-                Response: The HTTP response object.
-
-        """
-        response = None
-        url = RequestHelper.gen_url_with_key(url, privateKey)
-        try:
-            response = requests.post(url,
-                                     headers=RequestHelper.DEFAULT_HEADERS,
-                                     json=data)
-            response.raise_for_status()
-        except RequestException as e:
-            return RequestHelper.handle_exception(response, e)
-        return response
-
-    @staticmethod
-    def patchRequest_static(privateKey: str,
-                            url: str,
-                            data: dict) -> Response:
-        """
-            Send an HTTP PATCH request to the specified URL with JSON data.
-
-            Args:
-                url (str): The URL to send the PATCH request to.
-                data (dict): The JSON data to include in the request body.
-                headers (Optional[Dict[str, str]]): Custom headers to include in the request. Defaults to None.
-
-            Returns:
-                Response: The HTTP response object.
-
-        """
-        response = None
-        url = RequestHelper.gen_url_with_key(url=url,
-                                             privateKey=privateKey)
-        try:
-            response = requests.patch(url,
-                                      headers=RequestHelper.DEFAULT_HEADERS,
-                                      json=data)
-            response.raise_for_status()
-        except RequestException as e:
-            return RequestHelper.handle_exception(response, e)
-        return response
-
-    @staticmethod
-    def deleteRequest_static(privateKey: str, url: str) -> Response:
-        """
-            Send an HTTP DELETE request to the specified URL.
-
-            Args:
-                url (str): The URL to send the DELETE request to.
-                headers (Optional[Dict[str, str]]): Custom headers to include in the request. Defaults to None.
-
-            Returns:
-                Response: The HTTP response object.
-
-        """
-        response = None
-        url = RequestHelper.gen_url_with_key(
-            url=url, privateKey=privateKey)
-        try:
-            response = requests.delete(url,
-                                       headers=RequestHelper.DEFAULT_HEADERS)
-            response.raise_for_status()
-        except RequestException as e:
-            return RequestHelper.handle_exception(response, e)
-        return response
-
-    def getRequest(self,
-                   url) -> Response:
-        response = None
-        url = RequestHelper.gen_url_with_key(
-            url=url, privateKey=self.api_key)
-        try:
-            response = requests.get(url, headers=self.DEFAULT_HEADERS)
-            response.raise_for_status()
-        except RequestException as e:
-            return RequestHelper.handle_exception(response, e)
-        return response
-
-    def postRequest(self,
+    def post_static(api_key: str,
                     url: str,
                     data: dict) -> Response:
         """
@@ -160,18 +74,19 @@ class RequestHelper:
 
         """
         response = None
-        url = RequestHelper.gen_url_with_key(
-            url=url, privateKey=self.api_key)
+        url = RequestHelper.generate_url_with_key(url, api_key)
         try:
             response = requests.post(url,
-                                     headers=self.DEFAULT_HEADERS,
+                                     headers=RequestHelper.DEFAULT_HEADERS,
                                      json=data)
             response.raise_for_status()
         except RequestException as e:
-            return RequestHelper.handle_exception(response, e)
+            return RequestHelper.handle_exception(e=e,
+                                                  response=response)
         return response
 
-    def patchRequest(self,
+    @staticmethod
+    def patch_static(api_key: str,
                      url: str,
                      data: dict) -> Response:
         """
@@ -187,18 +102,21 @@ class RequestHelper:
 
         """
         response = None
-        url = RequestHelper.gen_url_with_key(
-            url=url, privateKey=self.api_key)
+        url = RequestHelper.generate_url_with_key(url=url,
+                                                  api_key=api_key)
         try:
             response = requests.patch(url,
-                                      headers=self.DEFAULT_HEADERS,
+                                      headers=RequestHelper.DEFAULT_HEADERS,
                                       json=data)
             response.raise_for_status()
         except RequestException as e:
-            return RequestHelper.handle_exception(response, e)
+            return RequestHelper.handle_exception(e=e,
+                                                  response=response)
         return response
 
-    def deleteRequest(self, url: str) -> Response:
+    @staticmethod
+    def delete_static(api_key: str,
+                      url: str) -> Response:
         """
             Send an HTTP DELETE request to the specified URL.
 
@@ -211,14 +129,72 @@ class RequestHelper:
 
         """
         response = None
-        url = RequestHelper.gen_url_with_key(
-            url=url, privateKey=self.api_key)
+        url = RequestHelper.generate_url_with_key(
+            url=url, api_key=api_key)
         try:
-            response = requests.delete(url, headers=self.DEFAULT_HEADERS)
+            response = requests.delete(url,
+                                       headers=RequestHelper.DEFAULT_HEADERS)
             response.raise_for_status()
         except RequestException as e:
-            return RequestHelper.handle_exception(response, e)
+            return RequestHelper.handle_exception(e=e,
+                                                  response=response)
         return response
+
+    def get(self,
+            url) -> Response:
+        return RequestHelper.get_static(self.api_key, url)
+
+    def post(self,
+             url: str,
+             data: dict) -> Response:
+        """
+            Send an HTTP POST request to the specified URL with JSON data.
+
+            Args:
+                url (str): The URL to send the POST request to.
+                data (dict): The JSON data to include in the request body.
+                headers (Optional[Dict[str, str]]): Custom headers to include in the request. Defaults to None.
+
+            Returns:
+                Response: The HTTP response object.
+
+        """
+        return RequestHelper.post_static(api_key=self.api_key,
+                                         url=url,
+                                         data=data)
+
+    def patch(self,
+              url: str,
+              data: dict) -> Response:
+        """
+            Send an HTTP PATCH request to the specified URL with JSON data.
+
+            Args:
+                url (str): The URL to send the PATCH request to.
+                data (dict): The JSON data to include in the request body.
+                headers (Optional[Dict[str, str]]): Custom headers to include in the request. Defaults to None.
+
+            Returns:
+                Response: The HTTP response object.
+
+        """
+        return RequestHelper.patch_static(api_key=self.api_key,
+                                          url=url,
+                                          data=data)
+
+    def delete(self, url: str) -> Response:
+        """
+            Send an HTTP DELETE request to the specified URL.
+
+            Args:
+                url (str): The URL to send the DELETE request to.
+
+            Returns:
+                Response: The HTTP response object.
+
+        """
+        return RequestHelper.delete_static(api_key=self.api_key,
+                                           url=url)
 
     @staticmethod
     def to_payload_static(dataclass_obj: Any, api_payload: Optional[List[str]] = None) -> Dict[str, Any]:
@@ -240,20 +216,24 @@ class RequestHelper:
         ) if value and (api_payload is None or key in api_payload)}
 
         # Serialize using the custom serializer
-        final_dict = json.loads(json.dumps(
-            filtered_dict, default=FileHelper.json_default))
-        return final_dict
+        filtered_dict_string=json.dumps(filtered_dict,
+                          indent=4,
+                          cls=CustomJSONEncoder)
+        return json.loads(filtered_dict_string)
 
     @staticmethod
-    def handle_exception(response: Optional[Response], e: Exception):
+    def handle_exception(e: Exception,
+                         response: Optional[Response]
+                         ):
         """
             Handle exceptions and errors in API requests.
 
             This method checks the HTTP response and handles exceptions gracefully. It logs error messages and raises exceptions when necessary.
 
             Args:
-                response (Optional[Response]): The HTTP response object.
                 e (Exception): The exception that occurred during the request.
+                response (Optional[Response]): The HTTP response object.
+
 
             Returns:
                 Response: The HTTP response object if it's successful or a 400 Bad Request response. Otherwise, it raises the original exception.
@@ -277,27 +257,6 @@ class RequestHelper:
 
 
 class FileHelper:
-    @staticmethod
-    def json_default(value):
-        if isinstance(value, datetime.date):
-            return dict(year=value.year, month=value.month, day=value.day)
-        elif isinstance(value, list):
-            return [FileHelper.json_default(item) for item in value]
-        else:
-            return value.__dict__
-
-    def to_json(self, filepath: str):
-        FileHelper.check_filepath(filepath)
-        with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(self, f,
-                      ensure_ascii=False, indent=4, default=FileHelper.json_default)
-
-    @staticmethod
-    def from_json(filepath: str):
-        if not FileHelper.file_exists(filepath):
-            raise ValueError(f'{filepath} does not exist')
-        with open(file=filepath, mode='r') as json_file:
-            return json.load(json_file)
 
     @staticmethod
     def check_filepath(filepath: str):
@@ -351,3 +310,61 @@ class ListHelper:
         lst = list(filter(None, list(dict.fromkeys(lst1+lst2))))
         lst.sort()
         return lst
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        if hasattr(obj, "to_json"):
+            return obj.to_json()
+        return super().default(obj)
+
+
+T = TypeVar('T', bound='JSONSerializable')
+
+
+class JSONSerializable:
+    """
+    A mixin class that provides JSON serialization and deserialization capabilities.
+    Methods
+    -------
+    __str__() -> str
+        Pretty-print JSON when calling print(object).
+    to_json() -> dict
+        Converts the object to a JSON-serializable dictionary.
+    from_json(cls, data: dict) -> T
+        Creates an instance of the class from a JSON dictionary.
+    to_json_file(filepath: str)
+        Serializes the object to a JSON file using CustomJSONEncoder.
+    from_json_file(cls, filepath: str) -> T
+        Creates an instance of the class from a JSON file.
+    """
+
+    def __str__(self) -> str:
+        """ Pretty-print JSON when calling print(object). """
+        return json.dumps(self.to_json(),
+                          indent=4,
+                          cls=CustomJSONEncoder)
+
+    def to_json(self) -> dict:
+        """Converts the object to a JSON-serializable dictionary."""
+        return asdict(self)
+
+    @classmethod
+    def from_json(cls: Type[T], data: dict) -> T:
+        """Creates an instance of the class from a JSON dictionary."""
+        return cls(**data)
+
+    def to_json_file(self, filepath: str):
+        """Serializes the object to a JSON file using CustomJSONEncoder."""
+        with open(file=filepath, mode='w', encoding='utf-8') as f:
+            json.dump(self.to_json(), f, ensure_ascii=False,
+                      indent=4, cls=CustomJSONEncoder)
+
+    @classmethod
+    def from_json_file(cls: Type[T], filepath: str) -> T:
+        """Creates an instance of the class from a JSON file."""
+        with open(file=filepath, mode='r') as json_file:
+            data = json.load(json_file)
+            return cls.from_json(data)

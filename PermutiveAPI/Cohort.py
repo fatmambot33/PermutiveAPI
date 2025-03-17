@@ -1,10 +1,9 @@
 
-import json
 import logging
 from typing import Dict, List, Optional, Union
-from dataclasses import dataclass, field,asdict
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from .Utils import RequestHelper, FileHelper
+from PermutiveAPI.Utils import RequestHelper, JSONSerializable
 from collections import defaultdict
 
 _API_VERSION = "v2"
@@ -13,7 +12,7 @@ _API_PAYLOAD = ["id", "name", "query", "description", "tags"]
 
 
 @dataclass
-class Cohort():
+class Cohort(JSONSerializable):
     """
     Represents a cohort entity in the Permutive ecosystem.
 
@@ -34,25 +33,25 @@ class Cohort():
         error (str, optional): An error message, if an error occurs during operations.
 
     Methods:
-        create(privateKey: str) -> None:
+        create(api_key: str) -> None:
             Creates a new cohort in the Permutive ecosystem.
 
-        update(privateKey: str) -> Cohort:
+        update(api_key: str) -> Cohort:
             Updates an existing cohort.
 
-        delete(privateKey: str) -> None:
+        delete(api_key: str) -> None:
             Deletes the current cohort.
 
-        get_by_id(id: str, privateKey: str) -> Cohort:
+        get_by_id(id: str, api_key: str) -> Cohort:
             Retrieves a cohort by its unique identifier.
 
-        get_by_name(name: str, privateKey: str) -> Optional[Cohort]:
+        get_by_name(name: str, api_key: str) -> Optional[Cohort]:
             Retrieves a cohort by its name.
 
-        get_by_code(code: Union[int, str], privateKey: str) -> Optional[Cohort]:
+        get_by_code(code: Union[int, str], api_key: str) -> Optional[Cohort]:
             Retrieves a cohort by its code.
 
-        list(include_child_workspaces: bool = False, privateKey: str) -> List[Cohort]:
+        list(include_child_workspaces: bool = False, api_key: str) -> List[Cohort]:
             Retrieves a list of all cohorts.
     """
 
@@ -72,28 +71,29 @@ class Cohort():
     error: Optional[str] = None
 
     def create(self,
-               privateKey: str):
+               api_key: str):
         """
         Creates a new cohort.
 
         :param cohort: Cohort to be created.
         :return: Created cohort object.
         """
-        logging.debug(f"{datetime.now()}::CohortAPI::create::{self.name}")
+        logging.debug(f"CohortAPI::create::{self.name}")
         if not self.query:
             raise ValueError('query must be specified')
         if self.id:
             logging.warning("id is specified")
         url = f"{_API_ENDPOINT}"
-        response = RequestHelper.postRequest_static(privateKey=privateKey,
-                                                    url=url,
-                                                    data=RequestHelper.to_payload_static(self, _API_PAYLOAD))
-        created = Cohort(**response.json())
+        response = RequestHelper.post_static(api_key=api_key,
+                                             url=url,
+                                             data=RequestHelper.to_payload_static(self,
+                                                                                  _API_PAYLOAD))
+        created = Cohort.from_json(response.json())
         self.id = created.id
         self.code = created.code
 
     def update(self,
-               privateKey: str):
+               api_key: str):
         """
         Updates an existing cohort.
 
@@ -101,19 +101,19 @@ class Cohort():
         :param updated_cohort: Updated cohort data.
         :return: Updated cohort object.
         """
-        logging.debug(f"{datetime.now()}::CohortAPI::update::{self.name}")
+        logging.debug(f"CohortAPI::update::{self.name}")
         if not self.id:
             raise ValueError("Cohort ID must be specified for update.")
         url = f"{_API_ENDPOINT}{self.id}"
 
-        response = RequestHelper.patchRequest_static(privateKey=privateKey,
-                                                     url=url,
-                                                     data=RequestHelper.to_payload_static(self, _API_PAYLOAD))
+        response = RequestHelper.patch_static(api_key=api_key,
+                                              url=url,
+                                              data=RequestHelper.to_payload_static(self, _API_PAYLOAD))
 
-        return Cohort(**response.json())
+        return Cohort.from_json(response.json())
 
     def delete(self,
-               privateKey) -> None:
+               api_key) -> None:
         """
         Deletes a specific cohort.
         :param cohort_id: ID of the cohort to be deleted.
@@ -123,12 +123,12 @@ class Cohort():
         if not self.id:
             raise ValueError("Cohort ID must be specified for deletion.")
         url = f"{_API_ENDPOINT}{self.id}"
-        RequestHelper.deleteRequest_static(privateKey=privateKey,
-                                           url=url)
+        RequestHelper.delete_static(api_key=api_key,
+                                    url=url)
 
     @staticmethod
     def get_by_id(id: str,
-                  privateKey: str) -> 'Cohort':
+                  api_key: str) -> 'Cohort':
         """
         Fetches a specific cohort from the API using its ID.
 
@@ -137,15 +137,15 @@ class Cohort():
         """
         logging.debug(f"{datetime.now()}::CohortAPI::get::{id}")
         url = f"{_API_ENDPOINT}{id}"
-        response = RequestHelper.getRequest_static(privateKey=privateKey,
-                                                   url=url)
+        response = RequestHelper.get_static(api_key=api_key,
+                                            url=url)
 
-        return Cohort(**response.json())
+        return Cohort.from_json(response.json())
 
     @staticmethod
     def get_by_name(
         name: str,
-        privateKey: str
+        api_key: str
     ) -> Optional['Cohort']:
         '''
             Object Oriented Permutive Cohort seqrch
@@ -156,15 +156,15 @@ class Cohort():
         logging.debug(f"{datetime.now()}::CohortAPI::get_by_name::{name}")
 
         for cohort in Cohort.list(include_child_workspaces=True,
-                                  privateKey=privateKey):
+                                  api_key=api_key):
             if name == cohort.name and cohort.id:
                 return Cohort.get_by_id(id=cohort.id,
-                                        privateKey=privateKey)
+                                        api_key=api_key)
 
     @staticmethod
     def get_by_code(
             code: Union[int, str],
-            privateKey: str) -> Optional['Cohort']:
+            api_key: str) -> Optional['Cohort']:
         '''
         Object Oriented Permutive Cohort seqrch
         :rtype: Cohort object
@@ -173,13 +173,14 @@ class Cohort():
         '''
         logging.debug(f"{datetime.now()}::CohortAPI::get_by_code::{code}")
         for cohort in Cohort.list(include_child_workspaces=True,
-                                  privateKey=privateKey):
+                                  api_key=api_key):
             if code == cohort.code and cohort.id:
                 return Cohort.get_by_id(id=cohort.id,
-                                        privateKey=privateKey)
+                                        api_key=api_key)
 
     @staticmethod
-    def list(privateKey: str, include_child_workspaces=False) -> 'CohortList':
+    def list(api_key: str,
+             include_child_workspaces=False) -> 'CohortList':
         """
             Fetches all cohorts from the API.
 
@@ -187,27 +188,33 @@ class Cohort():
         """
         logging.debug(f"CohortAPI::list")
 
-        url = RequestHelper.gen_url_with_key(_API_ENDPOINT, privateKey)
+        url = RequestHelper.generate_url_with_key(url=_API_ENDPOINT,
+                                                  api_key=api_key)
         if include_child_workspaces:
             url = f"{url}&include-child-workspaces=true"
 
-        response = RequestHelper.getRequest_static(privateKey, url)
+        response = RequestHelper.get_static(api_key, url)
         cohort_list = CohortList([Cohort(**cohort)
                                  for cohort in response.json()])
         return cohort_list
 
-    def to_json(self, filepath: str):
-        FileHelper.check_filepath(filepath)
-        with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(asdict(self), f,
-                      ensure_ascii=False, indent=4, default=FileHelper.json_default)
-
-    @staticmethod
-    def from_json(filepath: str) -> 'Cohort':
-        if not FileHelper.file_exists(filepath):
-            raise ValueError(f'{filepath} does not exist')
-        with open(file=filepath, mode='r') as json_file:
-            return Cohort(**json.load(json_file))
+    def to_json(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "query": self.query,
+            "tags": self.tags,
+            "description": self.description,
+            "state": self.state,
+            "segment_type": self.segment_type,
+            "live_audience_size": self.live_audience_size,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "last_updated_at": self.last_updated_at.isoformat() if self.last_updated_at else None,
+            "workspace_id": self.workspace_id,
+            "request_id": self.request_id,
+            "error": self.error
+        }
 
     def dict_to_sql_databricks(self, table_mapping,
                                start_date: datetime = datetime.now() - timedelta(days=31),
@@ -318,28 +325,41 @@ class Cohort():
         return parse_query(self.query)
 
 
-class CohortList(List[Cohort]):
+class CohortList(List[Cohort], JSONSerializable):
 
     def __init__(self, cohorts: Optional[List[Cohort]] = None):
         super().__init__(cohorts if cohorts is not None else [])
         self._id_dictionary_cache: Dict[str, Cohort] = {}
+        self._code_dictionary_cache: Dict[str, Cohort] = {}
         self._name_dictionary_cache: Dict[str, Cohort] = {}
         self._tag_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(list)
-        self._workspace_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(list)
+        self._workspace_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(
+            list)
+        self._segment_type_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(
+            list)
         self.rebuild_cache()
 
     def rebuild_cache(self):
         """Rebuilds all caches based on the current state of the list."""
         self._id_dictionary_cache = {
             cohort.id: cohort for cohort in self if cohort.id}
+        self._code_dictionary_cache = {
+            cohort.code: cohort for cohort in self if cohort.code}
         self._name_dictionary_cache = {
             cohort.name: cohort for cohort in self if cohort.name}
+        self._segment_type_dictionary_cache = {
+            cohort.segment_type: cohort for cohort in self if cohort.segment_type}
+
         self._tag_dictionary_cache = defaultdict(CohortList)
+        self._segment_type_dictionary_cache = defaultdict(CohortList)
         self._workspace_dictionary_cache = defaultdict(CohortList)
         for cohort in self:
             if cohort.tags:
                 for tag in cohort.tags:
                     self._tag_dictionary_cache[tag].append(cohort)
+            if cohort.segment_type:
+                self._segment_type_dictionary_cache[cohort.segment_type].append(
+                    cohort)
             if cohort.workspace_id:
                 self._workspace_dictionary_cache[cohort.workspace_id].append(
                     cohort)
@@ -348,6 +368,13 @@ class CohortList(List[Cohort]):
     def id_dictionary(self) -> Dict[str, Cohort]:
         """Returns a dictionary of cohorts indexed by their IDs."""
         if not self._id_dictionary_cache:
+            self.rebuild_cache()
+        return self._id_dictionary_cache
+
+    @property
+    def code_dictionary(self) -> Dict[str, Cohort]:
+        """Returns a dictionary of cohorts indexed by their code"""
+        if not self._code_dictionary_cache:
             self.rebuild_cache()
         return self._id_dictionary_cache
 
@@ -366,21 +393,24 @@ class CohortList(List[Cohort]):
         return self._tag_dictionary_cache
 
     @property
+    def segment_type_dictionary(self) -> Dict[str, List[Cohort]]:
+        """Returns a dictionary of cohorts indexed by their tags."""
+        if not self._segment_type_dictionary_cache:
+            self.rebuild_cache()
+        return self._segment_type_dictionary_cache
+
+    @property
     def workspace_dictionary(self) -> Dict[str, List[Cohort]]:
         """Returns a dictionary of cohorts indexed by their workspace IDs."""
         if not self._workspace_dictionary_cache:
             self.rebuild_cache()
         return self._workspace_dictionary_cache
 
-    def to_json(self, filepath: str):
-        """Saves the CohortList to a JSON file at the specified filepath."""
-        FileHelper.check_filepath(filepath)
-        with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump([asdict(cohort) for cohort in self], f, ensure_ascii=False, indent=4,
-                      default=FileHelper.json_default)
+    def to_json(self) -> List[dict]:
+        return [_item.to_json() for _item in self]
 
-    @staticmethod
-    def from_json(filepath: str) -> 'CohortList':
-        """Creates a new CohortList from a JSON file at the specified filepath."""
-        cohort_list = FileHelper.from_json(filepath)
-        return CohortList([Cohort(**cohort) for cohort in cohort_list])
+    @classmethod
+    def from_json(cls,
+                  data: List[dict]) -> 'CohortList':
+        cohorts = [Cohort.from_json(item) for item in data]
+        return cls(cohorts)
