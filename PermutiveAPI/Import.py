@@ -141,8 +141,8 @@ class ImportList(List[Import],
             Deserializes a list of dictionaries to an ImportList object.
     """
 
-    def __init__(self, imports: Optional[List[Import]] = None):
-        super().__init__(imports if imports is not None else [])
+    def __init__(self, items_list: Optional[List[Import]] = None):
+        super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Import] = {}
         self._name_dictionary_cache: Dict[str, Import] = {}
         self._identifier_dictionary_cache: Dict[str, ImportList]= defaultdict(list)
@@ -428,7 +428,7 @@ class SegmentList(List[Segment],
             Deserializes a list of dictionaries to a SegmentList."""
 
     def __init__(self,
-                 segments: Optional[List[Segment]] = None):
+                 items_list: Optional[List[Segment]] = None):
         """
         Initializes the SegmentList with an optional list of Segment objects.
 
@@ -436,7 +436,7 @@ class SegmentList(List[Segment],
             segments (Optional[List[Segment]]): A list of Segment objects to initialize the SegmentList with. 
                                                 If None, initializes with an empty list.
         """
-        super().__init__(segments if segments is not None else [])
+        super().__init__(items_list if items_list is not None else [])
         self.rebuild_cache()
 
     def rebuild_cache(self):

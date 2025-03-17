@@ -12,14 +12,14 @@ class Workspace(JSONSerializable):
     Dataclass for the Workspace entity in the Permutive ecosystem.
     """
     name: str
-    organization_id: str
+    organisation_id: str
     workspace_id: str
     api_key: str
 
     @property
     def isTopLevel(self) -> bool:
         """Determines if the workspace is the top-level workspace."""
-        return self.organization_id == self.workspace_id
+        return self.organisation_id == self.workspace_id
 
     @property
     def cohorts(self) -> CohortList:
@@ -47,9 +47,9 @@ class Workspace(JSONSerializable):
 
 class WorkspaceList(List[Workspace], JSONSerializable):
     def __init__(self,
-                 workspaces: Optional[List[Workspace]] = None):
+                 items_list: Optional[List[Workspace]] = None):
         """Initializes the WorkspaceList with an optional list of Workspace objects."""
-        super().__init__(workspaces if workspaces is not None else [])
+        super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Workspace] = {}
         self._name_dictionary_cache: Dict[str, Workspace] = {}
         self.rebuild_cache()

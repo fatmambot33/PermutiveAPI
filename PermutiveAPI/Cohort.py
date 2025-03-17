@@ -199,11 +199,10 @@ class Cohort(JSONSerializable):
         return cohort_list
 
 
-
 class CohortList(List[Cohort], JSONSerializable):
 
-    def __init__(self, cohorts: Optional[List[Cohort]] = None):
-        super().__init__(cohorts if cohorts is not None else [])
+    def __init__(self, items_list: Optional[List[Cohort]] = None):
+        super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Cohort] = {}
         self._code_dictionary_cache: Dict[str, Cohort] = {}
         self._name_dictionary_cache: Dict[str, Cohort] = {}
@@ -222,8 +221,6 @@ class CohortList(List[Cohort], JSONSerializable):
             cohort.code: cohort for cohort in self if cohort.code}
         self._name_dictionary_cache = {
             cohort.name: cohort for cohort in self if cohort.name}
-        self._segment_type_dictionary_cache = {
-            cohort.segment_type: cohort for cohort in self if cohort.segment_type}
 
         for cohort in self:
             if cohort.tags:
@@ -278,3 +275,6 @@ class CohortList(List[Cohort], JSONSerializable):
             self.rebuild_cache()
         return self._workspace_dictionary_cache
 
+    def to_list(self) -> List[Cohort]:
+        """Returns the list of cohorts."""
+        return list(self)
