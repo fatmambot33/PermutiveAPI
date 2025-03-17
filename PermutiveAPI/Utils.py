@@ -2,7 +2,6 @@ import requests
 from requests.exceptions import RequestException
 from requests.models import Response
 import json
-import datetime
 import pathlib
 from glob import glob
 import ast
@@ -13,6 +12,8 @@ import json
 from dataclasses import asdict
 
 
+import datetime
+import json
 class RequestHelper:
     """
         A utility class for making HTTP requests to a RESTful API and handling common operations.
@@ -216,9 +217,9 @@ class RequestHelper:
         ) if value and (api_payload is None or key in api_payload)}
 
         # Serialize using the custom serializer
-        filtered_dict_string=json.dumps(filtered_dict,
-                          indent=4,
-                          cls=CustomJSONEncoder)
+        filtered_dict_string = json.dumps(filtered_dict,
+                                          indent=4,
+                                          cls=PermutiveJSONEncoder)
         return json.loads(filtered_dict_string)
 
     @staticmethod
@@ -312,17 +313,16 @@ class ListHelper:
         return lst
 
 
-class CustomJSONEncoder(json.JSONEncoder):
+T = TypeVar('T', bound='JSONSerializable')
+
+
+class PermutiveJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
             return obj.isoformat()
         if hasattr(obj, "to_json"):
             return obj.to_json()
         return super().default(obj)
-
-
-T = TypeVar('T', bound='JSONSerializable')
-
 
 class JSONSerializable:
     """
@@ -345,7 +345,7 @@ class JSONSerializable:
         """ Pretty-print JSON when calling print(object). """
         return json.dumps(self.to_json(),
                           indent=4,
-                          cls=CustomJSONEncoder)
+                          cls=PermutiveJSONEncoder)
 
     def to_json(self) -> dict:
         """Converts the object to a JSON-serializable dictionary."""
@@ -360,7 +360,7 @@ class JSONSerializable:
         """Serializes the object to a JSON file using CustomJSONEncoder."""
         with open(file=filepath, mode='w', encoding='utf-8') as f:
             json.dump(self.to_json(), f, ensure_ascii=False,
-                      indent=4, cls=CustomJSONEncoder)
+                      indent=4, cls=PermutiveJSONEncoder)
 
     @classmethod
     def from_json_file(cls: Type[T], filepath: str) -> T:
