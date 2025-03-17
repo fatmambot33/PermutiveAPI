@@ -143,18 +143,19 @@ class ImportList(List[Import],
 
     def __init__(self, imports: Optional[List[Import]] = None):
         super().__init__(imports if imports is not None else [])
+        self._id_dictionary_cache: Dict[str, Import] = {}
+        self._name_dictionary_cache: Dict[str, Import] = {}
+        self._identifier_dictionary_cache: Dict[str, ImportList]= defaultdict(list)
         self.rebuild_cache()
 
     def rebuild_cache(self):
         """Rebuilds all caches based on the current state of the list."""
-        self._id_dictionary_cache = {
-            import_.id: import_ for import_ in self if import_.id}
-        self._name_dictionary_cache = {
-            import_.name: import_ for import_ in self if import_.name}
-        self._identifier_dictionary_cache = defaultdict(ImportList)
-        for import_ in self:
-            for identifier in import_.identifiers:
-                self._identifier_dictionary_cache[identifier].append(import_)
+        for _import in self:
+            self._id_dictionary_cache[_import.id]=_import
+            self._name_dictionary_cache[_import.id]=_import
+            for identifier in _import.identifiers:
+                self._identifier_dictionary_cache[identifier].append(_import)
+        return self
 
     @property
     def id_dictionary(self) -> Dict[str, Import]:

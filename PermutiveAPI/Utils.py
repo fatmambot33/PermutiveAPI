@@ -5,7 +5,7 @@ import json
 import pathlib
 from glob import glob
 import ast
-from typing import Dict, List, Optional, Any, Union, Type, TypeVar,get_origin, get_args
+from typing import Dict, List, Optional, Any, Union, Type, TypeVar, get_origin, get_args
 import logging
 import os
 from dataclasses import asdict
@@ -14,7 +14,6 @@ from decimal import Decimal
 from enum import Enum
 import datetime
 import inspect
-
 
 
 class RequestHelper:
@@ -379,15 +378,29 @@ class JSONSerializable:
                           indent=4,
                           cls=customJSONEncoder)
 
-    def to_json(self) -> dict:
-        """Converts the object to a JSON-serializable dictionary."""
-        if hasattr(self, "__dataclass_fields__"):
-            data = asdict(self)
-        else:
-            data = {k: v for k, v in vars(
-                self).items() if not k.startswith("_")}
+    def to_json(self):
+        """Converts the object to a JSON-serializable format."""
+        
+        def serialize_value(v):
+            if isinstance(v, JSONSerializable):
+                return v.to_json()
+            elif isinstance(v, list): 
+                return [serialize_value(item) for item in v]
+            elif isinstance(v, dict):  
+                return {key: serialize_value(value) for key, value in v.items()}
+            else:
+                return json_default(v)
 
-        return {k: v.to_json() if isinstance(v, JSONSerializable) else json_default(v) for k, v in data.items()}
+        # Prioritize list behavior if self is a list
+        if isinstance(self, list):
+            return [serialize_value(item) for item in self]
+        elif hasattr(self, "__dataclass_fields__"):
+            return asdict(self)
+        elif hasattr(self, "__dict__"):
+            return {k: serialize_value(v) for k, v in self.__dict__.items() if not k.startswith("_")}
+        
+        return json_default(self)  # Fallback for unexpected cases
+
 
     def to_json_file(self, filepath: str):
         """Serializes the object to a JSON file using CustomJSONEncoder."""
@@ -402,18 +415,19 @@ class JSONSerializable:
         with open(file=filepath, mode='r') as json_file:
             data = json.load(json_file)
             return cls.from_json(data)
-        
 
     @classmethod
     def from_json(cls: Type[T], data: Any) -> Union[T, List[T]]:
-        """Handles JSON deserialization, including list-based classes like WorkspaceList."""
+        """Handles JSON deserialization"""
         if isinstance(data, list):
             if issubclass(cls, list):  # Handle WorkspaceList correctly
-                expected_type = get_args(cls.__orig_bases__[0])[0]  # Extract Workspace type
+                expected_type = get_args(cls.__orig_bases__[0])[
+                    0]  # Extract Workspace type
                 return cls([expected_type.from_json(item) if isinstance(item, dict) else item for item in data])
             return [cls.from_json(item) if isinstance(item, dict) else item for item in data]
 
         if not isinstance(data, dict):
-            raise TypeError(f"Expected a dictionary or list, but got {type(data).__name__}")
+            raise TypeError(
+                f"Expected a dictionary or list, but got {type(data).__name__}")
 
         return cls(**data)
