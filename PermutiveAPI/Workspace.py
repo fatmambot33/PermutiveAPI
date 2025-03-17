@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional,Any
 from dataclasses import dataclass
 
 from PermutiveAPI.Utils import JSONSerializable
@@ -36,12 +36,13 @@ class Workspace(JSONSerializable):
     @property
     def imports(self) -> List[Import]:
         if not hasattr(self, '_import_cache'):
-            self._import_cache = Import.list(privateKey=self.api_key)
+            self._import_cache = Import.list(api_key=self.api_key)
         return self._import_cache
 
     def list_segments(self,
                       import_id: str) -> List[Segment]:
-        return Segment.list(import_id=import_id, privateKey=self.api_key)
+        return Segment.list(import_id=import_id, 
+                            api_key=self.api_key)
 
 
 class WorkspaceList(List[Workspace], JSONSerializable):
@@ -81,12 +82,14 @@ class WorkspaceList(List[Workspace], JSONSerializable):
             if workspace.isTopLevel:
                 return workspace
         raise ValueError("No Top-Level Workspace found")
+    
+    @classmethod
+    def from_json(cls, data: Any) -> "WorkspaceList":
+        if not isinstance(data, list):
+            raise TypeError(f"Expected a list, but got {type(data).__name__}")
+
+        return cls([Workspace.from_json(item) if isinstance(item, dict) else item for item in data])
 
     def to_json(self) -> List[dict]:
-        return [ws.to_json() for ws in self]
-
-    @classmethod
-    def from_json(cls,
-                  data: List[dict]) -> 'WorkspaceList':
-        workspaces = [Workspace.from_json(item) for item in data]
-        return cls(workspaces)
+        """Serializes the WorkspaceList into a list of dictionaries."""
+        return [item.to_json() for item in self]

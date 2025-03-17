@@ -29,30 +29,16 @@ class Identity(JSONSerializable):
     user_id: str
     aliases: List[Alias]
 
-    def to_json(self) -> dict:
-        return {
-            "user_id": self.user_id,
-            "aliases": [alias.to_json() for alias in self.aliases] if self.aliases else None
-        }
-
-    @classmethod
-    def from_json(cls, 
-                  data: dict) -> 'Identity':
-        aliases_data = data.get('aliases')
-        if aliases_data:
-            data['segments'] = [Alias.from_json(
-                alias) for alias in aliases_data]
-        return super().from_json(data)
 
     def Identify(self,
-                 privateKey: str):
+                 api_key: str):
 
         logging.debug(
             f"{datetime.now()}::UserAPI::identify::{self.user_id}")
 
         url = f"{_API_ENDPOINT}"
 
-        return RequestHelper.post_static(api_key=privateKey,
+        return RequestHelper.post_static(api_key=api_key,
                                                 url=url,
                                                 data=RequestHelper.to_payload_static(self,
                                                                                      _API_PAYLOAD))

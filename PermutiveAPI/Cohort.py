@@ -2,7 +2,7 @@
 import logging
 from typing import Dict, List, Optional, Union
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable
 from collections import defaultdict
 
@@ -198,131 +198,6 @@ class Cohort(JSONSerializable):
                                  for cohort in response.json()])
         return cohort_list
 
-    def to_json(self) -> dict:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "code": self.code,
-            "query": self.query,
-            "tags": self.tags,
-            "description": self.description,
-            "state": self.state,
-            "segment_type": self.segment_type,
-            "live_audience_size": self.live_audience_size,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "last_updated_at": self.last_updated_at.isoformat() if self.last_updated_at else None,
-            "workspace_id": self.workspace_id,
-            "request_id": self.request_id,
-            "error": self.error
-        }
-
-    def dict_to_sql_databricks(self, table_mapping,
-                               start_date: datetime = datetime.now() - timedelta(days=31),
-                               end_date: datetime = datetime.now() - timedelta(days=1)):
-
-        def condition_to_sql(condition: Dict[str, Union[str, list]], property_name: str) -> Optional[str]:
-            # Remove 'properties.' prefix
-            property_name = property_name.replace('properties.', '')
-            sql_parts = []
-            if 'contains' in condition:
-                values = condition['contains']
-                if isinstance(values, str):
-                    values = [values]
-                for value in values:
-                    sql_parts.append(
-                        "{} LIKE '%{}%'".format(property_name, value))
-            elif 'equal_to' in condition:
-                values = condition['equal_to']
-                if isinstance(values, list):
-                    sql_parts.append("{} IN ({})".format(
-                        property_name, ', '.join("'{}'".format(v) for v in values)))
-                else:
-                    sql_parts.append("{} = '{}'".format(property_name, values))
-            elif 'list_contains' in condition:
-                values = condition['list_contains']
-                if isinstance(values, list):
-                    sql_parts.append("ARRAYS_OVERLAP({}, ARRAY({}))".format(
-                        property_name, ', '.join("'{}'".format(v) for v in values)))
-                else:
-                    sql_parts.append(
-                        "ARRAYS_OVERLAP({}, ARRAY('{}'))".format(property_name, values))
-            elif 'condition' in condition:
-                logging.debug(f"Condition: {condition}")
-            if len(sql_parts) > 0:
-                return " OR ".join(sql_parts)
-
-        def parse_where(where_clause):
-            if 'or' in where_clause:
-                or_conditions = []
-                for clause in where_clause['or']:
-                    or_conditions.append(parse_where(clause))
-                return " OR ".join(f"({cond})" for cond in or_conditions)
-            elif 'and' in where_clause:
-                and_conditions = []
-                for clause in where_clause['and']:
-                    and_conditions.append(parse_where(clause))
-                return " AND ".join(f"({cond})" for cond in and_conditions)
-            elif 'condition' in where_clause and 'property' in where_clause:
-                return condition_to_sql(where_clause['condition'], where_clause['property'])
-            else:
-                print(where_clause)
-
-        def parse_event(event, table_name) -> Optional[str]:
-            start_d = start_date.strftime('%Y-%m-%d')
-            end_d = end_date.strftime('%Y-%m-%d')
-            event_conditions = [f"dt BETWEEN '{start_d}' AND '{end_d}'"]
-            where_sql = None
-            if 'where' in event:
-                where_sql = parse_where(event['where'])
-                event_conditions.append(f"({where_sql})")
-            base_query = f"SELECT user_id FROM {table_name} WHERE " + \
-                " AND ".join(event_conditions) + " GROUP BY user_id"
-            if 'frequency' in event:
-                frequency = event['frequency']
-                if 'greater_than_or_equal_to' in frequency:
-                    base_query += f" HAVING COUNT(*) >= {frequency['greater_than_or_equal_to']}"
-                if 'greater_than' in frequency:
-                    base_query += f" HAVING COUNT(*) > {frequency['greater_than']}"
-                if 'equal_to' in frequency:
-                    base_query += f" HAVING COUNT(*) = {frequency['equal_to']}"
-            if where_sql:
-                return base_query
-            else:
-                print(f"{table_name}:no where")
-
-        def parse_query(query):
-            if 'or' in query:
-                queries = []
-                for event in query['or']:
-                    parsed_query = parse_query(event)
-                    if parsed_query:
-                        queries.append(parsed_query)
-                if len(queries) == 0:
-                    return None
-                sqlquery = " UNION ".join(queries)
-                return f"({sqlquery})"
-            elif 'and' in query:
-                queries = []
-                for event in query['and']:
-                    parsed_query = parse_query(event)
-                    if parsed_query:
-                        queries.append(parsed_query)
-                if len(queries) == 0:
-                    return None
-                sqlquery = " INTERSECT ".join(queries)
-                return f"({sqlquery})"
-            elif 'event' in query:
-                event_name = query['event']
-                table_name = table_mapping.get(event_name)
-                if table_name:
-                    parsed_event = parse_event(query, table_name)
-                    return parsed_event
-                else:
-                    print(f"Missing mapping for {event_name}")
-            else:
-                print(query)
-
-        return parse_query(self.query)
 
 
 class CohortList(List[Cohort], JSONSerializable):
@@ -406,11 +281,3 @@ class CohortList(List[Cohort], JSONSerializable):
             self.rebuild_cache()
         return self._workspace_dictionary_cache
 
-    def to_json(self) -> List[dict]:
-        return [_item.to_json() for _item in self]
-
-    @classmethod
-    def from_json(cls,
-                  data: List[dict]) -> 'CohortList':
-        cohorts = [Cohort.from_json(item) for item in data]
-        return cls(cohorts)

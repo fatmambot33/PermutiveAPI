@@ -5,15 +5,18 @@ import json
 import pathlib
 from glob import glob
 import ast
-from typing import Dict, List, Optional, Any, Union, Type, TypeVar
+from typing import Dict, List, Optional, Any, Union, Type, TypeVar,get_origin, get_args
 import logging
 import os
-import json
 from dataclasses import asdict
-
-
+import uuid
+from decimal import Decimal
+from enum import Enum
 import datetime
-import json
+import inspect
+
+
+
 class RequestHelper:
     """
         A utility class for making HTTP requests to a RESTful API and handling common operations.
@@ -171,7 +174,7 @@ class RequestHelper:
             Send an HTTP PATCH request to the specified URL with JSON data.
 
             Args:
-                url (str): The URL to send the PATCH request to.
+                url (str): The URL to send the PATCH request Permutiveto.
                 data (dict): The JSON data to include in the request body.
                 headers (Optional[Dict[str, str]]): Custom headers to include in the request. Defaults to None.
 
@@ -219,7 +222,7 @@ class RequestHelper:
         # Serialize using the custom serializer
         filtered_dict_string = json.dumps(filtered_dict,
                                           indent=4,
-                                          cls=PermutiveJSONEncoder)
+                                          cls=customJSONEncoder)
         return json.loads(filtered_dict_string)
 
     @staticmethod
@@ -316,13 +319,42 @@ class ListHelper:
 T = TypeVar('T', bound='JSONSerializable')
 
 
-class PermutiveJSONEncoder(json.JSONEncoder):
+def json_default(value: Any):
+    """Custom JSON serialization function for complex data types."""
+    if isinstance(value, Enum):
+        return value.value
+    elif isinstance(value, (float, Decimal)):
+        return float(value)
+    elif isinstance(value, (int)):
+        return int(value)
+    elif isinstance(value, uuid.UUID):
+        return str(value)  # Convert UUID to string
+    elif isinstance(value, datetime.datetime):
+        return value.isoformat()
+    elif isinstance(value, datetime.date):
+        return {"year": value.year, "month": value.month, "day": value.day}
+    elif isinstance(value, (list, set, tuple)):
+        # Recursively process items
+        return [json_default(item) for item in value]
+    elif isinstance(value, dict):
+        # Handle dicts recursively
+        return {k: json_default(v) for k, v in value.items()}
+    elif hasattr(value, "__dict__"):
+        # Convert objects to dict
+        return {k: json_default(v) for k, v in value.__dict__.items()}
+    elif value is None:
+        return None
+    else:
+        return str(value)
+
+
+class customJSONEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        if hasattr(obj, "to_json"):
-            return obj.to_json()
-        return super().default(obj)
+        try:
+            return json_default(obj)
+        except TypeError:
+            return super().default(obj)
+
 
 class JSONSerializable:
     """
@@ -345,22 +377,24 @@ class JSONSerializable:
         """ Pretty-print JSON when calling print(object). """
         return json.dumps(self.to_json(),
                           indent=4,
-                          cls=PermutiveJSONEncoder)
+                          cls=customJSONEncoder)
 
     def to_json(self) -> dict:
         """Converts the object to a JSON-serializable dictionary."""
-        return asdict(self)
+        if hasattr(self, "__dataclass_fields__"):
+            data = asdict(self)
+        else:
+            data = {k: v for k, v in vars(
+                self).items() if not k.startswith("_")}
 
-    @classmethod
-    def from_json(cls: Type[T], data: dict) -> T:
-        """Creates an instance of the class from a JSON dictionary."""
-        return cls(**data)
+        return {k: v.to_json() if isinstance(v, JSONSerializable) else json_default(v) for k, v in data.items()}
 
     def to_json_file(self, filepath: str):
         """Serializes the object to a JSON file using CustomJSONEncoder."""
+        FileHelper.check_filepath(filepath=filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
             json.dump(self.to_json(), f, ensure_ascii=False,
-                      indent=4, cls=PermutiveJSONEncoder)
+                      indent=4, cls=customJSONEncoder)
 
     @classmethod
     def from_json_file(cls: Type[T], filepath: str) -> T:
@@ -368,3 +402,18 @@ class JSONSerializable:
         with open(file=filepath, mode='r') as json_file:
             data = json.load(json_file)
             return cls.from_json(data)
+        
+
+    @classmethod
+    def from_json(cls: Type[T], data: Any) -> Union[T, List[T]]:
+        """Handles JSON deserialization, including list-based classes like WorkspaceList."""
+        if isinstance(data, list):
+            if issubclass(cls, list):  # Handle WorkspaceList correctly
+                expected_type = get_args(cls.__orig_bases__[0])[0]  # Extract Workspace type
+                return cls([expected_type.from_json(item) if isinstance(item, dict) else item for item in data])
+            return [cls.from_json(item) if isinstance(item, dict) else item for item in data]
+
+        if not isinstance(data, dict):
+            raise TypeError(f"Expected a dictionary or list, but got {type(data).__name__}")
+
+        return cls(**data)

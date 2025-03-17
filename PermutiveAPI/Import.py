@@ -106,31 +106,6 @@ class Import(JSONSerializable):
 
         return [create_import(item) for item in imports['items']]
 
-    def to_json(self) -> dict:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "code": self.code,
-            "relation": self.relation,
-            "identifiers": self.identifiers,
-            "source": self.source.to_json() if self.source else None,
-            "description": self.description,
-            "inheritance": self.inheritance,
-            "segments": [segment.to_json() for segment in self.segments] if self.segments else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
-        }
-
-    @classmethod
-    def from_json(cls,
-                  data: dict) -> 'Import':
-        source_data = data.get('source')
-        if source_data:
-            data['source'] = Source.from_json(source_data)
-        segments_data = data.get('segments')
-        if segments_data:
-            data['segments'] = SegmentList(
-                [Segment.from_json(segment) for segment in segments_data])
-        return super().from_json(data)
 
 
 class ImportList(List[Import],
@@ -201,14 +176,6 @@ class ImportList(List[Import],
         if not self._identifier_dictionary_cache:
             self.rebuild_cache()
         return self._identifier_dictionary_cache
-
-    def to_json(self) -> List[dict]:
-        return [import_.to_json() for import_ in self]
-
-    @classmethod
-    def from_json(cls, data: List[dict]) -> 'ImportList':
-        imports = [Import.from_json(item) for item in data]
-        return cls(imports)
 
 
 @dataclass
@@ -439,26 +406,6 @@ class Segment(JSONSerializable):
 
         return all_segments
 
-    def to_json(self) -> dict:
-        return {
-            "code": self.code,
-            "name": self.name,
-            "import_id": self.import_id,
-            "id": self.id,
-            "description": self.description,
-            "cpm": self.cpm,
-            "categories": self.categories,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
-        }
-
-    @classmethod
-    def from_json(cls,
-                  data: dict) -> 'Segment':
-        data['updated_at'] = datetime.fromisoformat(
-            data.get("updated_at")) if data.get("updated_at") else None
-        return super().from_json(data)
-
-
 class SegmentList(List[Segment],
                   JSONSerializable):
     """
@@ -557,12 +504,3 @@ class SegmentList(List[Segment],
         if not self._code_dictionary_cache:
             self.rebuild_cache()
         return self._code_dictionary_cache
-
-    def to_json(self) -> List[dict]:
-        return [segment.to_json() for segment in self]
-
-    @classmethod
-    def from_json(cls,
-                  data: List[dict]) -> 'SegmentList':
-        segments = [Segment.from_json(item) for item in data]
-        return cls(segments)
