@@ -107,7 +107,6 @@ class Import(JSONSerializable):
         return [create_import(item) for item in imports['items']]
 
 
-
 class ImportList(List[Import],
                  JSONSerializable):
     """
@@ -145,14 +144,15 @@ class ImportList(List[Import],
         super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Import] = {}
         self._name_dictionary_cache: Dict[str, Import] = {}
-        self._identifier_dictionary_cache: Dict[str, ImportList]= defaultdict(list)
+        self._identifier_dictionary_cache: Dict[str, ImportList] = defaultdict(
+            list)
         self.rebuild_cache()
 
     def rebuild_cache(self):
         """Rebuilds all caches based on the current state of the list."""
         for _import in self:
-            self._id_dictionary_cache[_import.id]=_import
-            self._name_dictionary_cache[_import.id]=_import
+            self._id_dictionary_cache[_import.id] = _import
+            self._name_dictionary_cache[_import.id] = _import
             for identifier in _import.identifiers:
                 self._identifier_dictionary_cache[identifier].append(_import)
         return self
@@ -177,6 +177,10 @@ class ImportList(List[Import],
         if not self._identifier_dictionary_cache:
             self.rebuild_cache()
         return self._identifier_dictionary_cache
+
+    def to_list(self) -> List[Import]:
+        """Returns the list of imports."""
+        return list(self)
 
 
 @dataclass
@@ -407,6 +411,7 @@ class Segment(JSONSerializable):
 
         return all_segments
 
+
 class SegmentList(List[Segment],
                   JSONSerializable):
     """
@@ -505,3 +510,7 @@ class SegmentList(List[Segment],
         if not self._code_dictionary_cache:
             self.rebuild_cache()
         return self._code_dictionary_cache
+
+    def to_list(self) -> List[Segment]:
+        """Returns the list of segments."""
+        return list(self)

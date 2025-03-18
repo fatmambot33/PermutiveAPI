@@ -5,7 +5,7 @@ import json
 import pathlib
 from glob import glob
 import ast
-from typing import Dict, List, Optional, Any, Union, Type, TypeVar, get_origin, get_args
+from typing import Dict, List, Optional, Any, Union, Type, TypeVar, get_args
 import logging
 import os
 from dataclasses import asdict
@@ -13,7 +13,6 @@ import uuid
 from decimal import Decimal
 from enum import Enum
 import datetime
-import inspect
 
 
 class RequestHelper:
@@ -380,13 +379,13 @@ class JSONSerializable:
 
     def to_json(self):
         """Converts the object to a JSON-serializable format."""
-        
+
         def serialize_value(v):
             if isinstance(v, JSONSerializable):
                 return v.to_json()
-            elif isinstance(v, list): 
+            elif isinstance(v, list):
                 return [serialize_value(item) for item in v]
-            elif isinstance(v, dict):  
+            elif isinstance(v, dict):
                 return {key: serialize_value(value) for key, value in v.items()}
             else:
                 return json_default(v)
@@ -398,9 +397,8 @@ class JSONSerializable:
             return asdict(self)
         elif hasattr(self, "__dict__"):
             return {k: serialize_value(v) for k, v in self.__dict__.items() if not k.startswith("_")}
-        
-        return json_default(self)  # Fallback for unexpected cases
 
+        return json_default(self)  # Fallback for unexpected cases
 
     def to_json_file(self, filepath: str):
         """Serializes the object to a JSON file using CustomJSONEncoder."""
