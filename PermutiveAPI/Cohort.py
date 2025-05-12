@@ -61,6 +61,7 @@ class Cohort(JSONSerializable):
     query: Optional[Dict] = None
     tags: Optional[List[str]] = None
     description: Optional[str] = None
+    subject_entity_level: Optional[str] = None
     state: Optional[str] = None
     segment_type: Optional[str] = None
     live_audience_size: Optional[int] = 0
