@@ -24,6 +24,11 @@ Edit the `.env` file to include the path to your workspace JSON file:
 PERMUTIVE_APPLICATION_CREDENTIALS="/absolute/path/to/workspace.json"
 ```
 
+The workspace credentials JSON can be downloaded from the Permutive dashboard
+under **Settings \u2192 API keys**. Save the file somewhere secure and set the
+`PERMUTIVE_APPLICATION_CREDENTIALS` variable to its absolute path. The `apiKey`
+inside this JSON is used to authenticate API calls.
+
 ## Usage
 
 ### Importing the Module
@@ -104,6 +109,22 @@ imports = workspace.imports
 
 # List segments in a workspace
 segments = workspace.list_segments(import_id="import_id")
+```
+
+## Development
+
+Install the dependencies and set up your environment:
+
+```sh
+pip install -r requirements.txt
+cp _env .env  # update the path to your workspace.json
+```
+
+After configuring the `.env` file you can import the package to verify
+everything is configured correctly:
+
+```sh
+python -c "import PermutiveAPI"
 ```
 
 ## License
