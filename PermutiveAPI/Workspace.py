@@ -1,4 +1,5 @@
-from typing import Dict, List, Optional, Any,overload,Type,Union
+from typing import Dict, List, Optional, Any, overload, Type, Union
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from PermutiveAPI.Utils import JSONSerializable
@@ -104,3 +105,8 @@ class WorkspaceList(List[Workspace], JSONSerializable):
     def to_list(self) -> List[Workspace]:
         """Returns the list of workspaces."""
         return list(self)
+
+    @classmethod
+    def from_json_string(cls, json_string: str) -> "WorkspaceList":
+        """Create a ``WorkspaceList`` from a JSON string."""
+        return cls.from_json(json_string)
