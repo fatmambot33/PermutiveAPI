@@ -2,8 +2,8 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+The table below lists the versions of PermutiveAPI that currently receive
+security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -14,8 +14,10 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
-
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+If you believe you have found a security issue, please email
+[security@permutive.com](mailto:security@permutive.com) with a detailed
+description of the problem. We will acknowledge your report within five
+business days. After triage we will keep you informed of the status at least
+every two weeks until the issue is resolved. We aim to release fixes for
+confirmed vulnerabilities within 90 days of the initial report whenever
+possible.
