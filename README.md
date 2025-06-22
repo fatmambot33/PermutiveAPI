@@ -105,6 +105,10 @@ imports = workspace.imports
 # List segments in a workspace
 segments = workspace.list_segments(import_id="import_id")
 ```
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and pull request guidelines.
+
 
 ## License
 
