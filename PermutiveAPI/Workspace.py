@@ -1,6 +1,6 @@
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any,overload,Type,Union
 from dataclasses import dataclass
-
+from pathlib import Path
 from PermutiveAPI.Utils import JSONSerializable
 from PermutiveAPI.Import import Import, Segment
 from PermutiveAPI.Cohort import Cohort, CohortList
@@ -43,6 +43,24 @@ class Workspace(JSONSerializable):
                       import_id: str) -> List[Segment]:
         return Segment.list(import_id=import_id,
                             api_key=self.api_key)
+    @overload
+    @classmethod
+    def from_json(cls: Type["Workspace"], data: dict) -> "Workspace": ...
+    
+    @overload
+    @classmethod
+    def from_json(cls: Type["Workspace"], data: list[dict]) -> list["Workspace"]: ...
+    
+    @overload
+    @classmethod
+    def from_json(cls: Type["Workspace"], data: str) -> Union["Workspace", list["Workspace"]]: ...
+    @overload
+    @classmethod
+    def from_json(cls: Type["Workspace"], data: Path) -> Union["Workspace", list["Workspace"]]: ...
+    
+    @classmethod
+    def from_json(cls: Type["Workspace"], data: Any) -> Union["Workspace", list["Workspace"]]:
+        return super().from_json(data)
 
 
 class WorkspaceList(List[Workspace], JSONSerializable):

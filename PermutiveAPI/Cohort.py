@@ -90,8 +90,9 @@ class Cohort(JSONSerializable):
                                              data=RequestHelper.to_payload_static(self,
                                                                                   _API_PAYLOAD))
         created = Cohort.from_json(response.json())
-        self.id = created.id
-        self.code = created.code
+        if isinstance(created, Cohort):
+            self.id = created.id
+            self.code = created.code
 
     def update(self,
                api_key: str):
@@ -140,8 +141,11 @@ class Cohort(JSONSerializable):
         url = f"{_API_ENDPOINT}{id}"
         response = RequestHelper.get_static(api_key=api_key,
                                             url=url)
-
-        return Cohort.from_json(response.json())
+        cohort= Cohort.from_json(response.json())
+        if isinstance(cohort, Cohort):
+            return cohort
+        else:
+            raise ValueError(f"Failed to fetch cohort with ID: {id}. Response: {response.text}")
 
     @staticmethod
     def get_by_name(

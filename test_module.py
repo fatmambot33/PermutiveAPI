@@ -12,8 +12,8 @@ workspace_instance = Workspace(
                          organisation_id="Act",
                          workspace_id="workspace_description",
                          api_key="workspace_updated_at")
-workspace_list_instance_json = workspace_instance.to_json()
-workspace_instance = Workspace.from_json(workspace_list_instance_json)
+workspace_instance_json = workspace_instance.to_json()
+workspace_instance = Workspace.from_json(workspace_instance_json)
 workspace_list_instance = WorkspaceList(items_list=[workspace_instance])
 workspace_list_instance_json = workspace_list_instance.to_json()
 workspace_list_instance = WorkspaceList.from_json(workspace_list_instance)

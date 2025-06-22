@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, DefaultDict
 from dataclasses import dataclass, field
 from datetime import datetime
 from collections import defaultdict
@@ -144,8 +144,8 @@ class ImportList(List[Import],
         super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Import] = {}
         self._name_dictionary_cache: Dict[str, Import] = {}
-        self._identifier_dictionary_cache: Dict[str, ImportList] = defaultdict(
-            list)
+        self._identifier_dictionary_cache: DefaultDict[str, ImportList] = defaultdict(
+            ImportList)
         self.rebuild_cache()
 
     def rebuild_cache(self):
@@ -290,7 +290,7 @@ class Segment(JSONSerializable):
                                                url=url)
         return response.status_code == 204
 
-    @classmethod
+    @staticmethod
     def get(import_id: str,
             segment_id: str,
             api_key: str) -> 'Segment':
@@ -316,7 +316,11 @@ class Segment(JSONSerializable):
                                             url=url)
         if not response:
             raise ValueError('Unable to get_segment')
-        return Segment.from_json(response.json())
+        segment = Segment.from_json(response.json())
+        if isinstance(segment, Segment):
+            return segment
+        else:
+            raise ValueError('Segment not found or invalid response format')
 
     @staticmethod
     def get_by_code(import_id: str,
@@ -344,6 +348,11 @@ class Segment(JSONSerializable):
                                             )
         if not response:
             raise ValueError('Unable to get_segment')
+        segment = Segment.from_json(response.json())
+        if isinstance(segment, Segment):
+            return segment
+        else:
+            raise ValueError('Segment not found or invalid response format')
         return Segment.from_json(response.json())
 
     @staticmethod
@@ -368,7 +377,11 @@ class Segment(JSONSerializable):
                                             api_key=api_key)
         if not response:
             raise ValueError('Unable to get_by_id')
-        return Segment.from_json(response.json())
+        segment = Segment.from_json(response.json())
+        if isinstance(segment, Segment):
+            return segment
+        else:
+            raise ValueError('Segment not found or invalid response format')
 
     @staticmethod
     def list(import_id: str,

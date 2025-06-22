@@ -5,14 +5,15 @@ import json
 import pathlib
 from glob import glob
 import ast
-from typing import Dict, List, Optional, Any, Union, Type, TypeVar, get_args
+from typing import Dict, List, Optional, Any, Union, Type, TypeVar, get_args, overload
 import logging
 import os
-from dataclasses import asdict
+from dataclasses import dataclass, is_dataclass, fields, Field as DataclassField
 import uuid
 from decimal import Decimal
 from enum import Enum
 import datetime
+from pathlib import Path
 
 
 class RequestHelper:
@@ -347,11 +348,11 @@ def json_default(value: Any):
 
 
 class customJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, o):
         try:
-            return json_default(obj)
+            return json_default(o)
         except TypeError:
-            return super().default(obj)
+            return super().default(o)
 
 
 class JSONSerializable:
@@ -377,28 +378,47 @@ class JSONSerializable:
                           indent=4,
                           cls=customJSONEncoder)
 
-    def to_json(self):
+    def to_json(self) -> Union[dict[str, Any], list[Any]]:
         """Converts the object to a JSON-serializable format."""
 
         def serialize_value(v):
             if isinstance(v, JSONSerializable):
                 return v.to_json()
             elif isinstance(v, list):
-                return [serialize_value(item) for item in v]
+                return [serialize_value(item) for item in v if item not in (None, [], {})]
             elif isinstance(v, dict):
-                return {key: serialize_value(value) for key, value in v.items()}
+                return {key: serialize_value(value) for key, value in v.items() if value not in (None, [], {})}
             else:
                 return json_default(v)
 
-        # Prioritize list behavior if self is a list
-        if isinstance(self, list):
-            return [serialize_value(item) for item in self]
-        elif hasattr(self, "__dataclass_fields__"):
-            return asdict(self)
+        # Case 1: if self is a dict-like object
+        if isinstance(self, dict):
+            return {k: serialize_value(v) for k, v in self.items() if not str(k).startswith("_")}
+
+        # Case 2: if self is a list-like object
+        elif isinstance(self, list):
+            return [serialize_value(item) for item in self if item not in (None, [], {})]
+
+        # Case 3: if self is a dataclass
+        elif is_dataclass(self):
+            result = {}
+            for f in fields(self):
+                try:
+                    value = getattr(self, f.name)
+                    serialized = serialize_value(value)
+                    if serialized not in (None, [], {}):
+                        result[f.name] = serialized
+                except Exception as e:
+                    logging.warning(f"Error serializing field {f.name}: {e}")
+            return result
+
+        # Case 4: fallback to __dict__ if available
         elif hasattr(self, "__dict__"):
             return {k: serialize_value(v) for k, v in self.__dict__.items() if not k.startswith("_")}
 
-        return json_default(self)  # Fallback for unexpected cases
+        # Final fallback for unsupported objects — raise error instead of returning str/float
+        raise TypeError(f"{type(self).__name__} is not JSON-serializable")
+
 
     def to_json_file(self, filepath: str):
         """Serializes the object to a JSON file using CustomJSONEncoder."""
@@ -414,18 +434,59 @@ class JSONSerializable:
             data = json.load(json_file)
             return cls.from_json(data)
 
+    @overload
+    @classmethod
+    def from_json(cls: Type[T], data: dict) -> T: ...
+
+    @overload
+    @classmethod
+    def from_json(cls: Type[T], data: list[dict]) -> list[T]: ...
+
+    @overload
+    @classmethod
+    def from_json(cls: Type[T], data: str) -> Union[T, List[T]]: ...
+
+    @overload
+    @classmethod
+    def from_json(cls: Type[T], data: Path) -> Union[T, List[T]]: ...
+
     @classmethod
     def from_json(cls: Type[T], data: Any) -> Union[T, List[T]]:
-        """Handles JSON deserialization"""
+        """Handles JSON deserialization from dict, list[dict], JSON string, or file path."""
+
+        # Load if input is a string or path
+        if isinstance(data, (str, Path)):
+            try:
+                if isinstance(data, Path):
+                    content = data.read_text(encoding="utf-8")
+                else:
+                    content = data
+                data = json.loads(content)
+            except Exception as e:
+                raise TypeError(f"Failed to parse JSON from input: {e}")
+
+        # If list of dicts and cls is a list subclass
         if isinstance(data, list):
-            if issubclass(cls, list):  # Handle WorkspaceList correctly
-                expected_type = get_args(cls.__orig_bases__[0])[
-                    0]  # Extract Workspace type
-                return cls([expected_type.from_json(item) if isinstance(item, dict) else item for item in data])
-            return [cls.from_json(item) if isinstance(item, dict) else item for item in data]
+            if issubclass(cls, list):
+                try:
+                    # type: ignore[attr-defined]
+                    base_args = get_args(cls.__orig_bases__[0]) # type: ignore
+                    if not base_args:
+                        raise TypeError(
+                            "Cannot determine list item type for deserialization")
+                    item_type = base_args[0]
+                except Exception as e:
+                    raise TypeError(
+                        f"Failed to resolve list item type for {cls.__name__}: {e}")
+                # type: ignore
+                return cls([item_type.from_json(item) for item in data])
+            else:
+                return [cls.from_json(item) for item in data]
 
-        if not isinstance(data, dict):
-            raise TypeError(
-                f"Expected a dictionary or list, but got {type(data).__name__}")
+        # Single dict
+        if isinstance(data, dict):
+            return cls(**data)
 
-        return cls(**data)
+        raise TypeError(
+            f"`from_json()` expected a dict, list of dicts, JSON string, or Path, but got {type(data).__name__}"
+        )
