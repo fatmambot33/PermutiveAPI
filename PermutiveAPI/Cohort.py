@@ -250,7 +250,7 @@ class CohortList(List[Cohort], JSONSerializable):
         """Returns a dictionary of cohorts indexed by their code"""
         if not self._code_dictionary_cache:
             self.rebuild_cache()
-        return self._id_dictionary_cache
+        return self._code_dictionary_cache
 
     @property
     def name_dictionary(self) -> Dict[str, Cohort]:

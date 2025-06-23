@@ -152,7 +152,7 @@ class ImportList(List[Import],
         """Rebuilds all caches based on the current state of the list."""
         for _import in self:
             self._id_dictionary_cache[_import.id] = _import
-            self._name_dictionary_cache[_import.id] = _import
+            self._name_dictionary_cache[_import.name] = _import
             for identifier in _import.identifiers:
                 self._identifier_dictionary_cache[identifier].append(_import)
         return self
@@ -356,7 +356,8 @@ class Segment(JSONSerializable):
         return Segment.from_json(response.json())
 
     @staticmethod
-    def get_by_id(id: str,
+    def get_by_id(import_id:str,
+                  segment_id: str,
                   api_key: str) -> 'Segment':
         """
         Retrieve a Segment by its ID.
@@ -372,7 +373,9 @@ class Segment(JSONSerializable):
             ValueError: If the segment cannot be retrieved.
         """
         logging.debug(f"{datetime.now()}::SegmentAPI::get_segment:{id}")
-        url = f"{_API_ENDPOINT}/{id}"
+        logging.debug(
+            f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
+        url = f"{_API_ENDPOINT}/{import_id}/segments/{segment_id}"
         response = RequestHelper.get_static(url=url,
                                             api_key=api_key)
         if not response:
@@ -471,7 +474,7 @@ class SegmentList(List[Segment],
         self._name_dictionary_cache = {
             segment.name: segment for segment in self if segment.name}
         self._code_dictionary_cache = {
-            segment.code: segment for segment in self if segment.name}
+            segment.code: segment for segment in self if segment.code}
 
     @property
     def id_dictionary(self) -> Dict[str, Segment]:
