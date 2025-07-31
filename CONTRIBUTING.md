@@ -33,6 +33,16 @@ black .
 flake8
 ```
 
+## Running Tests
+
+This project uses Python's built-in `unittest` framework. To run the test suite, navigate to the root directory of the project and run the following command:
+
+```sh
+python -m unittest discover tests
+```
+
+This will automatically discover and run all tests within the `tests` directory. Please ensure all tests pass before submitting a pull request.
+
 ## Pull Request Process
 
 1. Create a new branch for your feature or bugfix:

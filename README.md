@@ -56,7 +56,7 @@ identity = Identity(user_id="user_id", aliases=[alias])
 identity_json = identity.to_json()
 
 # Identify a user
-identity.Identify(api_key="your_private_key")
+identity.identify(api_key="your_private_key")
 ```
 
 ### Managing Imports
