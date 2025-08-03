@@ -15,6 +15,13 @@ _API_PAYLOAD = ["user_id", "aliases"]
 class Alias(JSONSerializable):
     """
     Dataclass for the Alias entity in the Permutive ecosystem.
+
+    :param id: The ID of the alias.
+    :type id: str
+    :param tag: The tag of the alias.
+    :type tag: str
+    :param priority: The priority of the alias.
+    :type priority: int
     """
     id: str
     tag: str
@@ -24,15 +31,28 @@ class Alias(JSONSerializable):
 @dataclass
 class Identity(JSONSerializable):
     """
-    Dataclass for the Source entity in the Permutive ecosystem.
+    Dataclass for the Identity entity in the Permutive ecosystem.
+
+    :param user_id: The user's ID.
+    :type user_id: str
+    :param aliases: A list of aliases for the user.
+    :type aliases: List[Alias]
     """
     user_id: str
     aliases: List[Alias]
 
-
-    def Identify(self,
+    def identify(self,
                  api_key: str):
+        """
+        Identifies a user in Permutive.
 
+        This method sends a POST request to the Permutive API to identify a user
+        with the given aliases.
+
+        :param api_key: The API key for authentication.
+        :type api_key: str
+        :return: The response from the Permutive API.
+        """
         logging.debug(
             f"{datetime.now()}::UserAPI::identify::{self.user_id}")
 

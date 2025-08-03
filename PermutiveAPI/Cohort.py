@@ -18,41 +18,19 @@ class Cohort(JSONSerializable):
 
     Attributes:
         name (str): The name of the cohort.
-        id (str, optional): The unique identifier of the cohort.
-        code (str, optional): The code associated with the cohort.
-        query (Dict, optional): The query used to define the cohort.
-        tags (List[str], optional): Tags associated with the cohort.
-        description (str, optional): A description of the cohort.
-        state (str, optional): The state of the cohort.
-        segment_type (str, optional): The type of segment.
-        live_audience_size (int, optional): The size of the live audience.
-        created_at (datetime, optional): The creation date of the cohort.
-        last_updated_at (datetime, optional): The last update date of the cohort.
-        workspace_id (str, optional): The ID of the associated workspace.
-        request_id (str, optional): The request ID associated with cohort operations.
-        error (str, optional): An error message, if an error occurs during operations.
-
-    Methods:
-        create(api_key: str) -> None:
-            Creates a new cohort in the Permutive ecosystem.
-
-        update(api_key: str) -> Cohort:
-            Updates an existing cohort.
-
-        delete(api_key: str) -> None:
-            Deletes the current cohort.
-
-        get_by_id(id: str, api_key: str) -> Cohort:
-            Retrieves a cohort by its unique identifier.
-
-        get_by_name(name: str, api_key: str) -> Optional[Cohort]:
-            Retrieves a cohort by its name.
-
-        get_by_code(code: Union[int, str], api_key: str) -> Optional[Cohort]:
-            Retrieves a cohort by its code.
-
-        list(include_child_workspaces: bool = False, api_key: str) -> List[Cohort]:
-            Retrieves a list of all cohorts.
+        id (Optional[str]): The unique identifier of the cohort.
+        code (Optional[str]): The code associated with the cohort.
+        query (Optional[Dict]): The query used to define the cohort.
+        tags (Optional[List[str]]): Tags associated with the cohort.
+        description (Optional[str]): A description of the cohort.
+        state (Optional[str]): The state of the cohort.
+        segment_type (Optional[str]): The type of segment.
+        live_audience_size (Optional[int]): The size of the live audience.
+        created_at (Optional[datetime]): The creation date of the cohort.
+        last_updated_at (Optional[datetime]): The last update date of the cohort.
+        workspace_id (Optional[str]): The ID of the associated workspace.
+        request_id (Optional[str]): The request ID associated with cohort operations.
+        error (Optional[str]): An error message, if an error occurs during operations.
     """
 
     name: str
@@ -72,12 +50,16 @@ class Cohort(JSONSerializable):
     error: Optional[str] = None
 
     def create(self,
-               api_key: str):
+               api_key: str) -> None:
         """
-        Creates a new cohort.
+        Creates a new cohort in Permutive.
 
-        :param cohort: Cohort to be created.
-        :return: Created cohort object.
+        The method sends a POST request to the Permutive API to create a new cohort
+        based on the instance's attributes. The `id` and `code` of the instance are
+        updated with the values returned by the API.
+
+        :param api_key: The API key for authentication.
+        :type api_key: str
         """
         logging.debug(f"CohortAPI::create::{self.name}")
         if not self.query:
@@ -95,13 +77,17 @@ class Cohort(JSONSerializable):
             self.code = created.code
 
     def update(self,
-               api_key: str):
+               api_key: str) -> "Cohort":
         """
-        Updates an existing cohort.
+        Updates an existing cohort in Permutive.
 
-        :param cohort_id: ID of the cohort to be updated.
-        :param updated_cohort: Updated cohort data.
-        :return: Updated cohort object.
+        This method sends a PATCH request to the Permutive API to update a cohort.
+        The cohort to be updated is identified by the `id` attribute of the instance.
+
+        :param api_key: The API key for authentication.
+        :type api_key: str
+        :return: A new Cohort object representing the updated state.
+        :rtype: Cohort
         """
         logging.debug(f"CohortAPI::update::{self.name}")
         if not self.id:
@@ -115,11 +101,15 @@ class Cohort(JSONSerializable):
         return Cohort.from_json(response.json())
 
     def delete(self,
-               api_key) -> None:
+               api_key: str) -> None:
         """
-        Deletes a specific cohort.
-        :param cohort_id: ID of the cohort to be deleted.
-        :return: None
+        Deletes a cohort from Permutive.
+
+        This method sends a DELETE request to the Permutive API to delete the cohort
+        identified by the `id` attribute of the instance.
+
+        :param api_key: The API key for authentication.
+        :type api_key: str
         """
         logging.debug(f"{datetime.now()}::CohortAPI::delete::{self.name}")
         if not self.id:
@@ -134,8 +124,13 @@ class Cohort(JSONSerializable):
         """
         Fetches a specific cohort from the API using its ID.
 
-        :param cohort_id: ID of the cohort.
-        :return: Cohort object or None if not found.
+        :param id: The ID of the cohort to retrieve.
+        :type id: str
+        :param api_key: The API key for authentication.
+        :type api_key: str
+        :return: A Cohort object.
+        :rtype: Cohort
+        :raises ValueError: If the cohort cannot be fetched.
         """
         logging.debug(f"{datetime.now()}::CohortAPI::get::{id}")
         url = f"{_API_ENDPOINT}{id}"
@@ -152,12 +147,18 @@ class Cohort(JSONSerializable):
         name: str,
         api_key: str
     ) -> Optional['Cohort']:
-        '''
-            Object Oriented Permutive Cohort seqrch
-            :rtype: Cohort object
-            :param cohort_name: str Cohort Name. Required
-            :return: Cohort object
-        '''
+        """
+        Retrieves a cohort by its name.
+
+        This method searches for a cohort with the specified name.
+
+        :param name: The name of the cohort to retrieve.
+        :type name: str
+        :param api_key: The API key for authentication.
+        :type api_key: str
+        :return: A Cohort object if found, otherwise None.
+        :rtype: Optional[Cohort]
+        """
         logging.debug(f"{datetime.now()}::CohortAPI::get_by_name::{name}")
 
         for cohort in Cohort.list(include_child_workspaces=True,
@@ -165,31 +166,44 @@ class Cohort(JSONSerializable):
             if name == cohort.name and cohort.id:
                 return Cohort.get_by_id(id=cohort.id,
                                         api_key=api_key)
+        return None
 
     @staticmethod
     def get_by_code(
             code: Union[int, str],
             api_key: str) -> Optional['Cohort']:
-        '''
-        Object Oriented Permutive Cohort seqrch
-        :rtype: Cohort object
-        :param cohort_code: Union[int, str] Cohort Code. Required
-        :return: Cohort object
-        '''
+        """
+        Retrieves a cohort by its code.
+
+        This method searches for a cohort with the specified code.
+
+        :param code: The code of the cohort to retrieve.
+        :type code: Union[int, str]
+        :param api_key: The API key for authentication.
+        :type api_key: str
+        :return: A Cohort object if found, otherwise None.
+        :rtype: Optional[Cohort]
+        """
         logging.debug(f"{datetime.now()}::CohortAPI::get_by_code::{code}")
         for cohort in Cohort.list(include_child_workspaces=True,
                                   api_key=api_key):
             if code == cohort.code and cohort.id:
                 return Cohort.get_by_id(id=cohort.id,
                                         api_key=api_key)
+        return None
 
     @staticmethod
     def list(api_key: str,
-             include_child_workspaces=False) -> 'CohortList':
+             include_child_workspaces: bool = False) -> 'CohortList':
         """
-            Fetches all cohorts from the API.
+        Fetches all cohorts from the API.
 
-            :return: List of all cohorts.
+        :param api_key: The API key for authentication.
+        :type api_key: str
+        :param include_child_workspaces: Whether to include cohorts from child workspaces.
+        :type include_child_workspaces: bool
+        :return: A list of all cohorts.
+        :rtype: CohortList
         """
         logging.debug(f"CohortAPI::list")
 
@@ -205,8 +219,18 @@ class Cohort(JSONSerializable):
 
 
 class CohortList(List[Cohort], JSONSerializable):
+    """
+    A list-like object for managing a collection of Cohort instances.
+    It provides caching mechanisms for quick lookups by id, code, name, etc.
+    """
 
     def __init__(self, items_list: Optional[List[Cohort]] = None):
+        """
+        Initializes the CohortList.
+
+        :param items_list: An optional list of Cohort objects to initialize the list with.
+        :type items_list: Optional[List[Cohort]]
+        """
         super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Cohort] = {}
         self._code_dictionary_cache: Dict[str, Cohort] = {}

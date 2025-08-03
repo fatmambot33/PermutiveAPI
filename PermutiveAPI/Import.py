@@ -57,7 +57,28 @@ class Source(JSONSerializable):
 @dataclass
 class Import(JSONSerializable):
     """
-    Dataclass for the Import in the Permutive ecosystem.
+    Represents an Import in the Permutive ecosystem.
+
+    :param id: The ID of the import.
+    :type id: str
+    :param name: The name of the import.
+    :type name: str
+    :param code: The code of the import.
+    :type code: str
+    :param relation: The relation of the import.
+    :type relation: str
+    :param identifiers: A list of identifiers for the import.
+    :type identifiers: List[str]
+    :param source: The source of the import.
+    :type source: Source
+    :param description: An optional description of the import.
+    :type description: Optional[str]
+    :param inheritance: An optional inheritance of the import.
+    :type inheritance: Optional[str]
+    :param segments: An optional list of segments in the import.
+    :type segments: Optional[SegmentList]
+    :param updated_at: The timestamp of the last update.
+    :type updated_at: Optional[datetime]
     """
     id: str
     name: str
@@ -77,8 +98,12 @@ class Import(JSONSerializable):
         """
         Fetches a specific import by its id.
 
-        :param import_id: ID of the import.
-        :return: The requested Importt.
+        :param id: ID of the import.
+        :type id: str
+        :param api_key: The API key for authentication.
+        :type api_key: str
+        :return: The requested Import.
+        :rtype: Import
         """
         logging.debug(f"{datetime.now()}::AudienceAPI::get_import::{id}")
         url = f"{_API_ENDPOINT}/{id}"
@@ -91,6 +116,14 @@ class Import(JSONSerializable):
     @classmethod
     def list(cls,
              api_key: str) -> List['Import']:
+        """
+        Retrieves a list of all imports.
+
+        :param api_key: The API key for authentication.
+        :type api_key: str
+        :return: A list of Import objects.
+        :rtype: List[Import]
+        """
         logging.debug(f"{datetime.now()}::AudienceAPI::list_imports")
         url = _API_ENDPOINT
         response = RequestHelper.get_static(
