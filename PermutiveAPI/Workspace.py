@@ -31,12 +31,20 @@ class Workspace(JSONSerializable):
 
     @property
     def isTopLevel(self) -> bool:
-        """Determines if the workspace is the top-level workspace."""
+        """Determine if the workspace is the top-level workspace.
+
+        Returns:
+            bool: ``True`` if this workspace is top-level, otherwise ``False``.
+        """
         return self.organisation_id == self.workspace_id
 
     @property
     def cohorts(self) -> CohortList:
-        """Retrieve a cached list of cohorts for the workspace."""
+        """Retrieve a cached list of cohorts for the workspace.
+
+        Returns:
+            CohortList: Cached list of cohorts.
+        """
         if not hasattr(self, '_cohort_cache'):
             self._cohort_cache = Cohort.list(
                 include_child_workspaces=False, api_key=self.api_key)
@@ -44,33 +52,38 @@ class Workspace(JSONSerializable):
 
     def list_cohorts(self,
                      include_child_workspaces: bool = False) -> CohortList:
-        """
-        Retrieve a list of cohorts for the workspace.
+        """Retrieve a list of cohorts for the workspace.
 
-        :param include_child_workspaces: Whether to include cohorts from child workspaces.
-        :type include_child_workspaces: bool
-        :return: A list of cohorts.
-        :rtype: CohortList
+        Args:
+            include_child_workspaces (bool): Whether to include cohorts from child
+                workspaces.
+
+        Returns:
+            CohortList: A list of cohorts.
         """
         return Cohort.list(include_child_workspaces=include_child_workspaces,
                            api_key=self.api_key)
 
     @property
     def imports(self) -> List[Import]:
-        """Retrieve a cached list of imports for the workspace."""
+        """Retrieve a cached list of imports for the workspace.
+
+        Returns:
+            List[Import]: Cached list of imports.
+        """
         if not hasattr(self, '_import_cache'):
             self._import_cache = Import.list(api_key=self.api_key)
         return self._import_cache
 
     def list_segments(self,
                       import_id: str) -> List[Segment]:
-        """
-        Retrieve a list of segments for a given import.
+        """Retrieve a list of segments for a given import.
 
-        :param import_id: The ID of the import to retrieve segments for.
-        :type import_id: str
-        :return: A list of segments.
-        :rtype: List[Segment]
+        Args:
+            import_id (str): The ID of the import to retrieve segments for.
+
+        Returns:
+            List[Segment]: A list of segments.
         """
         return Segment.list(import_id=import_id,
                             api_key=self.api_key)
@@ -100,14 +113,26 @@ class WorkspaceList(List[Workspace], JSONSerializable):
 
     def __init__(self,
                  items_list: Optional[List[Workspace]] = None):
-        """Initialize the WorkspaceList with an optional list of Workspace objects."""
+        """Initialize the WorkspaceList with an optional list of Workspace objects.
+
+        Args:
+            items_list (Optional[List[Workspace]]): Workspace objects to initialize
+                with.
+
+        Returns:
+            None
+        """
         super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Workspace] = {}
         self._name_dictionary_cache: Dict[str, Workspace] = {}
         self.rebuild_cache()
 
     def rebuild_cache(self):
-        """Rebuild all caches based on the current state of the list."""
+        """Rebuild all caches based on the current state of the list.
+
+        Returns:
+            None
+        """
         self._id_dictionary_cache = {
             workspace.workspace_id: workspace for workspace in self if workspace.workspace_id}
         self._name_dictionary_cache = {
@@ -115,26 +140,45 @@ class WorkspaceList(List[Workspace], JSONSerializable):
 
     @property
     def id_dictionary(self) -> Dict[str, Workspace]:
-        """Return a dictionary of workspaces indexed by their IDs."""
+        """Return a dictionary of workspaces indexed by their IDs.
+
+        Returns:
+            Dict[str, Workspace]: Mapping of workspace IDs to ``Workspace`` objects.
+        """
         if not self._id_dictionary_cache:
             self.rebuild_cache()
         return self._id_dictionary_cache
 
     @property
     def name_dictionary(self) -> Dict[str, Workspace]:
-        """Return a dictionary of workspaces indexed by their names."""
+        """Return a dictionary of workspaces indexed by their names.
+
+        Returns:
+            Dict[str, Workspace]: Mapping of workspace names to ``Workspace`` objects.
+        """
         if not self._name_dictionary_cache:
             self.rebuild_cache()
         return self._name_dictionary_cache
 
     @property
     def master_workspace(self) -> Workspace:
-        """Return the top-level workspace."""
+        """Return the top-level workspace.
+
+        Returns:
+            Workspace: The workspace marked as top-level.
+
+        Raises:
+            ValueError: If no top-level workspace is found.
+        """
         for workspace in self:
             if workspace.isTopLevel:
                 return workspace
         raise ValueError("No Top-Level Workspace found")
 
     def to_list(self) -> List[Workspace]:
-        """Return the list of workspaces."""
+        """Return the list of workspaces.
+
+        Returns:
+            List[Workspace]: The underlying list of workspaces.
+        """
         return list(self)

@@ -47,15 +47,16 @@ class Identity(JSONSerializable):
 
     def identify(self,
                  api_key: str):
-        """
-        Identify a user in Permutive.
+        """Identify a user in Permutive.
 
         This method sends a POST request to the Permutive API to identify a user
         with the given aliases.
 
-        :param api_key: The API key for authentication.
-        :type api_key: str
-        :return: The response from the Permutive API.
+        Args:
+            api_key (str): The API key for authentication.
+
+        Returns:
+            Response: The response from the Permutive API.
         """
         logging.debug(
             f"{datetime.now()}::UserAPI::identify::{self.user_id}")

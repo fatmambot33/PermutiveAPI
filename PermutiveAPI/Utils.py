@@ -42,14 +42,31 @@ class RequestHelper:
                  api_key: str,
                  api_endpoint: str,
                  payload_keys: Optional[List[str]] = None) -> None:
-        """Initialize the RequestHelper."""
+        """Initialize the RequestHelper.
+
+        Args:
+            api_key (str): The API key for authentication.
+            api_endpoint (str): The base endpoint for the API.
+            payload_keys (Optional[List[str]]): Keys to include in the payload.
+
+        Returns:
+            None
+        """
         self.api_key = api_key
         self.api_endpoint = api_endpoint
         self.payload_keys = payload_keys
 
     @staticmethod
     def generate_url_with_key(url, api_key):
-        """Append the API key to a URL as a query parameter."""
+        """Append the API key to a URL as a query parameter.
+
+        Args:
+            url (str): The base URL.
+            api_key (str): API key to append.
+
+        Returns:
+            str: The URL with the API key parameter.
+        """
         if "?" in url:
             return f"{url}&k={api_key}"
         else:
@@ -58,7 +75,15 @@ class RequestHelper:
     @staticmethod
     def get_static(api_key: str,
                    url: str) -> Response:
-        """Send an HTTP GET request and return the response."""
+        """Send an HTTP GET request and return the response.
+
+        Args:
+            api_key (str): The API key for authentication.
+            url (str): The URL to send the GET request to.
+
+        Returns:
+            Response: The HTTP response object.
+        """
         response = None
         url = RequestHelper.generate_url_with_key(url, api_key)
         try:
@@ -74,17 +99,15 @@ class RequestHelper:
     def post_static(api_key: str,
                     url: str,
                     data: dict) -> Response:
-        """
-        Send an HTTP POST request to the specified URL with JSON data.
+        """Send an HTTP POST request to the specified URL with JSON data.
 
-        :param api_key: The API key for authentication.
-        :type api_key: str
-        :param url: The URL to send the POST request to.
-        :type url: str
-        :param data: The JSON data to include in the request body.
-        :type data: dict
-        :return: The HTTP response object.
-        :rtype: Response
+        Args:
+            api_key (str): The API key for authentication.
+            url (str): The URL to send the POST request to.
+            data (dict): The JSON payload to include in the request body.
+
+        Returns:
+            Response: The HTTP response object.
         """
         response = None
         url = RequestHelper.generate_url_with_key(url, api_key)
@@ -102,17 +125,15 @@ class RequestHelper:
     def patch_static(api_key: str,
                      url: str,
                      data: dict) -> Response:
-        """
-        Send an HTTP PATCH request to the specified URL with JSON data.
+        """Send an HTTP PATCH request to the specified URL with JSON data.
 
-        :param api_key: The API key for authentication.
-        :type api_key: str
-        :param url: The URL to send the PATCH request to.
-        :type url: str
-        :param data: The JSON data to include in the request body.
-        :type data: dict
-        :return: The HTTP response object.
-        :rtype: Response
+        Args:
+            api_key (str): The API key for authentication.
+            url (str): The URL to send the PATCH request to.
+            data (dict): The JSON payload to include in the request body.
+
+        Returns:
+            Response: The HTTP response object.
         """
         response = None
         url = RequestHelper.generate_url_with_key(url=url,
@@ -130,15 +151,14 @@ class RequestHelper:
     @staticmethod
     def delete_static(api_key: str,
                       url: str) -> Response:
-        """
-        Send an HTTP DELETE request to the specified URL.
+        """Send an HTTP DELETE request to the specified URL.
 
-        :param api_key: The API key for authentication.
-        :type api_key: str
-        :param url: The URL to send the DELETE request to.
-        :type url: str
-        :return: The HTTP response object.
-        :rtype: Response
+        Args:
+            api_key (str): The API key for authentication.
+            url (str): The URL to send the DELETE request to.
+
+        Returns:
+            Response: The HTTP response object.
         """
         response = None
         url = RequestHelper.generate_url_with_key(
@@ -154,21 +174,27 @@ class RequestHelper:
 
     def get(self,
             url) -> Response:
-        """Send an HTTP GET request using stored credentials."""
+        """Send an HTTP GET request using stored credentials.
+
+        Args:
+            url (str): The URL to send the GET request to.
+
+        Returns:
+            Response: The HTTP response object.
+        """
         return RequestHelper.get_static(self.api_key, url)
 
     def post(self,
              url: str,
              data: dict) -> Response:
-        """
-        Send an HTTP POST request to the specified URL with JSON data.
+        """Send an HTTP POST request to the specified URL with JSON data.
 
-        :param url: The URL to send the POST request to.
-        :type url: str
-        :param data: The JSON data to include in the request body.
-        :type data: dict
-        :return: The HTTP response object.
-        :rtype: Response
+        Args:
+            url (str): The URL to send the POST request to.
+            data (dict): The JSON payload to include in the request body.
+
+        Returns:
+            Response: The HTTP response object.
         """
         return RequestHelper.post_static(api_key=self.api_key,
                                          url=url,
@@ -177,45 +203,45 @@ class RequestHelper:
     def patch(self,
               url: str,
               data: dict) -> Response:
-        """
-        Send an HTTP PATCH request to the specified URL with JSON data.
+        """Send an HTTP PATCH request to the specified URL with JSON data.
 
-        :param url: The URL to send the PATCH request to.
-        :type url: str
-        :param data: The JSON data to include in the request body.
-        :type data: dict
-        :return: The HTTP response object.
-        :rtype: Response
+        Args:
+            url (str): The URL to send the PATCH request to.
+            data (dict): The JSON payload to include in the request body.
+
+        Returns:
+            Response: The HTTP response object.
         """
         return RequestHelper.patch_static(api_key=self.api_key,
                                           url=url,
                                           data=data)
 
     def delete(self, url: str) -> Response:
-        """
-        Send an HTTP DELETE request to the specified URL.
+        """Send an HTTP DELETE request to the specified URL.
 
-        :param url: The URL to send the DELETE request to.
-        :type url: str
-        :return: The HTTP response object.
-        :rtype: Response
+        Args:
+            url (str): The URL to send the DELETE request to.
+
+        Returns:
+            Response: The HTTP response object.
         """
         return RequestHelper.delete_static(api_key=self.api_key,
                                            url=url)
 
     @staticmethod
     def to_payload_static(dataclass_obj: Any, api_payload: Optional[List[str]] = None) -> Dict[str, Any]:
-        """
-        Convert a data class object to a dictionary payload.
+        """Convert a data class object to a dictionary payload.
 
-        This method converts a data class object into a dictionary, optionally filtering keys.
+        This method converts a data class object into a dictionary, optionally
+        filtering keys.
 
-        :param dataclass_obj: The data class object to be converted.
-        :type dataclass_obj: Any
-        :param api_payload: List of keys to include in the payload. If None, all keys with non-None values are included.
-        :type api_payload: Optional[List[str]]
-        :return: The dictionary payload.
-        :rtype: Dict[str, Any]
+        Args:
+            dataclass_obj (Any): The data class object to be converted.
+            api_payload (Optional[List[str]]): Keys to include in the payload. If
+                ``None``, all keys with non-``None`` values are included.
+
+        Returns:
+            Dict[str, Any]: The dictionary payload.
         """
         dataclass_dict = vars(dataclass_obj)
         filtered_dict = {key: value for key, value in dataclass_dict.items(
@@ -231,7 +257,18 @@ class RequestHelper:
     def handle_exception(e: Exception,
                          response: Optional[Response]
                          ):
-        """Handle exceptions raised during API requests."""
+        """Handle exceptions raised during API requests.
+
+        Args:
+            e (Exception): The exception raised.
+            response (Optional[Response]): The HTTP response, if any.
+
+        Returns:
+            Response: The original response if available and not critical.
+
+        Raises:
+            Exception: Re-raises the original exception for critical errors.
+        """
         if response:
             if 200 <= response.status_code <= 300:
                 return response
@@ -254,24 +291,26 @@ class FileHelper:
 
     @staticmethod
     def check_filepath(filepath: str):
-        """
-        Check if the directory of a filepath exists, and creates it if it doesn't.
+        """Check if the directory of a filepath exists and create it if needed.
 
-        :param filepath: The path to the file.
-        :type filepath: str
+        Args:
+            filepath (str): The path to the file.
+
+        Returns:
+            None
         """
         if not os.path.exists(os.path.dirname(filepath)) and len(os.path.dirname(filepath)) > 0:
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
     @staticmethod
     def split_filepath(fullfilepath):
-        """
-        Split a filepath into its path, name, and extension.
+        """Split a filepath into its path, name, and extension.
 
-        :param fullfilepath: The full path to the file.
-        :type fullfilepath: str
-        :return: A tuple containing the path, name, and extension.
-        :rtype: tuple
+        Args:
+            fullfilepath (str): The full path to the file.
+
+        Returns:
+            tuple: A tuple containing the path, name, and extension.
         """
         p = pathlib.Path(fullfilepath)
         file_path = str(p.parent)+'/'
@@ -284,13 +323,13 @@ class FileHelper:
 
     @staticmethod
     def file_exists(fullfilepath):
-        """
-        Check if a file exists, taking into account variations in the filename.
+        """Check if a file exists, accounting for variations in the filename.
 
-        :param fullfilepath: The full path to the file.
-        :type fullfilepath: str
-        :return: True if the file exists, False otherwise.
-        :rtype: bool
+        Args:
+            fullfilepath (str): The full path to the file.
+
+        Returns:
+            bool: ``True`` if the file exists, ``False`` otherwise.
         """
         file_path, file_name, file_extension = FileHelper.split_filepath(
             fullfilepath)
@@ -305,27 +344,26 @@ class ListHelper:
 
     @staticmethod
     def chunk_list(lst, n):
-        """
-        Split a list into chunks of a specified size.
+        """Split a list into chunks of a specified size.
 
-        :param lst: The list to split.
-        :type lst: list
-        :param n: The size of each chunk.
-        :type n: int
-        :return: A list of chunks.
-        :rtype: list
+        Args:
+            lst (list): The list to split.
+            n (int): The size of each chunk.
+
+        Returns:
+            list: A list of chunks.
         """
         return [lst[i:i + n] for i in range(0, len(lst), n)]
 
     @staticmethod
     def convert_list(val):
-        """
-        Convert a string representation of a list into a list.
+        """Convert a string representation of a list into a list.
 
-        :param val: The string to convert.
-        :type val: str
-        :return: The converted list.
-        :rtype: list
+        Args:
+            val (str): The string to convert.
+
+        Returns:
+            list: The converted list.
         """
         if isinstance(val, str):
             return ast.literal_eval(val)
@@ -334,29 +372,27 @@ class ListHelper:
 
     @staticmethod
     def compare_list(list1: List[str], list2: List[str]):
-        """
-        Compare two lists for equality, ignoring order.
+        """Compare two lists for equality, ignoring order.
 
-        :param list1: The first list.
-        :type list1: List[str]
-        :param list2: The second list.
-        :type list2: List[str]
-        :return: True if the lists are equal, False otherwise.
-        :rtype: bool
+        Args:
+            list1 (List[str]): The first list.
+            list2 (List[str]): The second list.
+
+        Returns:
+            bool: ``True`` if the lists are equal, ``False`` otherwise.
         """
         return set(list1) == set(list2)
 
     @staticmethod
     def merge_list(lst1: List, lst2: Optional[Union[int, str, List]] = None) -> List:
-        """
-        Merge two lists, removing duplicates and sorting the result.
+        """Merge two lists, removing duplicates and sorting the result.
 
-        :param lst1: The first list.
-        :type lst1: List
-        :param lst2: The second list.
-        :type lst2: Optional[Union[int, str, List]]
-        :return: The merged list.
-        :rtype: List
+        Args:
+            lst1 (List): The first list.
+            lst2 (Optional[Union[int, str, List]]): The second list.
+
+        Returns:
+            List: The merged list.
         """
         if isinstance(lst2, str) or isinstance(lst2, int):
             lst2 = [lst2]
