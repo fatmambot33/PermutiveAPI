@@ -1,3 +1,5 @@
+"""Import and segment management for the Permutive API."""
+
 import logging
 from typing import Dict, List, Optional, DefaultDict
 from dataclasses import dataclass, field
@@ -33,10 +35,10 @@ class Source(JSONSerializable):
         version (Optional[str]): Version information of the source.
 
     Methods:
-        __str__(): Returns a pretty-printed JSON string representation of the source.
-        to_json() -> dict: Converts the source object to a JSON-serializable dictionary.
+        __str__(): Return a pretty-printed JSON string representation of the source.
+        to_json() -> dict: Convert the source object to a JSON-serializable dictionary.
         to_json_file(filepath: str): Writes the JSON representation of the source to a file.
-        from_json_file(filepath: str) -> 'Source': Creates a Source object from a JSON file.
+        from_json_file(filepath: str) -> 'Source': Create a Source object from a JSON file.
 
     """
 
@@ -80,6 +82,7 @@ class Import(JSONSerializable):
     :param updated_at: The timestamp of the last update.
     :type updated_at: Optional[datetime]
     """
+
     id: str
     name: str
     code: str
@@ -96,7 +99,7 @@ class Import(JSONSerializable):
                   id: str,
                   api_key: str) -> 'Import':
         """
-        Fetches a specific import by its id.
+        Fetch a specific import by its id.
 
         :param id: ID of the import.
         :type id: str
@@ -117,7 +120,7 @@ class Import(JSONSerializable):
     def list(cls,
              api_key: str) -> List['Import']:
         """
-        Retrieves a list of all imports.
+        Retrieve a list of all imports.
 
         :param api_key: The API key for authentication.
         :type api_key: str
@@ -152,28 +155,29 @@ class ImportList(List[Import],
 
     Methods:
         __init__(imports: Optional[List[Import]] = None):
-            Initializes the ImportList with an optional list of Import objects and rebuilds the cache.
+            Initialize the ImportList with an optional list of Import objects and rebuilds the cache.
 
         rebuild_cache():
-            Rebuilds all caches based on the current state of the list.
+            Rebuild all caches based on the current state of the list.
 
         id_dictionary() -> Dict[str, Import]:
-            Returns a dictionary of imports indexed by their IDs.
+            Return a dictionary of imports indexed by their IDs.
 
         name_dictionary() -> Dict[str, Import]:
-            Returns a dictionary of imports indexed by their names.
+            Return a dictionary of imports indexed by their names.
 
         identifier_dictionary() -> Dict[str, 'ImportList']:
-            Returns a dictionary of imports indexed by their identifiers.
+            Return a dictionary of imports indexed by their identifiers.
 
         to_json() -> List[dict]:
-            Serializes the ImportList to a list of dictionaries.
+            Serialize the ImportList to a list of dictionaries.
 
         from_json(cls, data: List[dict]) -> 'ImportList':
             Deserializes a list of dictionaries to an ImportList object.
     """
 
     def __init__(self, items_list: Optional[List[Import]] = None):
+        """Initialize the ImportList with optional items."""
         super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Import] = {}
         self._name_dictionary_cache: Dict[str, Import] = {}
@@ -182,7 +186,7 @@ class ImportList(List[Import],
         self.rebuild_cache()
 
     def rebuild_cache(self):
-        """Rebuilds all caches based on the current state of the list."""
+        """Rebuild all caches based on the current state of the list."""
         for _import in self:
             self._id_dictionary_cache[_import.id] = _import
             self._name_dictionary_cache[_import.name] = _import
@@ -192,54 +196,44 @@ class ImportList(List[Import],
 
     @property
     def id_dictionary(self) -> Dict[str, Import]:
-        """Returns a dictionary of imports indexed by their IDs."""
+        """Return a dictionary of imports indexed by their IDs."""
         if not self._id_dictionary_cache:
             self.rebuild_cache()
         return self._id_dictionary_cache
 
     @property
     def name_dictionary(self) -> Dict[str, Import]:
-        """Returns a dictionary of imports indexed by their names."""
+        """Return a dictionary of imports indexed by their names."""
         if not self._name_dictionary_cache:
             self.rebuild_cache()
         return self._name_dictionary_cache
 
     @property
     def identifier_dictionary(self) -> Dict[str, 'ImportList']:
-        """Returns a dictionary of imports indexed by their identifiers."""
+        """Return a dictionary of imports indexed by their identifiers."""
         if not self._identifier_dictionary_cache:
             self.rebuild_cache()
         return self._identifier_dictionary_cache
 
     def to_list(self) -> List[Import]:
-        """Returns the list of imports."""
+        """Return the list of imports."""
         return list(self)
 
 
 @dataclass
 class Segment(JSONSerializable):
     """
-    A class to represent a Segment in the Permutive API.
+    Represent a segment in the Permutive API.
+
     Attributes:
         code (str): The code of the segment.
         name (str): The name of the segment.
         import_id (str): The import ID of the segment.
         id (Optional[str]): The ID of the segment.
         description (Optional[str]): The description of the segment.
-        cpm (Optional[float]): The cost per mille (CPM) of the segment.
-        categories (Optional[List[str]]): A list of categories associated with the segment.
-        updated_at (Optional[datetime]): The date and time when the segment was last updated.
-    Methods:
-        create(api_key: str):
-        update(api_key: str):
-        delete(api_key: str) -> bool:
-        get(import_id: str, segment_id: str, api_key: str) -> 'Segment':
-        get_by_code(import_id: str, segment_code: str, api_key: str) -> 'Segment':
-        get_by_id(id: str, api_key: str) -> 'Segment':
-        list(import_id: str, api_key: str) -> List['Segment']:
-        to_json_file(filepath: str):
-        from_json(data: dict) -> 'Segment':
-        from_json_file(filepath: str) -> 'Segment'
+        cpm (Optional[float]): The cost per mille of the segment.
+        categories (Optional[List[str]]): Categories associated with the segment.
+        updated_at (Optional[datetime]): When the segment was last updated.
     """
 
     code: str
@@ -253,19 +247,14 @@ class Segment(JSONSerializable):
 
     def create(self,
                api_key: str):
-        """
-        Creates a new segment using the provided private key.
+        """Create a new segment using the provided private key.
 
         Args:
             api_key (str): The private key used for authentication.
 
         Raises:
             ValueError: If the segment creation fails.
-
-        Returns:
-            None
         """
-
         logging.debug(
             f"SegmentAPI::create_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments"
@@ -280,19 +269,14 @@ class Segment(JSONSerializable):
 
     def update(self,
                api_key: str):
-        """
-        Updates the segment using the provided private key.
+        """Update the segment using the provided private key.
 
         Args:
             api_key (str): The private key used for authentication.
 
         Raises:
             ValueError: If the segment update fails.
-
-        Returns:
-            None
         """
-
         logging.debug(
             f"SegmentAPI::update_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
@@ -306,16 +290,14 @@ class Segment(JSONSerializable):
 
     def delete(self,
                api_key: str) -> bool:
-        """
-        Deletes a segment using the provided private key.
+        """Delete a segment using the provided private key.
 
         Args:
             api_key (str): The private key used for authentication.
 
-        Returns:
+        Return:
             bool: True if the segment was successfully deleted (status code 204), False otherwise.
         """
-
         logging.debug(
             f"SegmentAPI::delete_segment::{self.import_id:}::{self.id}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
@@ -327,21 +309,19 @@ class Segment(JSONSerializable):
     def get(import_id: str,
             segment_id: str,
             api_key: str) -> 'Segment':
+        """Retrieve a segment by its import ID and segment ID.
+
+        Args:
+            import_id (str): The ID of the import.
+            segment_id (str): The ID of the segment.
+            api_key (str): The private key for authentication.
+
+        Return:
+            Segment: The segment object retrieved from the API.
+
+        Raises:
+            ValueError: If the segment cannot be retrieved.
         """
-            Retrieve a segment by its import ID and segment ID.
-
-            Args:
-                import_id (str): The ID of the import.
-                segment_id (str): The ID of the segment.
-                api_key (str): The private key for authentication.
-
-            Returns:
-                Segment: The segment object retrieved from the API.
-
-            Raises:
-                ValueError: If the segment cannot be retrieved.
-        """
-
         logging.debug(
             f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/{segment_id}"
@@ -367,13 +347,12 @@ class Segment(JSONSerializable):
             segment_code (str): The code of the segment to retrieve.
             api_key (str): The private key for authentication.
 
-        Returns:
+        Return:
             Segment: The segment object retrieved by the given code.
 
         Raises:
             ValueError: If the segment cannot be retrieved.
         """
-
         logging.debug(
             f"SegmentAPI::get_segment_by_code::{import_id}::{segment_code}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/code/{segment_code}"
@@ -399,7 +378,7 @@ class Segment(JSONSerializable):
             id (str): The ID of the segment to retrieve.
             api_key (str): The private key for authentication.
 
-        Returns:
+        Return:
             Segment: The segment object retrieved by the given ID.
 
         Raises:
@@ -423,13 +402,13 @@ class Segment(JSONSerializable):
     def list(import_id: str,
              api_key: str) -> List['Segment']:
         """
-        Retrieves a list of segments for a given import ID.
+        Retrieve a list of segments for a given import ID.
 
         Args:
             import_id (str): The ID of the import to retrieve segments for.
             api_key (str): The private key used for authentication.
 
-        Returns:
+        Return:
             List[Segment]: A list of Segment objects retrieved from the API.
 
         Raises:
@@ -464,44 +443,26 @@ class Segment(JSONSerializable):
 class SegmentList(List[Segment],
                   JSONSerializable):
     """
-    SegmentList is a custom list that holds Segment objects and provides additional functionality
-    for caching and serializing the segments.
+    Custom list that holds Segment objects and provides caching and serialization.
+
     Attributes:
-        _id_dictionary_cache (Dict[str, Segment]): A cache dictionary mapping segment IDs to segment objects.
-        _name_dictionary_cache (Dict[str, Segment]): A cache dictionary mapping segment names to segment objects.
-        _code_dictionary_cache (Dict[str, Segment]): A cache dictionary mapping segment codes to segment objects.
-    Methods:
-        __init__(segments: Optional[List[Segment]] = None):
-        rebuild_cache():
-        id_dictionary() -> Dict[str, Segment]:
-        name_dictionary() -> Dict[str, Segment]:
-        code_dictionary() -> Dict[str, Segment]:
-        to_json() -> List[dict]:
-            Serializes the SegmentList to a list of dictionaries.
-        from_json(data: List[dict]) -> 'SegmentList':
-            Deserializes a list of dictionaries to a SegmentList."""
+        _id_dictionary_cache (Dict[str, Segment]): Cache mapping segment IDs to objects.
+        _name_dictionary_cache (Dict[str, Segment]): Cache mapping segment names to objects.
+        _code_dictionary_cache (Dict[str, Segment]): Cache mapping segment codes to objects.
+    """
 
     def __init__(self,
                  items_list: Optional[List[Segment]] = None):
-        """
-        Initializes the SegmentList with an optional list of Segment objects.
+        """Initialize the SegmentList with an optional list of Segment objects.
 
         Args:
-            segments (Optional[List[Segment]]): A list of Segment objects to initialize the SegmentList with. 
-                                                If None, initializes with an empty list.
+            segments (Optional[List[Segment]]): Segment objects to initialize with.
         """
         super().__init__(items_list if items_list is not None else [])
         self.rebuild_cache()
 
     def rebuild_cache(self):
-        """
-        Rebuilds all caches based on the current state of the list.
-
-        This method updates the following caches:
-        - _id_dictionary_cache: A dictionary mapping segment IDs to segment objects.
-        - _name_dictionary_cache: A dictionary mapping segment names to segment objects.
-        - _code_dictionary_cache: A dictionary mapping segment codes to segment objects.
-        """
+        """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache = {
             segment.id: segment for segment in self if segment.id}
         self._name_dictionary_cache = {
@@ -512,13 +473,13 @@ class SegmentList(List[Segment],
     @property
     def id_dictionary(self) -> Dict[str, Segment]:
         """
-        Returns a dictionary of segments indexed by their IDs.
+        Return a dictionary of segments indexed by their IDs.
 
         This method checks if the cache for the ID dictionary is empty. If it is,
         it rebuilds the cache by calling the `rebuild_cache` method. Finally, it
         returns the cached dictionary of segments.
 
-        Returns:
+        Return:
             Dict[str, Segment]: A dictionary where the keys are segment IDs (str)
             and the values are Segment objects.
         """
@@ -529,13 +490,13 @@ class SegmentList(List[Segment],
     @property
     def name_dictionary(self) -> Dict[str, Segment]:
         """
-        Returns a dictionary of segments indexed by their names.
+        Return a dictionary of segments indexed by their names.
 
         This method checks if the cache for the name dictionary is empty. If it is,
         it rebuilds the cache by calling the `rebuild_cache` method. Finally, it
         returns the cached dictionary of segments.
 
-        Returns:
+        Return:
             Dict[str, Segment]: A dictionary where the keys are segment names and
             the values are Segment objects.
         """
@@ -546,13 +507,13 @@ class SegmentList(List[Segment],
     @property
     def code_dictionary(self) -> Dict[str, Segment]:
         """
-        Returns a dictionary of segments indexed by their codes.
+        Return a dictionary of segments indexed by their codes.
 
         This method checks if the cache for the code dictionary is empty. If it is,
         it rebuilds the cache by calling the `rebuild_cache` method. Finally, it 
         returns the cached dictionary of segments.
 
-        Returns:
+        Return:
             Dict[str, Segment]: A dictionary where the keys are segment codes and 
             the values are Segment objects.
         """
@@ -561,5 +522,5 @@ class SegmentList(List[Segment],
         return self._code_dictionary_cache
 
     def to_list(self) -> List[Segment]:
-        """Returns the list of segments."""
+        """Return the list of segments."""
         return list(self)

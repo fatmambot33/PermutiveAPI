@@ -1,3 +1,5 @@
+"""Utility helpers for the Permutive API."""
+
 import requests
 from requests.exceptions import RequestException
 from requests.models import Response
@@ -27,6 +29,7 @@ class RequestHelper:
     :param payload_keys: A list of keys to include in the payload.
     :type payload_keys: Optional[List[str]]
     """
+    
     DEFAULT_HEADERS = {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -39,22 +42,14 @@ class RequestHelper:
                  api_key: str,
                  api_endpoint: str,
                  payload_keys: Optional[List[str]] = None) -> None:
-        """
-        Initializes the RequestHelper.
-
-        :param api_key: The API key for authentication.
-        :type api_key: str
-        :param api_endpoint: The base endpoint for the API.
-        :type api_endpoint: str
-        :param payload_keys: A list of keys to include in the payload.
-        :type payload_keys: Optional[List[str]]
-        """
+        """Initialize the RequestHelper."""
         self.api_key = api_key
         self.api_endpoint = api_endpoint
         self.payload_keys = payload_keys
 
     @staticmethod
     def generate_url_with_key(url, api_key):
+        """Append the API key to a URL as a query parameter."""
         if "?" in url:
             return f"{url}&k={api_key}"
         else:
@@ -63,6 +58,7 @@ class RequestHelper:
     @staticmethod
     def get_static(api_key: str,
                    url: str) -> Response:
+        """Send an HTTP GET request and return the response."""
         response = None
         url = RequestHelper.generate_url_with_key(url, api_key)
         try:
@@ -158,6 +154,7 @@ class RequestHelper:
 
     def get(self,
             url) -> Response:
+        """Send an HTTP GET request using stored credentials."""
         return RequestHelper.get_static(self.api_key, url)
 
     def post(self,
@@ -234,20 +231,7 @@ class RequestHelper:
     def handle_exception(e: Exception,
                          response: Optional[Response]
                          ):
-        """
-            Handle exceptions and errors in API requests.
-
-            This method checks the HTTP response and handles exceptions gracefully. It logs error messages and raises exceptions when necessary.
-
-            Args:
-                e (Exception): The exception that occurred during the request.
-                response (Optional[Response]): The HTTP response object.
-
-
-            Returns:
-                Response: The HTTP response object if it's successful or a 400 Bad Request response. Otherwise, it raises the original exception.
-
-        """
+        """Handle exceptions raised during API requests."""
         if response:
             if 200 <= response.status_code <= 300:
                 return response
@@ -271,7 +255,7 @@ class FileHelper:
     @staticmethod
     def check_filepath(filepath: str):
         """
-        Checks if the directory of a filepath exists, and creates it if it doesn't.
+        Check if the directory of a filepath exists, and creates it if it doesn't.
 
         :param filepath: The path to the file.
         :type filepath: str
@@ -282,7 +266,7 @@ class FileHelper:
     @staticmethod
     def split_filepath(fullfilepath):
         """
-        Splits a filepath into its path, name, and extension.
+        Split a filepath into its path, name, and extension.
 
         :param fullfilepath: The full path to the file.
         :type fullfilepath: str
@@ -301,7 +285,7 @@ class FileHelper:
     @staticmethod
     def file_exists(fullfilepath):
         """
-        Checks if a file exists, taking into account variations in the filename.
+        Check if a file exists, taking into account variations in the filename.
 
         :param fullfilepath: The full path to the file.
         :type fullfilepath: str
@@ -322,7 +306,7 @@ class ListHelper:
     @staticmethod
     def chunk_list(lst, n):
         """
-        Splits a list into chunks of a specified size.
+        Split a list into chunks of a specified size.
 
         :param lst: The list to split.
         :type lst: list
@@ -336,7 +320,7 @@ class ListHelper:
     @staticmethod
     def convert_list(val):
         """
-        Converts a string representation of a list into a list.
+        Convert a string representation of a list into a list.
 
         :param val: The string to convert.
         :type val: str
@@ -351,7 +335,7 @@ class ListHelper:
     @staticmethod
     def compare_list(list1: List[str], list2: List[str]):
         """
-        Compares two lists for equality, ignoring order.
+        Compare two lists for equality, ignoring order.
 
         :param list1: The first list.
         :type list1: List[str]
@@ -365,7 +349,7 @@ class ListHelper:
     @staticmethod
     def merge_list(lst1: List, lst2: Optional[Union[int, str, List]] = None) -> List:
         """
-        Merges two lists, removing duplicates and sorting the result.
+        Merge two lists, removing duplicates and sorting the result.
 
         :param lst1: The first list.
         :type lst1: List
@@ -387,7 +371,7 @@ T = TypeVar('T', bound='JSONSerializable')
 
 
 def json_default(value: Any):
-    """Custom JSON serialization function for complex data types."""
+    """Provide JSON serialization for complex data types."""
     if isinstance(value, Enum):
         return value.value
     elif isinstance(value, (float, Decimal)):
@@ -416,13 +400,10 @@ def json_default(value: Any):
 
 
 class customJSONEncoder(json.JSONEncoder):
-    """
-    A custom JSON encoder for complex data types.
-    """
+    """Custom JSON encoder for complex data types."""
+
     def default(self, o):
-        """
-        Overrides the default JSON encoder to handle complex data types.
-        """
+        """Override the default JSON encoder to handle complex data types."""
         try:
             return json_default(o)
         except TypeError:
@@ -431,29 +412,30 @@ class customJSONEncoder(json.JSONEncoder):
 
 class JSONSerializable:
     """
-    A mixin class that provides JSON serialization and deserialization capabilities.
+    Mixin providing JSON serialization and deserialization capabilities.
+
     Methods
     -------
     __str__() -> str
         Pretty-print JSON when calling print(object).
     to_json() -> dict
-        Converts the object to a JSON-serializable dictionary.
+        Convert the object to a JSON-serializable dictionary.
     from_json(cls, data: dict) -> T
-        Creates an instance of the class from a JSON dictionary.
+        Create an instance of the class from a JSON dictionary.
     to_json_file(filepath: str)
-        Serializes the object to a JSON file using CustomJSONEncoder.
+        Serialize the object to a JSON file using CustomJSONEncoder.
     from_json_file(cls, filepath: str) -> T
-        Creates an instance of the class from a JSON file.
+        Create an instance of the class from a JSON file.
     """
 
     def __str__(self) -> str:
-        """ Pretty-print JSON when calling print(object). """
+        """Pretty-print JSON when calling print(object)."""
         return json.dumps(self.to_json(),
                           indent=4,
                           cls=customJSONEncoder)
 
     def to_json(self) -> Union[dict[str, Any], list[Any]]:
-        """Converts the object to a JSON-serializable format."""
+        """Convert the object to a JSON-serializable format."""
 
         def serialize_value(v):
             if isinstance(v, JSONSerializable):
@@ -495,7 +477,7 @@ class JSONSerializable:
 
 
     def to_json_file(self, filepath: str):
-        """Serializes the object to a JSON file using CustomJSONEncoder."""
+        """Serialize the object to a JSON file using CustomJSONEncoder."""
         FileHelper.check_filepath(filepath=filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
             json.dump(self.to_json(), f, ensure_ascii=False,
@@ -503,7 +485,7 @@ class JSONSerializable:
 
     @classmethod
     def from_json_file(cls: Type[T], filepath: str) -> T:
-        """Creates an instance of the class from a JSON file."""
+        """Create an instance of the class from a JSON file."""
         with open(file=filepath, mode='r') as json_file:
             data = json.load(json_file)
             return cls.from_json(data)
@@ -526,8 +508,7 @@ class JSONSerializable:
 
     @classmethod
     def from_json(cls: Type[T], data: Any) -> Union[T, List[T]]:
-        """Handles JSON deserialization from dict, list[dict], JSON string, or file path."""
-
+        """Handle JSON deserialization from dict, list[dict], JSON string, or file path."""
         # Load if input is a string or path
         if isinstance(data, (str, Path)):
             try:

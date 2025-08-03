@@ -1,3 +1,5 @@
+"""User identification helpers for the Permutive API."""
+
 import logging
 from typing import List
 from dataclasses import dataclass
@@ -23,6 +25,7 @@ class Alias(JSONSerializable):
     :param priority: The priority of the alias.
     :type priority: int
     """
+
     id: str
     tag: str
     priority: int
@@ -38,13 +41,14 @@ class Identity(JSONSerializable):
     :param aliases: A list of aliases for the user.
     :type aliases: List[Alias]
     """
+
     user_id: str
     aliases: List[Alias]
 
     def identify(self,
                  api_key: str):
         """
-        Identifies a user in Permutive.
+        Identify a user in Permutive.
 
         This method sends a POST request to the Permutive API to identify a user
         with the given aliases.

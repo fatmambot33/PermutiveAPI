@@ -1,3 +1,4 @@
+"""Cohort management utilities for the Permutive API."""
 
 import logging
 from typing import Dict, List, Optional, Union
@@ -52,7 +53,7 @@ class Cohort(JSONSerializable):
     def create(self,
                api_key: str) -> None:
         """
-        Creates a new cohort in Permutive.
+        Create a new cohort in Permutive.
 
         The method sends a POST request to the Permutive API to create a new cohort
         based on the instance's attributes. The `id` and `code` of the instance are
@@ -79,7 +80,7 @@ class Cohort(JSONSerializable):
     def update(self,
                api_key: str) -> "Cohort":
         """
-        Updates an existing cohort in Permutive.
+        Update an existing cohort in Permutive.
 
         This method sends a PATCH request to the Permutive API to update a cohort.
         The cohort to be updated is identified by the `id` attribute of the instance.
@@ -103,7 +104,7 @@ class Cohort(JSONSerializable):
     def delete(self,
                api_key: str) -> None:
         """
-        Deletes a cohort from Permutive.
+        Delete a cohort from Permutive.
 
         This method sends a DELETE request to the Permutive API to delete the cohort
         identified by the `id` attribute of the instance.
@@ -122,7 +123,7 @@ class Cohort(JSONSerializable):
     def get_by_id(id: str,
                   api_key: str) -> 'Cohort':
         """
-        Fetches a specific cohort from the API using its ID.
+        Fetch a specific cohort from the API using its ID.
 
         :param id: The ID of the cohort to retrieve.
         :type id: str
@@ -148,7 +149,7 @@ class Cohort(JSONSerializable):
         api_key: str
     ) -> Optional['Cohort']:
         """
-        Retrieves a cohort by its name.
+        Retrieve a cohort by its name.
 
         This method searches for a cohort with the specified name.
 
@@ -173,7 +174,7 @@ class Cohort(JSONSerializable):
             code: Union[int, str],
             api_key: str) -> Optional['Cohort']:
         """
-        Retrieves a cohort by its code.
+        Retrieve a cohort by its code.
 
         This method searches for a cohort with the specified code.
 
@@ -196,7 +197,7 @@ class Cohort(JSONSerializable):
     def list(api_key: str,
              include_child_workspaces: bool = False) -> 'CohortList':
         """
-        Fetches all cohorts from the API.
+        Fetch all cohorts from the API.
 
         :param api_key: The API key for authentication.
         :type api_key: str
@@ -221,12 +222,13 @@ class Cohort(JSONSerializable):
 class CohortList(List[Cohort], JSONSerializable):
     """
     A list-like object for managing a collection of Cohort instances.
+
     It provides caching mechanisms for quick lookups by id, code, name, etc.
     """
 
     def __init__(self, items_list: Optional[List[Cohort]] = None):
         """
-        Initializes the CohortList.
+        Initialize the CohortList.
 
         :param items_list: An optional list of Cohort objects to initialize the list with.
         :type items_list: Optional[List[Cohort]]
@@ -243,7 +245,7 @@ class CohortList(List[Cohort], JSONSerializable):
         self.rebuild_cache()
 
     def rebuild_cache(self):
-        """Rebuilds all caches based on the current state of the list."""
+        """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache = {
             cohort.id: cohort for cohort in self if cohort.id}
         self._code_dictionary_cache = {
@@ -264,46 +266,46 @@ class CohortList(List[Cohort], JSONSerializable):
 
     @property
     def id_dictionary(self) -> Dict[str, Cohort]:
-        """Returns a dictionary of cohorts indexed by their IDs."""
+        """Return a dictionary of cohorts indexed by their IDs."""
         if not self._id_dictionary_cache:
             self.rebuild_cache()
         return self._id_dictionary_cache
 
     @property
     def code_dictionary(self) -> Dict[str, Cohort]:
-        """Returns a dictionary of cohorts indexed by their code"""
+        """Return a dictionary of cohorts indexed by their code."""
         if not self._code_dictionary_cache:
             self.rebuild_cache()
         return self._code_dictionary_cache
 
     @property
     def name_dictionary(self) -> Dict[str, Cohort]:
-        """Returns a dictionary of cohorts indexed by their names."""
+        """Return a dictionary of cohorts indexed by their names."""
         if not self._name_dictionary_cache:
             self.rebuild_cache()
         return self._name_dictionary_cache
 
     @property
     def tag_dictionary(self) -> Dict[str, List[Cohort]]:
-        """Returns a dictionary of cohorts indexed by their tags."""
+        """Return a dictionary of cohorts indexed by their tags."""
         if not self._tag_dictionary_cache:
             self.rebuild_cache()
         return self._tag_dictionary_cache
 
     @property
     def segment_type_dictionary(self) -> Dict[str, List[Cohort]]:
-        """Returns a dictionary of cohorts indexed by their tags."""
+        """Return a dictionary of cohorts indexed by their tags."""
         if not self._segment_type_dictionary_cache:
             self.rebuild_cache()
         return self._segment_type_dictionary_cache
 
     @property
     def workspace_dictionary(self) -> Dict[str, List[Cohort]]:
-        """Returns a dictionary of cohorts indexed by their workspace IDs."""
+        """Return a dictionary of cohorts indexed by their workspace IDs."""
         if not self._workspace_dictionary_cache:
             self.rebuild_cache()
         return self._workspace_dictionary_cache
 
     def to_list(self) -> List[Cohort]:
-        """Returns the list of cohorts."""
+        """Return the list of cohorts."""
         return list(self)
