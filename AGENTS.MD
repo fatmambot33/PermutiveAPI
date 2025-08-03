@@ -1,11 +1,15 @@
 # AGENTS
 
-## Commit Checklist
+This repository uses a small set of quality gates to keep the codebase healthy.
 
-- Run `pydocstyle PermutiveAPI`.
-- Run `pyright PermutiveAPI`.
-- Run `pytest -q`.
+## Commit Checklist
+Before committing, ensure all of the following pass:
+- `pydocstyle PermutiveAPI`
+- `pyright PermutiveAPI`
+- `pytest -q`
 
 ## Style Notes
-- Prefer numpy-style docstrings with explicit `Args` and `Returns` sections.
-- Keep code pythonic and maintainable.
+- Use NumPy-style docstrings with explicit `Args` and `Returns` sections.
+- Keep the implementation pythonic and maintainable.
+- Write commit messages in the imperative mood.
+
