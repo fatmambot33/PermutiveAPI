@@ -4,7 +4,7 @@ import logging
 from typing import Dict, List, Optional, Union
 from dataclasses import dataclass, field
 from datetime import datetime
-from .Utils import RequestHelper, JSONSerializable
+from .utils import RequestHelper, JSONSerializable
 from collections import defaultdict
 
 _API_VERSION = "v2"
