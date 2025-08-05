@@ -4,9 +4,9 @@ from typing import Dict, List, Optional, Any, overload, Type, Union
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from PermutiveAPI.Utils import JSONSerializable
-from PermutiveAPI.Import import Import, Segment
-from PermutiveAPI.Cohort import Cohort, CohortList
+from .utils import JSONSerializable
+from .source import Import, Segment
+from .cohort import Cohort, CohortList
 
 
 @dataclass

@@ -7,7 +7,7 @@ from datetime import datetime
 from collections import defaultdict
 
 
-from PermutiveAPI.Utils import RequestHelper,  JSONSerializable
+from .utils import RequestHelper,  JSONSerializable
 
 
 _API_VERSION = "v1"
