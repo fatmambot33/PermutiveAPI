@@ -1,7 +1,6 @@
 """Workspace utilities for interacting with the Permutive API."""
 
 from typing import Dict, List, Optional, Any, overload, Type, Union
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from .utils import JSONSerializable

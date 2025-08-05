@@ -10,7 +10,7 @@ import ast
 from typing import Dict, List, Optional, Any, Union, Type, TypeVar, get_args, overload
 import logging
 import os
-from dataclasses import dataclass, is_dataclass, fields, Field as DataclassField
+from dataclasses import is_dataclass, fields
 import uuid
 from decimal import Decimal
 from enum import Enum
