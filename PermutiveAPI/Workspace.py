@@ -3,9 +3,9 @@
 from typing import Dict, List, Optional, Any, overload, Type, Union
 from dataclasses import dataclass
 from pathlib import Path
-from .utils import JSONSerializable
-from .source import Import, Segment
-from .cohort import Cohort, CohortList
+from PermutiveAPI.utils import JSONSerializable
+from PermutiveAPI.source import Import, Segment
+from PermutiveAPI.cohort import Cohort, CohortList
 
 
 @dataclass

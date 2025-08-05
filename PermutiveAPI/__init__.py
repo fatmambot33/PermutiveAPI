@@ -6,11 +6,11 @@ cohorts and workspaces through Permutive's REST API.  Refer to ``README.md`` in
 the repository root for installation and full usage documentation.
 """
 
-from .source import Import, ImportList, Segment, SegmentList
-from .user import Identity, Alias
-from .cohort import Cohort, CohortList
-from .workspace import Workspace, WorkspaceList
-from .utils import customJSONEncoder
+from PermutiveAPI.source import Import, ImportList, Segment, SegmentList
+from PermutiveAPI.user import Identity, Alias
+from PermutiveAPI.cohort import Cohort, CohortList
+from PermutiveAPI.workspace import Workspace, WorkspaceList
+from PermutiveAPI.utils import customJSONEncoder
 
 
 
