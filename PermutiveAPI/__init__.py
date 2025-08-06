@@ -7,10 +7,10 @@ the repository root for installation and full usage documentation.
 """
 
 from PermutiveAPI.source import Import, ImportList, Segment, SegmentList
-from PermutiveAPI.user import Identity, Alias
-from PermutiveAPI.cohort import Cohort, CohortList
-from PermutiveAPI.workspace import Workspace, WorkspaceList
-from PermutiveAPI.utils import customJSONEncoder
+from PermutiveAPI.User import Identity, Alias
+from PermutiveAPI.Cohort import Cohort, CohortList
+from PermutiveAPI.Workspace import Workspace, WorkspaceList
+from PermutiveAPI.Utils import customJSONEncoder
 
 
 

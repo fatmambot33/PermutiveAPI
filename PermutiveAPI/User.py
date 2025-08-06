@@ -5,7 +5,7 @@ from typing import List
 from dataclasses import dataclass
 from datetime import datetime
 
-from PermutiveAPI.utils import RequestHelper, JSONSerializable
+from PermutiveAPI.Utils import RequestHelper, JSONSerializable
 
 
 _API_VERSION = 'v2.0'
