@@ -107,7 +107,7 @@ class Import(JSONSerializable):
         Returns:
             Import: The requested import.
         """
-        logging.debug(f"{datetime.now()}::AudienceAPI::get_import::{id}")
+        logging.debug(f"AudienceAPI::get_import::{id}")
         url = f"{_API_ENDPOINT}/{id}"
         response = RequestHelper.get_static(url=url,
                                             api_key=api_key)
@@ -117,16 +117,16 @@ class Import(JSONSerializable):
 
     @classmethod
     def list(cls,
-             api_key: str) -> List['Import']:
+             api_key: str) -> 'ImportList':
         """Retrieve a list of all imports.
 
         Args:
             api_key (str): The API key for authentication.
 
         Returns:
-            List[Import]: A list of Import objects.
+            ImportList: A list of Import objects.
         """
-        logging.debug(f"{datetime.now()}::AudienceAPI::list_imports")
+        logging.debug(f"AudienceAPI::list_imports")
         url = _API_ENDPOINT
         response = RequestHelper.get_static(
             api_key=api_key, url=url)
@@ -141,7 +141,7 @@ class Import(JSONSerializable):
                 item['source'] = source_instance
             return cls(**item)
 
-        return [create_import(item) for item in imports['items']]
+        return ImportList([create_import(item) for item in imports['items']])
 
 
 class ImportList(List[Import],
@@ -349,36 +349,6 @@ class Segment(JSONSerializable):
         return response.status_code == 204
 
     @staticmethod
-    def get(import_id: str,
-            segment_id: str,
-            api_key: str) -> 'Segment':
-        """Retrieve a segment by its import ID and segment ID.
-
-        Args:
-            import_id (str): The ID of the import.
-            segment_id (str): The ID of the segment.
-            api_key (str): The private key for authentication.
-
-        Returns:
-            Segment: The segment object retrieved from the API.
-
-        Raises:
-            ValueError: If the segment cannot be retrieved.
-        """
-        logging.debug(
-            f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
-        url = f"{_API_ENDPOINT}/{import_id}/segments/{segment_id}"
-        response = RequestHelper.get_static(api_key,
-                                            url=url)
-        if not response:
-            raise ValueError('Unable to get_segment')
-        segment = Segment.from_json(response.json())
-        if isinstance(segment, Segment):
-            return segment
-        else:
-            raise ValueError('Segment not found or invalid response format')
-
-    @staticmethod
     def get_by_code(import_id: str,
                     segment_code: str,
                     api_key: str) -> 'Segment':
@@ -407,7 +377,6 @@ class Segment(JSONSerializable):
             return segment
         else:
             raise ValueError('Segment not found or invalid response format')
-        return Segment.from_json(response.json())
 
     @staticmethod
     def get_by_id(import_id: str,
@@ -426,7 +395,6 @@ class Segment(JSONSerializable):
         Raises:
             ValueError: If the segment cannot be retrieved.
         """
-        logging.debug(f"{datetime.now()}::SegmentAPI::get_segment:{id}")
         logging.debug(
             f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/{segment_id}"
@@ -456,7 +424,7 @@ class Segment(JSONSerializable):
             requests.exceptions.RequestException: If an error occurs while making
                 the API request.
         """
-        logging.debug(f"{datetime.now()}::SegmentAPI::list")
+        logging.debug(f"SegmentAPI::list")
 
         base_url = f"{_API_ENDPOINT}/{import_id}/segments"
         all_segments = []

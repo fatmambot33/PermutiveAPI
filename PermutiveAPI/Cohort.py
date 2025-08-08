@@ -120,7 +120,7 @@ class Cohort(JSONSerializable):
         Returns:
             None
         """
-        logging.debug(f"{datetime.now()}::CohortAPI::delete::{self.name}")
+        logging.debug(f"CohortAPI::delete::{self.name}")
         if not self.id:
             raise ValueError("Cohort ID must be specified for deletion.")
         url = f"{_API_ENDPOINT}{self.id}"
@@ -142,7 +142,7 @@ class Cohort(JSONSerializable):
         Raises:
             ValueError: If the cohort cannot be fetched.
         """
-        logging.debug(f"{datetime.now()}::CohortAPI::get::{id}")
+        logging.debug(f"CohortAPI::get::{id}")
         url = f"{_API_ENDPOINT}{id}"
         response = RequestHelper.get_static(api_key=api_key,
                                             url=url)
@@ -171,14 +171,11 @@ class Cohort(JSONSerializable):
         Returns:
             Optional[Cohort]: The matching cohort if found, otherwise ``None``.
         """
-        logging.debug(f"{datetime.now()}::CohortAPI::get_by_name::{name}")
+        logging.debug(f"CohortAPI::get_by_name::{name}")
 
-        for cohort in Cohort.list(include_child_workspaces=True,
-                                  api_key=api_key):
-            if name == cohort.name and cohort.id:
-                return Cohort.get_by_id(id=cohort.id,
-                                        api_key=api_key)
-        return None
+        cohorts = Cohort.list(include_child_workspaces=True,
+                                  api_key=api_key)
+        return cohorts.name_dictionary.get(name)
 
     @staticmethod
     def get_by_code(
@@ -195,13 +192,10 @@ class Cohort(JSONSerializable):
         Returns:
             Optional[Cohort]: The matching cohort if found, otherwise ``None``.
         """
-        logging.debug(f"{datetime.now()}::CohortAPI::get_by_code::{code}")
-        for cohort in Cohort.list(include_child_workspaces=True,
-                                  api_key=api_key):
-            if code == cohort.code and cohort.id:
-                return Cohort.get_by_id(id=cohort.id,
-                                        api_key=api_key)
-        return None
+        logging.debug(f"CohortAPI::get_by_code::{code}")
+        cohorts = Cohort.list(include_child_workspaces=True,
+                                  api_key=api_key)
+        return cohorts.code_dictionary.get(str(code))
 
     @staticmethod
     def list(api_key: str,
@@ -218,10 +212,9 @@ class Cohort(JSONSerializable):
         """
         logging.debug(f"CohortAPI::list")
 
-        url = RequestHelper.generate_url_with_key(url=_API_ENDPOINT,
-                                                  api_key=api_key)
+        url = _API_ENDPOINT
         if include_child_workspaces:
-            url = f"{url}&include-child-workspaces=true"
+            url += "?include-child-workspaces=true"
 
         response = RequestHelper.get_static(api_key, url)
         if response is None:

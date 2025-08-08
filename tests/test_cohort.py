@@ -87,17 +87,14 @@ class TestCohort(unittest.TestCase):
     @patch('PermutiveAPI.Cohort.Cohort.list')
     def test_get_by_name(self, mock_list):
         # Arrange
-        mock_list.return_value = [self.cohort]
+        mock_list.return_value = CohortList([self.cohort])
 
-        with patch('PermutiveAPI.Cohort.Cohort.get_by_id') as mock_get_by_id:
-            mock_get_by_id.return_value = self.cohort
-            # Act
-            found_cohort = Cohort.get_by_name("Test Cohort", self.api_key)
+        # Act
+        found_cohort = Cohort.get_by_name("Test Cohort", self.api_key)
 
-            # Assert
-            mock_list.assert_called_once_with(include_child_workspaces=True, api_key=self.api_key)
-            mock_get_by_id.assert_called_once_with(id=self.cohort.id, api_key=self.api_key)
-            self.assertEqual(found_cohort, self.cohort)
+        # Assert
+        mock_list.assert_called_once_with(include_child_workspaces=True, api_key=self.api_key)
+        self.assertEqual(found_cohort, self.cohort)
 
     @patch('PermutiveAPI.Cohort.RequestHelper.get_static')
     def test_list_cohorts(self, mock_get):
