@@ -280,6 +280,15 @@ class RequestHelper:
                 except json.JSONDecodeError:
                     error_message = "Could not parse error message"
 
+                # Sanitize error_message to avoid leaking API key
+                if hasattr(response, 'request') and hasattr(response.request, 'url'):
+                    # Try to extract the API key from the request URL
+                    import urllib.parse
+                    parsed_url = urllib.parse.urlparse(response.request.url)
+                    query_params = urllib.parse.parse_qs(parsed_url.query)
+                    api_key_in_url = query_params.get('k', [None])[0]
+                    if api_key_in_url:
+                        error_message = error_message.replace(api_key_in_url, '[REDACTED]')
                 logging.warning(f"Received a 400 Bad Request: {error_message}")
                 return response
         logging.error(f"An error occurred: {e}")
