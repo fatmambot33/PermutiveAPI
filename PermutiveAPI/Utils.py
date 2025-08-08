@@ -289,7 +289,7 @@ class RequestHelper:
                     api_key_in_url = query_params.get('k', [None])[0]
                     if api_key_in_url:
                         error_message = error_message.replace(api_key_in_url, '[REDACTED]')
-                logging.warning(f"Received a 400 Bad Request: {error_message}")
+                logging.warning("Received a 400 Bad Request. Error details omitted to avoid leaking sensitive information.")
                 return response
         logging.error(f"An error occurred: {e}")
         raise e
