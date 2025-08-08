@@ -1,7 +1,7 @@
 """User identification helpers for the Permutive API."""
 
 import logging
-from typing import List,Optional
+from typing import List, Optional
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -66,6 +66,6 @@ class Identity(JSONSerializable):
         url = f"{_API_ENDPOINT}"
 
         return RequestHelper.post_static(api_key=api_key,
-                                                url=url,
-                                                data=RequestHelper.to_payload_static(self,
-                                                                                     _API_PAYLOAD))
+                                         url=url,
+                                         data=RequestHelper.to_payload_static(self,
+                                                                              _API_PAYLOAD))

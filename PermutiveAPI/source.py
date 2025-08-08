@@ -404,7 +404,7 @@ class Segment(JSONSerializable):
         return Segment.from_json(response.json())
 
     @staticmethod
-    def get_by_id(import_id:str,
+    def get_by_id(import_id: str,
                   segment_id: str,
                   api_key: str) -> 'Segment':
         """Retrieve a segment by its ID.

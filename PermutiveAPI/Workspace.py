@@ -86,21 +86,26 @@ class Workspace(JSONSerializable):
         """
         return Segment.list(import_id=import_id,
                             api_key=self.api_key)
+
     @overload
     @classmethod
     def from_json(cls: Type["Workspace"], data: dict) -> "Workspace": ...
-    
+
     @overload
     @classmethod
-    def from_json(cls: Type["Workspace"], data: list[dict]) -> list["Workspace"]: ...
-    
+    def from_json(cls: Type["Workspace"],
+                  data: list[dict]) -> list["Workspace"]: ...
+
     @overload
     @classmethod
-    def from_json(cls: Type["Workspace"], data: str) -> Union["Workspace", list["Workspace"]]: ...
+    def from_json(cls: Type["Workspace"], data: str) -> Union["Workspace",
+                                                              list["Workspace"]]: ...
+
     @overload
     @classmethod
-    def from_json(cls: Type["Workspace"], data: Path) -> Union["Workspace", list["Workspace"]]: ...
-    
+    def from_json(cls: Type["Workspace"], data: Path) -> Union["Workspace",
+                                                               list["Workspace"]]: ...
+
     @classmethod
     def from_json(cls: Type["Workspace"], data: Any) -> Union["Workspace", list["Workspace"]]:
         """Deserialize workspace data from various JSON representations."""
