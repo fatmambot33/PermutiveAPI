@@ -296,7 +296,10 @@ class Segment(JSONSerializable):
         if not response:
             raise ValueError('Unable to create_segment')
 
-        self = Segment.from_json(response.json())
+        new_segment = Segment.from_json(response.json())
+        if isinstance(new_segment, Segment):
+            self.__dict__.update(new_segment.__dict__)
+
 
     def update(self,
                api_key: str):
@@ -320,7 +323,10 @@ class Segment(JSONSerializable):
                                                                                    api_payload=_API_PAYLOAD))
         if not response:
             raise ValueError('Unable to update_segment')
-        self = Segment.from_json(response.json())
+
+        updated_segment = Segment.from_json(response.json())
+        if isinstance(updated_segment, Segment):
+            self.__dict__.update(updated_segment.__dict__)
 
     def delete(self,
                api_key: str) -> bool:

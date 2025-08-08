@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Any, Union, Type, TypeVar, Callable, ge
 import logging
 import os
 import urllib.parse
+import re
 from dataclasses import is_dataclass, fields
 import uuid
 from decimal import Decimal
@@ -24,9 +25,7 @@ SUCCESS_RANGE = range(200, 300)
 
 
 class RequestHelper:
-    """
-    A utility class for making HTTP requests to a RESTful API.
-    """
+    """A utility class for making HTTP requests to a RESTful API."""
 
     DEFAULT_HEADERS = {
         'Accept': 'application/json',
@@ -47,6 +46,14 @@ class RequestHelper:
                  api_key: str,
                  api_endpoint: str,
                  payload_keys: Optional[List[str]] = None) -> None:
+        """
+        Initialise the RequestHelper.
+
+        Args:
+            api_key (str): The API key for authentication.
+            api_endpoint (str): The API endpoint.
+            payload_keys (Optional[List[str]]): A list of keys to include in the payload.
+        """
         self.api_key = api_key
         self.api_endpoint = api_endpoint
         self.payload_keys = payload_keys
@@ -55,53 +62,153 @@ class RequestHelper:
     @staticmethod
     def generate_url_with_key(url: str,
                               api_key: str) -> str:
+        """
+        Generate a URL with the API key appended as a query parameter.
+
+        Args:
+            url (str): The URL to append the key to.
+            api_key (str): The API key.
+
+        Returns:
+            str: The URL with the API key.
+        """
         return f"{url}{'&' if '?' in url else '?'}k={api_key}"
 
     # -------- Public Request Methods --------
     @staticmethod
     def get_static(api_key: str,
                    url: str) -> Optional[Response]:
+        """
+        Perform a GET request with retry logic.
+
+        Args:
+            api_key (str): The API key for authentication.
+            url (str): The URL to send the request to.
+
+        Returns:
+            Optional[Response]: The response from the server, or None if the request fails.
+        """
         return RequestHelper._with_retry(requests.get, url, api_key)
 
     @staticmethod
     def post_static(api_key: str,
                     url: str,
                     data: dict) -> Optional[Response]:
+        """
+        Perform a POST request with retry logic.
+
+        Args:
+            api_key (str): The API key for authentication.
+            url (str): The URL to send the request to.
+            data (dict): The data to send in the request body.
+
+        Returns:
+            Optional[Response]: The response from the server, or None if the request fails.
+        """
         return RequestHelper._with_retry(requests.post, url, api_key, json=data)
 
     @staticmethod
     def patch_static(api_key: str,
                      url: str,
                      data: dict) -> Optional[Response]:
+        """
+        Perform a PATCH request with retry logic.
+
+        Args:
+            api_key (str): The API key for authentication.
+            url (str): The URL to send the request to.
+            data (dict): The data to send in the request body.
+
+        Returns:
+            Optional[Response]: The response from the server, or None if the request fails.
+        """
         return RequestHelper._with_retry(requests.patch, url, api_key, json=data)
 
     @staticmethod
     def delete_static(api_key: str,
                       url: str) -> Optional[Response]:
+        """
+        Perform a DELETE request with retry logic.
+
+        Args:
+            api_key (str): The API key for authentication.
+            url (str): The URL to send the request to.
+
+        Returns:
+            Optional[Response]: The response from the server, or None if the request fails.
+        """
         return RequestHelper._with_retry(requests.delete, url, api_key)
 
     def get(self,
             url) -> Optional[Response]:
+        """
+        Perform a GET request using the instance's API key.
+
+        Args:
+            url (str): The URL to send the request to.
+
+        Returns:
+            Optional[Response]: The response from the server, or None if the request fails.
+        """
         return RequestHelper.get_static(self.api_key, url)
 
     def post(self,
              url: str,
              data: dict) -> Optional[Response]:
+        """
+        Perform a POST request using the instance's API key.
+
+        Args:
+            url (str): The URL to send the request to.
+            data (dict): The data to send in the request body.
+
+        Returns:
+            Optional[Response]: The response from the server, or None if the request fails.
+        """
         return RequestHelper.post_static(self.api_key, url, data)
 
     def patch(self,
               url: str,
               data: dict) -> Optional[Response]:
+        """
+        Perform a PATCH request using the instance's API key.
+
+        Args:
+            url (str): The URL to send the request to.
+            data (dict): The data to send in the request body.
+
+        Returns:
+            Optional[Response]: The response from the server, or None if the request fails.
+        """
         return RequestHelper.patch_static(self.api_key, url, data)
 
     def delete(self,
                url: str) -> Optional[Response]:
+        """
+        Perform a DELETE request using the instance's API key.
+
+        Args:
+            url (str): The URL to send the request to.
+
+        Returns:
+            Optional[Response]: The response from the server, or None if the request fails.
+        """
         return RequestHelper.delete_static(self.api_key, url)
 
     # -------- Payload Helper --------
     @staticmethod
     def to_payload_static(dataclass_obj: Any,
                           api_payload: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+        Convert a dataclass object to a dictionary payload.
+
+        Args:
+            dataclass_obj (Any): The dataclass object to convert.
+            api_payload (Optional[List[str]]): A list of keys to include in the payload.
+
+        Returns:
+            Dict[str, Any]: The dictionary payload.
+        """
         dataclass_dict = vars(dataclass_obj)
         filtered_dict = {k: v for k, v in dataclass_dict.items(
         ) if v and (api_payload is None or k in api_payload)}
@@ -160,14 +267,23 @@ class RequestHelper:
     @staticmethod
     def _redact_sensitive_data(message: str,
                                response: Response) -> str:
+        # Redact sensitive data from both the message and any query parameters in the URL
         if hasattr(response, "request") and hasattr(response.request, "url"):
             parsed_url = urllib.parse.urlparse(response.request.url)
             query_params = urllib.parse.parse_qs(str(parsed_url.query))
             for key in RequestHelper.SENSITIVE_QUERY_KEYS:
                 if key in query_params:
-                    secret = query_params[key][0]
-                    if secret:
-                        message = message.replace(secret, "[REDACTED]")
+                    for secret in query_params[key]:
+                        if secret:
+                            message = message.replace(secret, "[REDACTED]")
+        # Also redact any sensitive keys that may appear in the message as key-value pairs
+        for key in RequestHelper.SENSITIVE_QUERY_KEYS:
+            # Redact patterns like 'key=secret' or '"key": "secret"'
+            import re
+            # key=secret (in URLs)
+            message = re.sub(rf'({key})=([^\s&"\']+)', rf'\1=[REDACTED]', message, flags=re.IGNORECASE)
+            # "key": "secret" (in JSON)
+            message = re.sub(rf'("{key}"\s*:\s*")[^"]+(")', rf'\1[REDACTED]\2', message, flags=re.IGNORECASE)
         return message
 
     @staticmethod
@@ -181,6 +297,16 @@ class RequestHelper:
     @staticmethod
     def handle_exception(e: Exception,
                          response: Optional[Response]) -> Optional[Response]:
+        """
+        Handle exceptions and HTTP errors.
+
+        Args:
+            e (Exception): The exception to handle.
+            response (Optional[Response]): The HTTP response.
+
+        Returns:
+            Optional[Response]: The response if it can be handled, otherwise None.
+        """
         if response:
             status = response.status_code
 
@@ -189,8 +315,13 @@ class RequestHelper:
 
             if status == 400:
                 msg = RequestHelper._extract_error_message(response)
+                # Redact sensitive data from both the error message and the request URL
                 msg = RequestHelper._redact_sensitive_data(msg, response)
-                logging.warning(f"400 Bad Request: {msg}")
+                if hasattr(response, "request") and hasattr(response.request, "url"):
+                    redacted_url = RequestHelper._redact_sensitive_data(response.request.url, response)
+                else:
+                    redacted_url = ""
+                logging.warning(f"400 Bad Request: {msg}" + (f" [URL: {redacted_url}]" if redacted_url else ""))
                 return response
 
             if status == 401:
