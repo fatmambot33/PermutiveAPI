@@ -7,291 +7,194 @@ import json
 import pathlib
 from glob import glob
 import ast
-from typing import Dict, List, Optional, Any, Union, Type, TypeVar, get_args, overload
+from typing import Dict, List, Optional, Any, Union, Type, TypeVar, Callable, get_args, overload
 import logging
 import os
+import urllib.parse
 from dataclasses import is_dataclass, fields
 import uuid
 from decimal import Decimal
 from enum import Enum
 import datetime
 from pathlib import Path
+import time
+
+SENSITIVE_QUERY_KEYS = ("k", "api_key", "token", "access_token", "key")
+SUCCESS_RANGE = range(200, 300)
 
 
 class RequestHelper:
     """
     A utility class for making HTTP requests to a RESTful API.
-
-    :param api_key: The API key for authentication.
-    :type api_key: str
-    :param api_endpoint: The base endpoint for the API.
-    :type api_endpoint: str
-    :param payload_keys: A list of keys to include in the payload.
-    :type payload_keys: Optional[List[str]]
     """
-    
+
     DEFAULT_HEADERS = {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
     }
+    SENSITIVE_QUERY_KEYS = ("k", "api_key", "token", "access_token", "key")
+    SUCCESS_RANGE = range(200, 300)
+
+    MAX_RETRIES = 3          # Max retry attempts
+    BACKOFF_FACTOR = 2       # Exponential backoff multiplier
+    INITIAL_DELAY = 1        # Initial retry delay (seconds)
+
     api_key: str
     api_endpoint: str
     payload_keys: Optional[List[str]] = None
 
-    def __init__(self,
-                 api_key: str,
-                 api_endpoint: str,
-                 payload_keys: Optional[List[str]] = None) -> None:
-        """Initialize the RequestHelper.
-
-        Args:
-            api_key (str): The API key for authentication.
-            api_endpoint (str): The base endpoint for the API.
-            payload_keys (Optional[List[str]]): Keys to include in the payload.
-
-        Returns:
-            None
-        """
+    def __init__(self, api_key: str, api_endpoint: str, payload_keys: Optional[List[str]] = None) -> None:
         self.api_key = api_key
         self.api_endpoint = api_endpoint
         self.payload_keys = payload_keys
 
+    # -------- URL Helper --------
     @staticmethod
-    def generate_url_with_key(url, api_key):
-        """Append the API key to a URL as a query parameter.
+    def generate_url_with_key(url, api_key) -> str:
+        return f"{url}{'&' if '?' in url else '?'}k={api_key}"
 
-        Args:
-            url (str): The base URL.
-            api_key (str): API key to append.
-
-        Returns:
-            str: The URL with the API key parameter.
-        """
-        if "?" in url:
-            return f"{url}&k={api_key}"
-        else:
-            return f"{url}?k={api_key}"
+    # -------- Public Request Methods --------
+    @staticmethod
+    def get_static(api_key: str, url: str) -> Optional[Response]:
+        return RequestHelper._with_retry(requests.get, url, api_key)
 
     @staticmethod
-    def get_static(api_key: str,
-                   url: str) -> Response:
-        """Send an HTTP GET request and return the response.
-
-        Args:
-            api_key (str): The API key for authentication.
-            url (str): The URL to send the GET request to.
-
-        Returns:
-            Response: The HTTP response object.
-        """
-        response = None
-        url = RequestHelper.generate_url_with_key(url, api_key)
-        try:
-            response = requests.get(
-                url, headers=RequestHelper.DEFAULT_HEADERS)
-            response.raise_for_status()
-        except RequestException as e:
-            return RequestHelper.handle_exception(e=e,
-                                                  response=response)
-        return response
+    def post_static(api_key: str, url: str, data: dict) -> Optional[Response]:
+        return RequestHelper._with_retry(requests.post, url, api_key, json=data)
 
     @staticmethod
-    def post_static(api_key: str,
-                    url: str,
-                    data: dict) -> Response:
-        """Send an HTTP POST request to the specified URL with JSON data.
-
-        Args:
-            api_key (str): The API key for authentication.
-            url (str): The URL to send the POST request to.
-            data (dict): The JSON payload to include in the request body.
-
-        Returns:
-            Response: The HTTP response object.
-        """
-        response = None
-        url = RequestHelper.generate_url_with_key(url, api_key)
-        try:
-            response = requests.post(url,
-                                     headers=RequestHelper.DEFAULT_HEADERS,
-                                     json=data)
-            response.raise_for_status()
-        except RequestException as e:
-            return RequestHelper.handle_exception(e=e,
-                                                  response=response)
-        return response
+    def patch_static(api_key: str, url: str, data: dict) -> Optional[Response]:
+        return RequestHelper._with_retry(requests.patch, url, api_key, json=data)
 
     @staticmethod
-    def patch_static(api_key: str,
-                     url: str,
-                     data: dict) -> Response:
-        """Send an HTTP PATCH request to the specified URL with JSON data.
+    def delete_static(api_key: str, url: str) -> Optional[Response]:
+        return RequestHelper._with_retry(requests.delete, url, api_key)
 
-        Args:
-            api_key (str): The API key for authentication.
-            url (str): The URL to send the PATCH request to.
-            data (dict): The JSON payload to include in the request body.
-
-        Returns:
-            Response: The HTTP response object.
-        """
-        response = None
-        url = RequestHelper.generate_url_with_key(url=url,
-                                                  api_key=api_key)
-        try:
-            response = requests.patch(url,
-                                      headers=RequestHelper.DEFAULT_HEADERS,
-                                      json=data)
-            response.raise_for_status()
-        except RequestException as e:
-            return RequestHelper.handle_exception(e=e,
-                                                  response=response)
-        return response
-
-    @staticmethod
-    def delete_static(api_key: str,
-                      url: str) -> Response:
-        """Send an HTTP DELETE request to the specified URL.
-
-        Args:
-            api_key (str): The API key for authentication.
-            url (str): The URL to send the DELETE request to.
-
-        Returns:
-            Response: The HTTP response object.
-        """
-        response = None
-        url = RequestHelper.generate_url_with_key(
-            url=url, api_key=api_key)
-        try:
-            response = requests.delete(url,
-                                       headers=RequestHelper.DEFAULT_HEADERS)
-            response.raise_for_status()
-        except RequestException as e:
-            return RequestHelper.handle_exception(e=e,
-                                                  response=response)
-        return response
-
-    def get(self,
-            url) -> Response:
-        """Send an HTTP GET request using stored credentials.
-
-        Args:
-            url (str): The URL to send the GET request to.
-
-        Returns:
-            Response: The HTTP response object.
-        """
+    def get(self, url) -> Optional[Response]:
         return RequestHelper.get_static(self.api_key, url)
 
-    def post(self,
-             url: str,
-             data: dict) -> Response:
-        """Send an HTTP POST request to the specified URL with JSON data.
+    def post(self, url: str, data: dict) -> Optional[Response]:
+        return RequestHelper.post_static(self.api_key, url, data)
 
-        Args:
-            url (str): The URL to send the POST request to.
-            data (dict): The JSON payload to include in the request body.
+    def patch(self, url: str, data: dict) -> Optional[Response]:
+        return RequestHelper.patch_static(self.api_key, url, data)
 
-        Returns:
-            Response: The HTTP response object.
-        """
-        return RequestHelper.post_static(api_key=self.api_key,
-                                         url=url,
-                                         data=data)
+    def delete(self, url: str) -> Optional[Response]:
+        return RequestHelper.delete_static(self.api_key, url)
 
-    def patch(self,
-              url: str,
-              data: dict) -> Response:
-        """Send an HTTP PATCH request to the specified URL with JSON data.
-
-        Args:
-            url (str): The URL to send the PATCH request to.
-            data (dict): The JSON payload to include in the request body.
-
-        Returns:
-            Response: The HTTP response object.
-        """
-        return RequestHelper.patch_static(api_key=self.api_key,
-                                          url=url,
-                                          data=data)
-
-    def delete(self, url: str) -> Response:
-        """Send an HTTP DELETE request to the specified URL.
-
-        Args:
-            url (str): The URL to send the DELETE request to.
-
-        Returns:
-            Response: The HTTP response object.
-        """
-        return RequestHelper.delete_static(api_key=self.api_key,
-                                           url=url)
-
+    # -------- Payload Helper --------
     @staticmethod
     def to_payload_static(dataclass_obj: Any, api_payload: Optional[List[str]] = None) -> Dict[str, Any]:
-        """Convert a data class object to a dictionary payload.
-
-        This method converts a data class object into a dictionary, optionally
-        filtering keys.
-
-        Args:
-            dataclass_obj (Any): The data class object to be converted.
-            api_payload (Optional[List[str]]): Keys to include in the payload. If
-                ``None``, all keys with non-``None`` values are included.
-
-        Returns:
-            Dict[str, Any]: The dictionary payload.
-        """
         dataclass_dict = vars(dataclass_obj)
-        filtered_dict = {key: value for key, value in dataclass_dict.items(
-        ) if value and (api_payload is None or key in api_payload)}
-
-        # Serialize using the custom serializer
-        filtered_dict_string = json.dumps(filtered_dict,
-                                          indent=4,
-                                          cls=customJSONEncoder)
+        filtered_dict = {k: v for k, v in dataclass_dict.items(
+        ) if v and (api_payload is None or k in api_payload)}
+        filtered_dict_string = json.dumps(
+            filtered_dict, indent=4, cls=customJSONEncoder)
         return json.loads(filtered_dict_string)
 
+    # -------- Retry Wrapper --------
     @staticmethod
-    def handle_exception(e: Exception,
-                         response: Optional[Response]
-                         ):
-        """Handle exceptions raised during API requests.
+    def _with_retry(method: Callable, url: str, api_key: str, **kwargs) -> Optional[Response]:
+        """Retry logic for transient errors and rate limiting."""
+        url = RequestHelper.generate_url_with_key(url, api_key)
+        attempt = 0
+        delay = RequestHelper.INITIAL_DELAY
+        response = None
 
-        Args:
-            e (Exception): The exception raised.
-            response (Optional[Response]): The HTTP response, if any.
+        while attempt <= RequestHelper.MAX_RETRIES:
+            try:
+                response = method(
+                    url, headers=RequestHelper.DEFAULT_HEADERS, **kwargs)
+                if response.status_code in RequestHelper.SUCCESS_RANGE:
+                    return response
 
-        Returns:
-            Response: The original response if available and not critical.
+                # Handle transient errors & rate limiting
+                if response.status_code == 429:
+                    retry_after = int(
+                        response.headers.get("Retry-After", delay))
+                    logging.warning(
+                        f"429 Too Many Requests: retrying in {retry_after}s (attempt {attempt+1})")
+                    time.sleep(retry_after)
+                elif 500 <= response.status_code < 600:
+                    logging.warning(
+                        f"{response.status_code} Server Error: retrying in {delay}s (attempt {attempt+1})")
+                    time.sleep(delay)
+                    delay *= RequestHelper.BACKOFF_FACTOR
+                else:
+                    # Non-retryable error
+                    return RequestHelper.handle_exception(RequestException(f"HTTP {response.status_code}"), response)
 
-        Raises:
-            Exception: Re-raises the original exception for critical errors.
-        """
+            except RequestException as e:
+                if attempt >= RequestHelper.MAX_RETRIES:
+                    raise
+                logging.warning(
+                    f"Request failed ({e}), retrying in {delay}s (attempt {attempt+1})")
+                time.sleep(delay)
+                delay *= RequestHelper.BACKOFF_FACTOR
+
+            attempt += 1
+
+        return RequestHelper.handle_exception(RequestException("Max retries reached"), response)
+
+    # -------- Exception Handling --------
+    @staticmethod
+    def _redact_sensitive_data(message: str, response: Response) -> str:
+        if hasattr(response, "request") and hasattr(response.request, "url"):
+            parsed_url = urllib.parse.urlparse(response.request.url)
+            query_params = urllib.parse.parse_qs(str(parsed_url.query))
+            for key in RequestHelper.SENSITIVE_QUERY_KEYS:
+                if key in query_params:
+                    secret = query_params[key][0]
+                    if secret:
+                        message = message.replace(secret, "[REDACTED]")
+        return message
+
+    @staticmethod
+    def _extract_error_message(response: Response) -> str:
+        try:
+            error_content = json.loads(response.content)
+            return error_content.get("error", {}).get("cause", "Unknown error")
+        except json.JSONDecodeError:
+            return "Could not parse error message"
+
+    @staticmethod
+    def handle_exception(e: Exception, response: Optional[Response]) -> Optional[Response]:
         if response:
-            if 200 <= response.status_code <= 300:
-                return response
-            elif response.status_code == 400:
-                try:
-                    error_content = json.loads(response.content)
-                    error_message = error_content.get(
-                        "error", {}).get("cause", "Unknown error")
-                except json.JSONDecodeError:
-                    error_message = "Could not parse error message"
+            status = response.status_code
 
-                # Sanitize error_message to avoid leaking API key
-                if hasattr(response, 'request') and hasattr(response.request, 'url'):
-                    # Try to extract the API key from the request URL
-                    import urllib.parse
-                    parsed_url = urllib.parse.urlparse(response.request.url)
-                    query_params = urllib.parse.parse_qs(parsed_url.query)
-                    api_key_in_url = query_params.get('k', [None])[0]
-                    if api_key_in_url:
-                        error_message = error_message.replace(api_key_in_url, '[REDACTED]')
-                logging.warning("Received a 400 Bad Request. Error details omitted to avoid leaking sensitive information.")
+            if status in RequestHelper.SUCCESS_RANGE:
                 return response
-        logging.error(f"An error occurred: {e}")
+
+            if status == 400:
+                msg = RequestHelper._extract_error_message(response)
+                msg = RequestHelper._redact_sensitive_data(msg, response)
+                logging.warning(f"400 Bad Request: {msg}")
+                return response
+
+            if status == 401:
+                logging.error(
+                    "401 Unauthorized: Invalid API key or credentials.")
+                return None
+
+            if status == 403:
+                logging.error(
+                    "403 Forbidden: You don't have permission for this resource.")
+                return None
+
+            if status == 404:
+                logging.warning("404 Not Found: Resource not found.")
+                return None
+
+            if status == 429:
+                logging.error("429 Too Many Requests: Retry limit exceeded.")
+                return None
+
+            if 500 <= status < 600:
+                logging.error(
+                    f"{status} Server Error: API unavailable after retries.")
+                return None
+
+        logging.error(f"An unexpected error occurred: {e}")
         raise e
 
 
@@ -520,7 +423,6 @@ class JSONSerializable:
         # Final fallback for unsupported objects — raise error instead of returning str/float
         raise TypeError(f"{type(self).__name__} is not JSON-serializable")
 
-
     def to_json_file(self, filepath: str):
         """Serialize the object to a JSON file using CustomJSONEncoder."""
         FileHelper.check_filepath(filepath=filepath)
@@ -570,7 +472,7 @@ class JSONSerializable:
             if issubclass(cls, list):
                 try:
                     # type: ignore[attr-defined]
-                    base_args = get_args(cls.__orig_bases__[0]) # type: ignore
+                    base_args = get_args(cls.__orig_bases__[0])  # type: ignore
                     if not base_args:
                         raise TypeError(
                             "Cannot determine list item type for deserialization")

@@ -1,9 +1,11 @@
 """User identification helpers for the Permutive API."""
 
 import logging
-from typing import List
+from typing import List,Optional
 from dataclasses import dataclass
 from datetime import datetime
+
+from requests import Response
 
 from PermutiveAPI.utils import RequestHelper, JSONSerializable
 
@@ -46,7 +48,7 @@ class Identity(JSONSerializable):
     aliases: List[Alias]
 
     def identify(self,
-                 api_key: str):
+                 api_key: str) -> Optional[Response]:
         """Identify a user in Permutive.
 
         This method sends a POST request to the Permutive API to identify a user

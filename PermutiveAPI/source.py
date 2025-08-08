@@ -130,6 +130,8 @@ class Import(JSONSerializable):
         url = _API_ENDPOINT
         response = RequestHelper.get_static(
             api_key=api_key, url=url)
+        if response is None:
+            raise ValueError("Response is None")
         imports = response.json()
 
         def create_import(item):
@@ -336,6 +338,8 @@ class Segment(JSONSerializable):
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
         response = RequestHelper.delete_static(api_key=api_key,
                                                url=url)
+        if response is None:
+            raise ValueError("Response is None")
         return response.status_code == 204
 
     @staticmethod
@@ -457,6 +461,8 @@ class Segment(JSONSerializable):
             url = f"{base_url}?pagination_token={next_token}" if next_token else base_url
             response = RequestHelper.get_static(
                 api_key=api_key, url=url)
+            if response is None:
+                raise ValueError("Response is None")
             data = response.json()
 
             # Extract elements and add them to the list

@@ -74,6 +74,8 @@ class Cohort(JSONSerializable):
                                              url=url,
                                              data=RequestHelper.to_payload_static(self,
                                                                                   _API_PAYLOAD))
+        if response is None:
+            raise ValueError("Response is None")
         created = Cohort.from_json(response.json())
         if isinstance(created, Cohort):
             self.id = created.id
@@ -101,7 +103,8 @@ class Cohort(JSONSerializable):
         response = RequestHelper.patch_static(api_key=api_key,
                                               url=url,
                                               data=RequestHelper.to_payload_static(self, _API_PAYLOAD))
-
+        if response is None:
+            raise ValueError("Response is None")
         return Cohort.from_json(response.json())
 
     def delete(self,
@@ -143,11 +146,14 @@ class Cohort(JSONSerializable):
         url = f"{_API_ENDPOINT}{id}"
         response = RequestHelper.get_static(api_key=api_key,
                                             url=url)
-        cohort= Cohort.from_json(response.json())
+        if response is None:
+            raise ValueError("Response is None")
+        cohort = Cohort.from_json(response.json())
         if isinstance(cohort, Cohort):
             return cohort
         else:
-            raise ValueError(f"Failed to fetch cohort with ID: {id}. Response: {response.text}")
+            raise ValueError(
+                f"Failed to fetch cohort with ID: {id}. Response: {response.text}")
 
     @staticmethod
     def get_by_name(
@@ -218,6 +224,8 @@ class Cohort(JSONSerializable):
             url = f"{url}&include-child-workspaces=true"
 
         response = RequestHelper.get_static(api_key, url)
+        if response is None:
+            raise ValueError("Response is None")
         cohort_list = CohortList([Cohort(**cohort)
                                  for cohort in response.json()])
         return cohort_list
