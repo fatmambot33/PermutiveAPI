@@ -43,48 +43,65 @@ class RequestHelper:
     api_endpoint: str
     payload_keys: Optional[List[str]] = None
 
-    def __init__(self, api_key: str, api_endpoint: str, payload_keys: Optional[List[str]] = None) -> None:
+    def __init__(self,
+                 api_key: str,
+                 api_endpoint: str,
+                 payload_keys: Optional[List[str]] = None) -> None:
         self.api_key = api_key
         self.api_endpoint = api_endpoint
         self.payload_keys = payload_keys
 
     # -------- URL Helper --------
     @staticmethod
-    def generate_url_with_key(url, api_key) -> str:
+    def generate_url_with_key(url: str,
+                              api_key: str) -> str:
         return f"{url}{'&' if '?' in url else '?'}k={api_key}"
 
     # -------- Public Request Methods --------
     @staticmethod
-    def get_static(api_key: str, url: str) -> Optional[Response]:
+    def get_static(api_key: str,
+                   url: str) -> Optional[Response]:
         return RequestHelper._with_retry(requests.get, url, api_key)
 
     @staticmethod
-    def post_static(api_key: str, url: str, data: dict) -> Optional[Response]:
+    def post_static(api_key: str,
+                    url: str,
+                    data: dict) -> Optional[Response]:
         return RequestHelper._with_retry(requests.post, url, api_key, json=data)
 
     @staticmethod
-    def patch_static(api_key: str, url: str, data: dict) -> Optional[Response]:
+    def patch_static(api_key: str,
+                     url: str,
+                     data: dict) -> Optional[Response]:
         return RequestHelper._with_retry(requests.patch, url, api_key, json=data)
 
     @staticmethod
-    def delete_static(api_key: str, url: str) -> Optional[Response]:
+    def delete_static(api_key: str,
+                      url: str) -> Optional[Response]:
         return RequestHelper._with_retry(requests.delete, url, api_key)
 
-    def get(self, url) -> Optional[Response]:
+    def get(self,
+            url) -> Optional[Response]:
         return RequestHelper.get_static(self.api_key, url)
 
-    def post(self, url: str, data: dict) -> Optional[Response]:
+    def post(self,
+             url: str,
+             data: dict) -> Optional[Response]:
         return RequestHelper.post_static(self.api_key, url, data)
 
-    def patch(self, url: str, data: dict) -> Optional[Response]:
+    def patch(self,
+              url: str,
+              data: dict) -> Optional[Response]:
         return RequestHelper.patch_static(self.api_key, url, data)
 
-    def delete(self, url: str) -> Optional[Response]:
+    def delete(self,
+               url: str) -> Optional[Response]:
         return RequestHelper.delete_static(self.api_key, url)
 
     # -------- Payload Helper --------
     @staticmethod
-    def to_payload_static(dataclass_obj: Any, api_payload: Optional[List[str]] = None) -> Dict[str, Any]:
+    def to_payload_static(dataclass_obj: Any,
+                          api_payload: Optional[List[str]] = None) -> Dict[str, Any]:
         dataclass_dict = vars(dataclass_obj)
         filtered_dict = {k: v for k, v in dataclass_dict.items(
         ) if v and (api_payload is None or k in api_payload)}
@@ -94,7 +111,10 @@ class RequestHelper:
 
     # -------- Retry Wrapper --------
     @staticmethod
-    def _with_retry(method: Callable, url: str, api_key: str, **kwargs) -> Optional[Response]:
+    def _with_retry(method: Callable,
+                    url: str,
+                    api_key: str,
+                    **kwargs) -> Optional[Response]:
         """Retry logic for transient errors and rate limiting."""
         url = RequestHelper.generate_url_with_key(url, api_key)
         attempt = 0
@@ -138,7 +158,8 @@ class RequestHelper:
 
     # -------- Exception Handling --------
     @staticmethod
-    def _redact_sensitive_data(message: str, response: Response) -> str:
+    def _redact_sensitive_data(message: str,
+                               response: Response) -> str:
         if hasattr(response, "request") and hasattr(response.request, "url"):
             parsed_url = urllib.parse.urlparse(response.request.url)
             query_params = urllib.parse.parse_qs(str(parsed_url.query))
@@ -158,7 +179,8 @@ class RequestHelper:
             return "Could not parse error message"
 
     @staticmethod
-    def handle_exception(e: Exception, response: Optional[Response]) -> Optional[Response]:
+    def handle_exception(e: Exception,
+                         response: Optional[Response]) -> Optional[Response]:
         if response:
             status = response.status_code
 
