@@ -156,10 +156,9 @@ class Cohort(JSONSerializable):
                 f"Failed to fetch cohort with ID: {id}. Response: {response.text}")
 
     @staticmethod
-    def get_by_name(
-        name: str,
-        api_key: str
-    ) -> Optional['Cohort']:
+    def get_by_name(name: str,
+                    api_key: str
+                    ) -> Optional['Cohort']:
         """Retrieve a cohort by its name.
 
         This method searches for a cohort with the specified name.
@@ -174,7 +173,7 @@ class Cohort(JSONSerializable):
         logging.debug(f"CohortAPI::get_by_name::{name}")
 
         cohorts = Cohort.list(include_child_workspaces=True,
-                                  api_key=api_key)
+                              api_key=api_key)
         return cohorts.name_dictionary.get(name)
 
     @staticmethod
@@ -194,7 +193,7 @@ class Cohort(JSONSerializable):
         """
         logging.debug(f"CohortAPI::get_by_code::{code}")
         cohorts = Cohort.list(include_child_workspaces=True,
-                                  api_key=api_key)
+                              api_key=api_key)
         return cohorts.code_dictionary.get(str(code))
 
     @staticmethod
