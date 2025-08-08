@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Any, Union, Type, TypeVar, Callable, ge
 import logging
 import os
 import urllib.parse
+import re
 from dataclasses import is_dataclass, fields
 import uuid
 from decimal import Decimal
@@ -266,14 +267,23 @@ class RequestHelper:
     @staticmethod
     def _redact_sensitive_data(message: str,
                                response: Response) -> str:
+        # Redact sensitive data from both the message and any query parameters in the URL
         if hasattr(response, "request") and hasattr(response.request, "url"):
             parsed_url = urllib.parse.urlparse(response.request.url)
             query_params = urllib.parse.parse_qs(str(parsed_url.query))
             for key in RequestHelper.SENSITIVE_QUERY_KEYS:
                 if key in query_params:
-                    secret = query_params[key][0]
-                    if secret:
-                        message = message.replace(secret, "[REDACTED]")
+                    for secret in query_params[key]:
+                        if secret:
+                            message = message.replace(secret, "[REDACTED]")
+        # Also redact any sensitive keys that may appear in the message as key-value pairs
+        for key in RequestHelper.SENSITIVE_QUERY_KEYS:
+            # Redact patterns like 'key=secret' or '"key": "secret"'
+            import re
+            # key=secret (in URLs)
+            message = re.sub(rf'({key})=([^\s&"\']+)', rf'\1=[REDACTED]', message, flags=re.IGNORECASE)
+            # "key": "secret" (in JSON)
+            message = re.sub(rf'("{key}"\s*:\s*")[^"]+(")', rf'\1[REDACTED]\2', message, flags=re.IGNORECASE)
         return message
 
     @staticmethod
@@ -305,8 +315,13 @@ class RequestHelper:
 
             if status == 400:
                 msg = RequestHelper._extract_error_message(response)
+                # Redact sensitive data from both the error message and the request URL
                 msg = RequestHelper._redact_sensitive_data(msg, response)
-                logging.warning(f"400 Bad Request: {msg}")
+                if hasattr(response, "request") and hasattr(response.request, "url"):
+                    redacted_url = RequestHelper._redact_sensitive_data(response.request.url, response)
+                else:
+                    redacted_url = ""
+                logging.warning(f"400 Bad Request: {msg}" + (f" [URL: {redacted_url}]" if redacted_url else ""))
                 return response
 
             if status == 401:
