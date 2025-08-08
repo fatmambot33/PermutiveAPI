@@ -317,10 +317,9 @@ class RequestHelper:
                 msg = RequestHelper._extract_error_message(response)
                 # Redact sensitive data from both the error message and the request URL
                 msg = RequestHelper._redact_sensitive_data(msg, response)
-                if hasattr(response, "request") and hasattr(response.request, "url"):
+                redacted_url = ""
+                if hasattr(response, "request") and response.request.url:
                     redacted_url = RequestHelper._redact_sensitive_data(response.request.url, response)
-                else:
-                    redacted_url = ""
                 logging.warning(f"400 Bad Request: {msg}" + (f" [URL: {redacted_url}]" if redacted_url else ""))
                 return response
 

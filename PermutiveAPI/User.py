@@ -60,8 +60,7 @@ class Identity(JSONSerializable):
         Returns:
             Response: The response from the Permutive API.
         """
-        logging.debug(
-            f"{datetime.now()}::UserAPI::identify::{self.user_id}")
+        logging.debug(f"UserAPI::identify::{self.user_id}")
 
         url = f"{_API_ENDPOINT}"
 

@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Any, overload, Type, Union
 from dataclasses import dataclass
 from pathlib import Path
 from PermutiveAPI.Utils import JSONSerializable
-from PermutiveAPI.Source import Import, Segment
+from PermutiveAPI.Source import Import, ImportList, Segment
 from PermutiveAPI.Cohort import Cohort, CohortList
 
 
@@ -64,11 +64,11 @@ class Workspace(JSONSerializable):
                            api_key=self.api_key)
 
     @property
-    def imports(self) -> List[Import]:
+    def imports(self) -> "ImportList":
         """Retrieve a cached list of imports for the workspace.
 
         Returns:
-            List[Import]: Cached list of imports.
+            ImportList: Cached list of imports.
         """
         if not hasattr(self, '_import_cache'):
             self._import_cache = Import.list(api_key=self.api_key)

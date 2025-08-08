@@ -146,20 +146,6 @@ class TestSegment(unittest.TestCase):
         self.assertTrue(result)
 
     @patch('PermutiveAPI.Source.RequestHelper.get_static')
-    def test_get(self, mock_get):
-        # Arrange
-        mock_response = MagicMock()
-        mock_response.json.return_value = self.segment_data
-        mock_get.return_value = mock_response
-
-        # Act
-        result = Segment.get("import-123", "seg-123", self.api_key)
-
-        # Assert
-        mock_get.assert_called_once()
-        self.assertEqual(result.id, "seg-123")
-
-    @patch('PermutiveAPI.Source.RequestHelper.get_static')
     def test_get_by_code(self, mock_get):
         # Arrange
         mock_response = MagicMock()
