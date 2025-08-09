@@ -5,8 +5,8 @@ from typing import Dict, List, Optional, Type, Union
 from dataclasses import dataclass
 from pathlib import Path
 from PermutiveAPI.Utils import JSONSerializable
-from PermutiveAPI.Import import Import, ImportList
-from PermutiveAPI.Segment import Segment
+from PermutiveAPI.Audience.Import import Import, ImportList
+from PermutiveAPI.Audience.Segment import Segment
 from PermutiveAPI.Cohort import Cohort, CohortList
 
 

@@ -7,12 +7,12 @@ from typing import Dict, List, Optional, DefaultDict, TYPE_CHECKING, Type, Union
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from PermutiveAPI.Segment import SegmentList
+    from PermutiveAPI.Audience.Segment import SegmentList
 from datetime import datetime, timezone
 from collections import defaultdict
 
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable
-from PermutiveAPI.Source import Source
+from PermutiveAPI.Audience.Source import Source
 
 
 _API_VERSION = "v1"

@@ -6,9 +6,9 @@ from datetime import timezone
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from PermutiveAPI.Source import Source
-from PermutiveAPI.Import import Import, ImportList
-from PermutiveAPI.Segment import Segment, SegmentList
+from PermutiveAPI.Audience.Source import Source
+from PermutiveAPI.Audience.Import import Import, ImportList
+from PermutiveAPI.Audience.Segment import Segment, SegmentList
 
 class TestSource(unittest.TestCase):
     def setUp(self):
