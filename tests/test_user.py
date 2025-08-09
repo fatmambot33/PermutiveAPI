@@ -48,7 +48,7 @@ class TestIdentity(unittest.TestCase):
         }
         self.assertEqual(self.identity.to_json(), expected_dict)
 
-    @patch('PermutiveAPI.User.RequestHelper.post_static')
+    @patch('PermutiveAPI.Identify.Identity.RequestHelper.post_static')
     def test_identify_call(self, mock_post_static):
         """Test that the identify method calls the RequestHelper with the correct arguments."""
         # Arrange
