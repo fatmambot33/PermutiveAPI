@@ -451,7 +451,7 @@ class FileHelper:
         return file_path, file_name, file_extension
 
     @staticmethod
-    def file_exists(fullfilepath):
+    def file_exists(fullfilepath: str) -> bool:
         """Check if a file exists, accounting for variations in the filename.
 
         Parameters
@@ -467,9 +467,11 @@ class FileHelper:
         file_path, file_name, file_extension = FileHelper.split_filepath(
             fullfilepath)
 
-        if len(glob(f"{file_path}{file_name }-*{file_extension}") + glob(f"{file_path}{file_name}{file_extension}")) > 0:
-            return True
-        return False
+        pattern_with_suffix = os.path.join(
+            file_path, f"{file_name}-*{file_extension}"
+        )
+        pattern_exact = os.path.join(file_path, f"{file_name}{file_extension}")
+        return len(glob(pattern_with_suffix) + glob(pattern_exact)) > 0
 
 
 class ListHelper:
