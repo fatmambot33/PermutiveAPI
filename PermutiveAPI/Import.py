@@ -185,13 +185,3 @@ class ImportList(List[Import],
         if not self._identifier_dictionary_cache:
             self.rebuild_cache()
         return self._identifier_dictionary_cache
-
-    def to_list(self) -> List[Import]:
-        """Return the list of imports.
-
-        Returns
-        -------
-        List[Import]
-            The underlying list of imports.
-        """
-        return list(self)

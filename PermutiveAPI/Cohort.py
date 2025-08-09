@@ -405,13 +405,3 @@ class CohortList(List[Cohort], JSONSerializable):
         if not self._workspace_dictionary_cache:
             self.rebuild_cache()
         return self._workspace_dictionary_cache
-
-    def to_list(self) -> List[Cohort]:
-        """Return the list of cohorts.
-
-        Returns
-        -------
-        List[Cohort]
-            The underlying list of cohorts.
-        """
-        return list(self)

@@ -195,13 +195,3 @@ class WorkspaceList(List[Workspace], JSONSerializable):
             if workspace.isTopLevel:
                 return workspace
         raise ValueError("No Top-Level Workspace found")
-
-    def to_list(self) -> List[Workspace]:
-        """Return the list of workspaces.
-
-        Returns
-        -------
-        List[Workspace]
-            The underlying list of workspaces.
-        """
-        return list(self)

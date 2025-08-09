@@ -76,7 +76,6 @@ class Segment(JSONSerializable):
         if isinstance(new_segment, Segment):
             self.__dict__.update(new_segment.__dict__)
 
-
     def update(self,
                api_key: str):
         """Update the segment using the provided private key.
@@ -318,13 +317,3 @@ class SegmentList(List[Segment],
         if not self._code_dictionary_cache:
             self.rebuild_cache()
         return self._code_dictionary_cache
-
-    def to_list(self) -> List[Segment]:
-        """Return the list of segments.
-
-        Returns
-        -------
-        List[Segment]
-            The underlying list of segments.
-        """
-        return list(self)
