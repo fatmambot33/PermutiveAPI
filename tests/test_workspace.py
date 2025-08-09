@@ -22,13 +22,13 @@ class TestWorkspace(unittest.TestCase):
         }
         self.workspace = Workspace(**self.workspace_data)
 
-    def test_isTopLevel(self):
+    def test_is_top_level(self):
         # Arrange
         top_level_workspace = Workspace(name="Top Level", organisation_id="org-123", workspace_id="org-123", api_key=self.api_key)
 
         # Act & Assert
-        self.assertTrue(top_level_workspace.isTopLevel)
-        self.assertFalse(self.workspace.isTopLevel)
+        self.assertTrue(top_level_workspace.is_top_level)
+        self.assertFalse(self.workspace.is_top_level)
 
     @patch('PermutiveAPI.Workspace.Cohort.list')
     def test_cohorts_property(self, mock_cohort_list):
@@ -118,7 +118,7 @@ class TestWorkspaceList(unittest.TestCase):
 
     def test_master_workspace_not_found(self):
         # Arrange
-        child_workspaces = [ws for ws in self.workspaces if not ws.isTopLevel]
+        child_workspaces = [ws for ws in self.workspaces if not ws.is_top_level]
         workspace_list = WorkspaceList(child_workspaces)
 
         # Act & Assert
