@@ -1,6 +1,6 @@
-"""Import and segment management for the Permutive API."""
+"""Source entity serialization for the Permutive API."""
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 
 from PermutiveAPI.Utils import JSONSerializable
@@ -14,7 +14,7 @@ class Source(JSONSerializable):
     ----------
     id : str
         Unique identifier for the source.
-    state : Dict
+    state : Dict[str, Any]
         State information of the source.
     type : str
         Type of the source.
@@ -24,7 +24,7 @@ class Source(JSONSerializable):
         List of cohorts associated with the source.
     bucket : Optional[str]
         Bucket information for the source.
-    permissions : Optional[Dict]
+    permissions : Optional[Dict[str, Any]]
         Permissions associated with the source.
     phase : Optional[str]
         Phase information of the source.
@@ -39,12 +39,12 @@ class Source(JSONSerializable):
     """
 
     id: str
-    state: Dict
+    state: Dict[str, Any]
     type: str
     schema_id: Optional[str] = None
     cohorts: Optional[List[str]] = None
     bucket: Optional[str] = None
-    permissions: Optional[Dict] = None
+    permissions: Optional[Dict[str, Any]] = None
     phase: Optional[str] = None
     errors: Optional[List[str]] = None
     advertiser_name: Optional[str] = None
