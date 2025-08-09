@@ -7,7 +7,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from PermutiveAPI.Workspace import Workspace, WorkspaceList
 from PermutiveAPI.Cohort import Cohort, CohortList
-from PermutiveAPI.Source import Import, Segment
+from PermutiveAPI.Import import Import
+from PermutiveAPI.Segment import Segment
 
 class TestWorkspace(unittest.TestCase):
 
