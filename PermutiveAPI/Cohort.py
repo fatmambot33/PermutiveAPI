@@ -14,24 +14,38 @@ _API_PAYLOAD = ["id", "name", "query", "description", "tags"]
 
 @dataclass
 class Cohort(JSONSerializable):
-    """
-    Represents a cohort entity in the Permutive ecosystem.
+    """Represents a cohort entity in the Permutive ecosystem.
 
-    Attributes:
-        name (str): The name of the cohort.
-        id (Optional[str]): The unique identifier of the cohort.
-        code (Optional[str]): The code associated with the cohort.
-        query (Optional[Dict]): The query used to define the cohort.
-        tags (Optional[List[str]]): Tags associated with the cohort.
-        description (Optional[str]): A description of the cohort.
-        state (Optional[str]): The state of the cohort.
-        segment_type (Optional[str]): The type of segment.
-        live_audience_size (Optional[int]): The size of the live audience.
-        created_at (Optional[datetime]): The creation date of the cohort.
-        last_updated_at (Optional[datetime]): The last update date of the cohort.
-        workspace_id (Optional[str]): The ID of the associated workspace.
-        request_id (Optional[str]): The request ID associated with cohort operations.
-        error (Optional[str]): An error message, if an error occurs during operations.
+    Attributes
+    ----------
+    name : str
+        The name of the cohort.
+    id : Optional[str]
+        The unique identifier of the cohort.
+    code : Optional[str]
+        The code associated with the cohort.
+    query : Optional[Dict]
+        The query used to define the cohort.
+    tags : Optional[List[str]]
+        Tags associated with the cohort.
+    description : Optional[str]
+        A description of the cohort.
+    state : Optional[str]
+        The state of the cohort.
+    segment_type : Optional[str]
+        The type of segment.
+    live_audience_size : Optional[int]
+        The size of the live audience.
+    created_at : Optional[datetime]
+        The creation date of the cohort.
+    last_updated_at : Optional[datetime]
+        The last update date of the cohort.
+    workspace_id : Optional[str]
+        The ID of the associated workspace.
+    request_id : Optional[str]
+        The request ID associated with cohort operations.
+    error : Optional[str]
+        An error message, if an error occurs during operations.
     """
 
     name: str
@@ -58,11 +72,14 @@ class Cohort(JSONSerializable):
         based on the instance's attributes. The ``id`` and ``code`` of the instance
         are updated with the values returned by the API.
 
-        Args:
-            api_key (str): The API key for authentication.
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
 
-        Returns:
-            None
+        Returns
+        -------
+        None
         """
         logging.debug(f"CohortAPI::create::{self.name}")
         if not self.query:
@@ -89,11 +106,15 @@ class Cohort(JSONSerializable):
         The cohort to be updated is identified by the ``id`` attribute of the
         instance.
 
-        Args:
-            api_key (str): The API key for authentication.
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
 
-        Returns:
-            Cohort: A new object representing the updated state.
+        Returns
+        -------
+        Cohort
+            A new object representing the updated state.
         """
         logging.debug(f"CohortAPI::update::{self.name}")
         if not self.id:
@@ -114,11 +135,14 @@ class Cohort(JSONSerializable):
         This method sends a DELETE request to the Permutive API to delete the cohort
         identified by the ``id`` attribute of the instance.
 
-        Args:
-            api_key (str): The API key for authentication.
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
 
-        Returns:
-            None
+        Returns
+        -------
+        None
         """
         logging.debug(f"CohortAPI::delete::{self.name}")
         if not self.id:
@@ -132,15 +156,22 @@ class Cohort(JSONSerializable):
                   api_key: str) -> 'Cohort':
         """Fetch a specific cohort from the API using its ID.
 
-        Args:
-            id (str): The ID of the cohort to retrieve.
-            api_key (str): The API key for authentication.
+        Parameters
+        ----------
+        id : str
+            The ID of the cohort to retrieve.
+        api_key : str
+            The API key for authentication.
 
-        Returns:
-            Cohort: The cohort retrieved from the API.
+        Returns
+        -------
+        Cohort
+            The cohort retrieved from the API.
 
-        Raises:
-            ValueError: If the cohort cannot be fetched.
+        Raises
+        ------
+        ValueError
+            If the cohort cannot be fetched.
         """
         logging.debug(f"CohortAPI::get::{id}")
         url = f"{_API_ENDPOINT}{id}"
@@ -163,12 +194,17 @@ class Cohort(JSONSerializable):
 
         This method searches for a cohort with the specified name.
 
-        Args:
-            name (str): The name of the cohort to retrieve.
-            api_key (str): The API key for authentication.
+        Parameters
+        ----------
+        name : str
+            The name of the cohort to retrieve.
+        api_key : str
+            The API key for authentication.
 
-        Returns:
-            Optional[Cohort]: The matching cohort if found, otherwise ``None``.
+        Returns
+        -------
+        Optional[Cohort]
+            The matching cohort if found, otherwise ``None``.
         """
         logging.debug(f"CohortAPI::get_by_name::{name}")
 
@@ -184,12 +220,17 @@ class Cohort(JSONSerializable):
 
         This method searches for a cohort with the specified code.
 
-        Args:
-            code (Union[int, str]): The code of the cohort to retrieve.
-            api_key (str): The API key for authentication.
+        Parameters
+        ----------
+        code : Union[int, str]
+            The code of the cohort to retrieve.
+        api_key : str
+            The API key for authentication.
 
-        Returns:
-            Optional[Cohort]: The matching cohort if found, otherwise ``None``.
+        Returns
+        -------
+        Optional[Cohort]
+            The matching cohort if found, otherwise ``None``.
         """
         logging.debug(f"CohortAPI::get_by_code::{code}")
         cohorts = Cohort.list(include_child_workspaces=True,
@@ -201,13 +242,17 @@ class Cohort(JSONSerializable):
              include_child_workspaces: bool = False) -> 'CohortList':
         """Fetch all cohorts from the API.
 
-        Args:
-            api_key (str): The API key for authentication.
-            include_child_workspaces (bool): Whether to include cohorts from child
-                workspaces.
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+        include_child_workspaces : bool, optional
+            Whether to include cohorts from child workspaces. Defaults to False.
 
-        Returns:
-            CohortList: A list of all cohorts.
+        Returns
+        -------
+        CohortList
+            A list of all cohorts.
         """
         logging.debug(f"CohortAPI::list")
 
@@ -224,8 +269,7 @@ class Cohort(JSONSerializable):
 
 
 class CohortList(List[Cohort], JSONSerializable):
-    """
-    A list-like object for managing a collection of Cohort instances.
+    """A list-like object for managing a collection of Cohort instances.
 
     It provides caching mechanisms for quick lookups by id, code, name, etc.
     """
@@ -233,11 +277,10 @@ class CohortList(List[Cohort], JSONSerializable):
     def __init__(self, items_list: Optional[List[Cohort]] = None):
         """Initialize the CohortList.
 
-        Args:
-            items_list (Optional[List[Cohort]]): Cohort objects to initialize with.
-
-        Returns:
-            None
+        Parameters
+        ----------
+        items_list : Optional[List[Cohort]], optional
+            Cohort objects to initialize with. Defaults to None.
         """
         super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Cohort] = {}
@@ -253,8 +296,9 @@ class CohortList(List[Cohort], JSONSerializable):
     def rebuild_cache(self):
         """Rebuild all caches based on the current state of the list.
 
-        Returns:
-            None
+        Returns
+        -------
+        None
         """
         self._id_dictionary_cache = {
             cohort.id: cohort for cohort in self if cohort.id}
@@ -278,8 +322,10 @@ class CohortList(List[Cohort], JSONSerializable):
     def id_dictionary(self) -> Dict[str, Cohort]:
         """Return a dictionary of cohorts indexed by their IDs.
 
-        Returns:
-            Dict[str, Cohort]: A mapping of cohort IDs to ``Cohort`` instances.
+        Returns
+        -------
+        Dict[str, Cohort]
+            A mapping of cohort IDs to ``Cohort`` instances.
         """
         if not self._id_dictionary_cache:
             self.rebuild_cache()
@@ -289,8 +335,10 @@ class CohortList(List[Cohort], JSONSerializable):
     def code_dictionary(self) -> Dict[str, Cohort]:
         """Return a dictionary of cohorts indexed by their code.
 
-        Returns:
-            Dict[str, Cohort]: A mapping of cohort codes to ``Cohort`` instances.
+        Returns
+        -------
+        Dict[str, Cohort]
+            A mapping of cohort codes to ``Cohort`` instances.
         """
         if not self._code_dictionary_cache:
             self.rebuild_cache()
@@ -300,8 +348,10 @@ class CohortList(List[Cohort], JSONSerializable):
     def name_dictionary(self) -> Dict[str, Cohort]:
         """Return a dictionary of cohorts indexed by their names.
 
-        Returns:
-            Dict[str, Cohort]: A mapping of cohort names to ``Cohort`` instances.
+        Returns
+        -------
+        Dict[str, Cohort]
+            A mapping of cohort names to ``Cohort`` instances.
         """
         if not self._name_dictionary_cache:
             self.rebuild_cache()
@@ -311,8 +361,10 @@ class CohortList(List[Cohort], JSONSerializable):
     def tag_dictionary(self) -> Dict[str, List[Cohort]]:
         """Return a dictionary of cohorts indexed by their tags.
 
-        Returns:
-            Dict[str, List[Cohort]]: A mapping of tag names to lists of cohorts.
+        Returns
+        -------
+        Dict[str, List[Cohort]]
+            A mapping of tag names to lists of cohorts.
         """
         if not self._tag_dictionary_cache:
             self.rebuild_cache()
@@ -322,8 +374,10 @@ class CohortList(List[Cohort], JSONSerializable):
     def segment_type_dictionary(self) -> Dict[str, List[Cohort]]:
         """Return a dictionary of cohorts indexed by their tags.
 
-        Returns:
-            Dict[str, List[Cohort]]: A mapping of segment types to lists of cohorts.
+        Returns
+        -------
+        Dict[str, List[Cohort]]
+            A mapping of segment types to lists of cohorts.
         """
         if not self._segment_type_dictionary_cache:
             self.rebuild_cache()
@@ -333,8 +387,10 @@ class CohortList(List[Cohort], JSONSerializable):
     def workspace_dictionary(self) -> Dict[str, List[Cohort]]:
         """Return a dictionary of cohorts indexed by their workspace IDs.
 
-        Returns:
-            Dict[str, List[Cohort]]: A mapping of workspace IDs to lists of cohorts.
+        Returns
+        -------
+        Dict[str, List[Cohort]]
+            A mapping of workspace IDs to lists of cohorts.
         """
         if not self._workspace_dictionary_cache:
             self.rebuild_cache()
@@ -343,7 +399,9 @@ class CohortList(List[Cohort], JSONSerializable):
     def to_list(self) -> List[Cohort]:
         """Return the list of cohorts.
 
-        Returns:
-            List[Cohort]: The underlying list of cohorts.
+        Returns
+        -------
+        List[Cohort]
+            The underlying list of cohorts.
         """
         return list(self)
