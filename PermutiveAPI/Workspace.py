@@ -1,5 +1,6 @@
 """Workspace utilities for interacting with the Permutive API."""
 
+import json
 from typing import Dict, List, Optional, Any, overload, Type, Union
 from dataclasses import dataclass
 from pathlib import Path
@@ -102,33 +103,36 @@ class Workspace(JSONSerializable):
         return Segment.list(import_id=import_id,
                             api_key=self.api_key)
 
-    @overload
     @classmethod
-    def from_json(cls: Type["Workspace"], data: dict) -> "Workspace": ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type["Workspace"],
-                  data: list[dict]) -> list["Workspace"]: ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type["Workspace"], data: str) -> Union["Workspace",
-                                                              list["Workspace"]]: ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type["Workspace"], data: Path) -> Union["Workspace",
-                                                               list["Workspace"]]: ...
-
-    @classmethod
-    def from_json(cls: Type["Workspace"], data: Any) -> Union["Workspace", list["Workspace"]]:
+    def from_json(cls: Type["Workspace"], data: Any) -> "Workspace":
         """Deserialize workspace data from various JSON representations."""
         return super().from_json(data)
 
 
 class WorkspaceList(List[Workspace], JSONSerializable):
     """Manage a collection of Workspace objects."""
+    @classmethod
+    def from_json(
+        cls: Type["WorkspaceList"],
+        data: Union[list[dict], str, Path],
+    ) -> "WorkspaceList":
+        """Deserialize a list of workspaces from various JSON representations."""
+        if isinstance(data, (str, Path)):
+            try:
+                if isinstance(data, Path):
+                    content = data.read_text(encoding="utf-8")
+                else:
+                    content = data
+                data = json.loads(content)
+            except Exception as e:
+                raise TypeError(f"Failed to parse JSON from input: {e}")
+
+        if isinstance(data, list):
+            return cls([Workspace.from_json(item) for item in data])
+
+        raise TypeError(
+            f"`from_json()` expected a list of dicts, JSON string, or Path, but got {type(data).__name__}"
+        )
 
     def __init__(self,
                  items_list: Optional[List[Workspace]] = None):
