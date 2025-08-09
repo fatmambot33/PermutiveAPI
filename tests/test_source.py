@@ -162,6 +162,21 @@ class TestSegment(unittest.TestCase):
         mock_delete.assert_called_once()
         self.assertTrue(result)
 
+    @patch('PermutiveAPI.Segment.RequestHelper.delete_static')
+    def test_delete_logs_import_id(self, mock_delete):
+        # Arrange
+        mock_response = MagicMock()
+        mock_response.status_code = 204
+        mock_delete.return_value = mock_response
+
+        with patch('PermutiveAPI.Segment.logging.debug') as mock_log:
+            # Act
+            self.segment.delete(self.api_key)
+
+            # Assert
+            mock_log.assert_called_with(
+                'SegmentAPI::delete_segment::import-123::seg-123')
+
     @patch('PermutiveAPI.Segment.RequestHelper.get_static')
     def test_get_by_code(self, mock_get):
         # Arrange

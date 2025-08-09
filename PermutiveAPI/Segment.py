@@ -119,7 +119,7 @@ class Segment(JSONSerializable):
             204), otherwise ``False``.
         """
         logging.debug(
-            f"SegmentAPI::delete_segment::{self.import_id:}::{self.id}")
+            f"SegmentAPI::delete_segment::{self.import_id}::{self.id}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
         response = RequestHelper.delete_static(api_key=api_key,
                                                url=url)
