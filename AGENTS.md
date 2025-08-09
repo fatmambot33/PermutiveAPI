@@ -8,6 +8,10 @@ Before committing, ensure all of the following pass:
 - `pyright PermutiveAPI`
 - `pytest -q`
 
+## Directory Layout
+- Production code lives in `PermutiveAPI/`.
+- Tests live in `tests/`.
+
 ## Style Notes
 - Use **NumPy-style** docstrings following [PEP 257](https://peps.python.org/pep-0257/) conventions.
 - **Do not** use `:param` / `:type` syntax (reST/Sphinx style) or Google-style `Args`.
