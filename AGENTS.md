@@ -9,7 +9,11 @@ Before committing, ensure all of the following pass:
 - `pytest -q`
 
 ## Style Notes
-- Use NumPy-style docstrings with explicit `Args` and `Returns` sections.
-- Keep the implementation pythonic and maintainable.
+- Use NumPy-style docstrings following PEP 257 conventions:
+  - Start with a short one-line summary.
+  - Include a blank line after the summary, followed by a more detailed description if needed.
+  - Use `Parameters` and `Returns` sections (not `Args`).
+- Keep the implementation Pythonic and maintainable.
 - Write commit messages in the imperative mood.
+
 
