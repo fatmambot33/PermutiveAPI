@@ -144,6 +144,32 @@ class WorkspaceList(List[Workspace], JSONSerializable):
         self._name_dictionary_cache: Dict[str, Workspace] = {}
         self.rebuild_cache()
 
+    @overload
+    @classmethod
+    def from_json(cls: Type["WorkspaceList"], data: dict) -> "WorkspaceList": ...
+
+    @overload
+    @classmethod
+    def from_json(cls: Type["WorkspaceList"],
+                  data: list[dict]) -> "WorkspaceList": ...
+
+    @overload
+    @classmethod
+    def from_json(cls: Type["WorkspaceList"], data: str) -> "WorkspaceList": ...
+
+    @overload
+    @classmethod
+    def from_json(cls: Type["WorkspaceList"], data: Path) -> "WorkspaceList": ...
+
+    @classmethod
+    def from_json(cls: Type["WorkspaceList"], data: Any) -> "WorkspaceList":
+        """Deserialize workspace data from various JSON representations."""
+        result = super().from_json(data)
+        if isinstance(result, cls):
+            return result
+        # This should be dead code at runtime if my analysis is correct
+        raise TypeError(f"Expected {cls.__name__}, got {type(result).__name__}")
+
     def rebuild_cache(self):
         """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache = {
