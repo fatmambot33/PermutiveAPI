@@ -103,12 +103,6 @@ class Workspace(JSONSerializable):
         return Segment.list(import_id=import_id,
                             api_key=self.api_key)
 
-    @classmethod
-    def from_json(cls: Type["Workspace"], data: Any) -> "Workspace":
-        """Deserialize workspace data from various JSON representations."""
-        return super().from_json(data)
-
-
 class WorkspaceList(List[Workspace], JSONSerializable):
     """Manage a collection of Workspace objects."""
     @classmethod

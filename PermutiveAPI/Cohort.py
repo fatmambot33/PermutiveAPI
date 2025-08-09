@@ -187,12 +187,7 @@ class Cohort(JSONSerializable):
                                             url=url)
         if response is None:
             raise ValueError("Response is None")
-        cohort = Cohort.from_json(response.json())
-        if isinstance(cohort, Cohort):
-            return cohort
-        else:
-            raise ValueError(
-                f"Failed to fetch cohort with ID: {id}. Response: {response.text}")
+        return Cohort.from_json(response.json())
 
     @staticmethod
     def get_by_name(name: str,
