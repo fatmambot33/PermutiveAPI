@@ -1,7 +1,9 @@
 """Cohort management utilities for the Permutive API."""
 
+import json
 import logging
-from typing import Dict, List, Optional, Union
+from pathlib import Path
+from typing import Dict, List, Optional, Union, Type
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable
@@ -185,12 +187,7 @@ class Cohort(JSONSerializable):
                                             url=url)
         if response is None:
             raise ValueError("Response is None")
-        cohort = Cohort.from_json(response.json())
-        if isinstance(cohort, Cohort):
-            return cohort
-        else:
-            raise ValueError(
-                f"Failed to fetch cohort with ID: {id}. Response: {response.text}")
+        return Cohort.from_json(response.json())
 
     @staticmethod
     def get_by_name(name: str,
@@ -269,16 +266,9 @@ class Cohort(JSONSerializable):
         response = RequestHelper.get_static(api_key, url)
         if response is None:
             raise ValueError("Response is None")
-        return CohortList.from_json(response.json())
-
-
-import json
-from pathlib import Path
-from typing import Type, Union
-
-
-from pathlib import Path
-from typing import Any, overload, Type
+        cohort_list = CohortList([Cohort(**cohort)
+                                 for cohort in response.json()])
+        return cohort_list
 
 
 class CohortList(List[Cohort], JSONSerializable):
@@ -289,16 +279,21 @@ class CohortList(List[Cohort], JSONSerializable):
     @classmethod
     def from_json(
         cls: Type["CohortList"],
-        data: Union[list[dict], str, Path],
+        data: Union[dict, list[dict], str, Path],
     ) -> "CohortList":
         """Deserialize a list of cohorts from various JSON representations."""
+        if isinstance(data, dict):
+            raise TypeError(f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Cohort class for single objects.")
         if isinstance(data, (str, Path)):
             try:
                 if isinstance(data, Path):
                     content = data.read_text(encoding="utf-8")
                 else:
                     content = data
-                data = json.loads(content)
+                loaded_data = json.loads(content)
+                if not isinstance(loaded_data, list):
+                    raise TypeError(f"JSON content from {type(data).__name__} did not decode to a list.")
+                data = loaded_data
             except Exception as e:
                 raise TypeError(f"Failed to parse JSON from input: {e}")
 
