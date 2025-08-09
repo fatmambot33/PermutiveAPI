@@ -1,5 +1,6 @@
 """Utility helpers for the Permutive API."""
 
+import re
 import requests
 from requests.exceptions import RequestException
 from requests.models import Response
@@ -11,7 +12,6 @@ from typing import Dict, List, Optional, Any, Union, Type, TypeVar, Callable, ge
 import logging
 import os
 import urllib.parse
-import re
 from dataclasses import is_dataclass, fields
 import uuid
 from decimal import Decimal
@@ -336,7 +336,6 @@ class RequestHelper:
         # Also redact any sensitive keys that may appear in the message as key-value pairs
         for key in RequestHelper.SENSITIVE_QUERY_KEYS:
             # Redact patterns like 'key=secret' or '"key": "secret"'
-            import re
             # key=secret (in URLs)
             message = re.sub(rf'({key})=([^\s&"\']+)', rf'\1=[REDACTED]', message, flags=re.IGNORECASE)
             # "key": "secret" (in JSON)
