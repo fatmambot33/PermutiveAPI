@@ -269,9 +269,12 @@ class Cohort(JSONSerializable):
         response = RequestHelper.get_static(api_key, url)
         if response is None:
             raise ValueError("Response is None")
-        cohort_list = CohortList([Cohort(**cohort)
-                                 for cohort in response.json()])
-        return cohort_list
+        return CohortList.from_json(response.json())
+
+
+import json
+from pathlib import Path
+from typing import Type, Union
 
 
 from pathlib import Path
@@ -283,6 +286,28 @@ class CohortList(List[Cohort], JSONSerializable):
 
     It provides caching mechanisms for quick lookups by id, code, name, etc.
     """
+    @classmethod
+    def from_json(
+        cls: Type["CohortList"],
+        data: Union[list[dict], str, Path],
+    ) -> "CohortList":
+        """Deserialize a list of cohorts from various JSON representations."""
+        if isinstance(data, (str, Path)):
+            try:
+                if isinstance(data, Path):
+                    content = data.read_text(encoding="utf-8")
+                else:
+                    content = data
+                data = json.loads(content)
+            except Exception as e:
+                raise TypeError(f"Failed to parse JSON from input: {e}")
+
+        if isinstance(data, list):
+            return cls([Cohort.from_json(item) for item in data])
+
+        raise TypeError(
+            f"`from_json()` expected a list of dicts, JSON string, or Path, but got {type(data).__name__}"
+        )
 
     def __init__(self, items_list: Optional[List[Cohort]] = None):
         """Initialize the CohortList.

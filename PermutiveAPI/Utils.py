@@ -684,19 +684,15 @@ class JSONSerializable:
 
     @overload
     @classmethod
-    def from_json(cls: Type[T], data: list[dict]) -> list[T]: ...
+    def from_json(cls: Type[T], data: str) -> T: ...
 
     @overload
     @classmethod
-    def from_json(cls: Type[T], data: str) -> Union[T, List[T]]: ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type[T], data: Path) -> Union[T, List[T]]: ...
+    def from_json(cls: Type[T], data: Path) -> T: ...
 
     @classmethod
-    def from_json(cls: Type[T], data: Any) -> Union[T, List[T]]:
-        """Handle JSON deserialization from dict, list[dict], JSON string, or file path."""
+    def from_json(cls: Type[T], data: Any) -> T:
+        """Handle JSON deserialization from dict, JSON string, or file path."""
         # Load if input is a string or path
         if isinstance(data, (str, Path)):
             try:
@@ -708,28 +704,10 @@ class JSONSerializable:
             except Exception as e:
                 raise TypeError(f"Failed to parse JSON from input: {e}")
 
-        # If list of dicts and cls is a list subclass
-        if isinstance(data, list):
-            if issubclass(cls, list):
-                try:
-                    # type: ignore[attr-defined]
-                    base_args = get_args(cls.__orig_bases__[0])  # type: ignore
-                    if not base_args:
-                        raise TypeError(
-                            "Cannot determine list item type for deserialization")
-                    item_type = base_args[0]
-                except Exception as e:
-                    raise TypeError(
-                        f"Failed to resolve list item type for {cls.__name__}: {e}")
-                # type: ignore
-                return cls([item_type.from_json(item) for item in data])
-            else:
-                return [cls.from_json(item) for item in data]
-
         # Single dict
         if isinstance(data, dict):
             return cls(**data)
 
         raise TypeError(
-            f"`from_json()` expected a dict, list of dicts, JSON string, or Path, but got {type(data).__name__}"
+            f"`from_json()` expected a dict, JSON string, or Path, but got {type(data).__name__}"
         )
