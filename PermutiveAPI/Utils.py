@@ -20,9 +20,6 @@ import datetime
 from pathlib import Path
 import time
 
-SENSITIVE_QUERY_KEYS = ("k", "api_key", "token", "access_token", "key")
-SUCCESS_RANGE = range(200, 300)
-
 
 class RequestHelper:
     """A utility class for making HTTP requests to a RESTful API."""
