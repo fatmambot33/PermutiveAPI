@@ -266,9 +266,7 @@ class Cohort(JSONSerializable):
         response = RequestHelper.get_static(api_key, url)
         if response is None:
             raise ValueError("Response is None")
-        cohort_list = CohortList([Cohort(**cohort)
-                                 for cohort in response.json()])
-        return cohort_list
+        return CohortList.from_json(response.json())
 
 
 class CohortList(List[Cohort], JSONSerializable):
