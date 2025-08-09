@@ -285,7 +285,7 @@ class RequestHelper:
         delay = RequestHelper.INITIAL_DELAY
         response = None
 
-        while attempt <= RequestHelper.MAX_RETRIES:
+        while attempt < RequestHelper.MAX_RETRIES:
             try:
                 response = method(
                     url, headers=RequestHelper.DEFAULT_HEADERS, **kwargs)
@@ -309,7 +309,7 @@ class RequestHelper:
                     return RequestHelper.handle_exception(RequestException(f"HTTP {response.status_code}"), response)
 
             except RequestException as e:
-                if attempt >= RequestHelper.MAX_RETRIES:
+                if attempt >= RequestHelper.MAX_RETRIES - 1:
                     raise
                 logging.warning(
                     f"Request failed ({e}), retrying in {delay}s (attempt {attempt+1})")

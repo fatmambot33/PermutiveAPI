@@ -4,6 +4,9 @@ import sys
 from pathlib import Path
 import unittest
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
+
+from requests.exceptions import RequestException
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -24,6 +27,17 @@ class TestRequestHelper(unittest.TestCase):
         url = "https://api.example.com/resource?x=1"
         result = RequestHelper.generate_url_with_key(url, "abc123")
         self.assertEqual(result, "https://api.example.com/resource?x=1&k=abc123")
+
+    def test_retry_respects_max_retries(self) -> None:
+        """Stop after the configured number of retries."""
+        with (
+            patch.object(RequestHelper, "MAX_RETRIES", 2),
+            patch("time.sleep", return_value=None),
+            patch("requests.get", side_effect=RequestException) as mock_get,
+        ):
+            with self.assertRaises(RequestException):
+                RequestHelper.get_static("abc123", "https://api.example.com")
+            self.assertEqual(mock_get.call_count, 2)
 
 
 class TestListHelper(unittest.TestCase):
