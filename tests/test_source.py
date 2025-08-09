@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 import unittest
 from unittest.mock import patch, MagicMock
-from datetime import datetime
+from datetime import timezone
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -67,6 +67,12 @@ class TestImport(unittest.TestCase):
         self.assertIsInstance(results, list)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].id, "import-123")
+
+    def test_default_updated_at_timezone(self):
+        source = Source(**self.source_data)
+        imp = Import(id="imp", name="N", code="C", relation="r", identifiers=[], source=source)
+        self.assertIsNotNone(imp.updated_at)
+        self.assertEqual(imp.updated_at.tzinfo, timezone.utc)
 
 class TestImportList(unittest.TestCase):
     def setUp(self):
@@ -219,6 +225,11 @@ class TestSegment(unittest.TestCase):
         mock_get.assert_called_once()
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].id, "seg-123")
+
+    def test_default_updated_at_timezone(self):
+        seg = Segment(import_id="import-123", name="Test Segment", code="S123")
+        self.assertIsNotNone(seg.updated_at)
+        self.assertEqual(seg.updated_at.tzinfo, timezone.utc)
 
 class TestSegmentList(unittest.TestCase):
     def setUp(self):
