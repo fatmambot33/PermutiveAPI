@@ -64,7 +64,9 @@ class RequestHelper:
     def generate_url_with_key(url: str,
                               api_key: str) -> str:
         """
-        Generate a URL with the API key appended as a query parameter.
+        Generate a URL with the API key appended as a ``k`` query parameter.
+
+        Merges the key with any existing query parameters.
 
         Parameters
         ----------
@@ -78,7 +80,11 @@ class RequestHelper:
         str
             The URL with the API key.
         """
-        return f"{url}{'&' if '?' in url else '?'}k={api_key}"
+        parsed_url = urllib.parse.urlparse(url)
+        query = urllib.parse.parse_qs(parsed_url.query)
+        query.update({"k": [api_key]})
+        new_query = urllib.parse.urlencode(query, doseq=True)
+        return urllib.parse.urlunparse(parsed_url._replace(query=new_query))
 
     # -------- Public Request Methods --------
     @staticmethod
