@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
     from PermutiveAPI.Segment import SegmentList
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import defaultdict
 
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable
@@ -54,7 +54,9 @@ class Import(JSONSerializable):
     description: Optional[str] = None
     inheritance: Optional[str] = None
     segments: Optional['SegmentList'] = None
-    updated_at: Optional[datetime] = field(default_factory=datetime.now)
+    updated_at: Optional[datetime] = field(
+        default_factory=lambda: datetime.now(tz=timezone.utc)
+    )
 
     @classmethod
     def get_by_id(cls,

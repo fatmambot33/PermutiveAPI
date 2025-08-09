@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable
 
@@ -44,7 +44,9 @@ class Segment(JSONSerializable):
     description: Optional[str] = None
     cpm: Optional[float] = 0.0
     categories: Optional[List[str]] = None
-    updated_at: Optional[datetime] = field(default_factory=datetime.now)
+    updated_at: Optional[datetime] = field(
+        default_factory=lambda: datetime.now(tz=timezone.utc)
+    )
 
     def create(self,
                api_key: str):

@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, List, Optional, Union
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable
 from collections import defaultdict
 
@@ -60,8 +60,12 @@ class Cohort(JSONSerializable):
     state: Optional[str] = None
     segment_type: Optional[str] = None
     live_audience_size: Optional[int] = 0
-    created_at: Optional[datetime] = field(default_factory=datetime.now)
-    last_updated_at: Optional[datetime] = field(default_factory=datetime.now)
+    created_at: Optional[datetime] = field(
+        default_factory=lambda: datetime.now(tz=timezone.utc)
+    )
+    last_updated_at: Optional[datetime] = field(
+        default_factory=lambda: datetime.now(tz=timezone.utc)
+    )
     workspace_id: Optional[str] = None
     request_id: Optional[str] = None
     error: Optional[str] = None

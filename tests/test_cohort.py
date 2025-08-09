@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 import unittest
 from unittest.mock import patch, MagicMock
+from datetime import timezone
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -20,6 +21,13 @@ class TestCohort(unittest.TestCase):
             "code": "C123"
         }
         self.cohort = Cohort(**self.cohort_data)
+
+    def test_default_datetime_timezone(self):
+        cohort = Cohort(name="T", query={"type": "and", "conditions": []})
+        self.assertIsNotNone(cohort.created_at)
+        self.assertIsNotNone(cohort.last_updated_at)
+        self.assertEqual(cohort.created_at.tzinfo, timezone.utc)
+        self.assertEqual(cohort.last_updated_at.tzinfo, timezone.utc)
 
     @patch('PermutiveAPI.Cohort.RequestHelper.post_static')
     def test_create_cohort(self, mock_post):
