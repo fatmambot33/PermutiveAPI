@@ -4,7 +4,8 @@ from typing import Dict, List, Optional, Any, overload, Type, Union
 from dataclasses import dataclass
 from pathlib import Path
 from PermutiveAPI.Utils import JSONSerializable
-from PermutiveAPI.Source import Import, ImportList, Segment
+from PermutiveAPI.Import import Import, ImportList
+from PermutiveAPI.Segment import Segment
 from PermutiveAPI.Cohort import Cohort, CohortList
 
 

@@ -6,7 +6,9 @@ from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from PermutiveAPI.Source import Source, Import, ImportList, Segment, SegmentList
+from PermutiveAPI.Source import Source
+from PermutiveAPI.Import import Import, ImportList
+from PermutiveAPI.Segment import Segment, SegmentList
 
 class TestSource(unittest.TestCase):
     def setUp(self):
@@ -35,7 +37,7 @@ class TestImport(unittest.TestCase):
             "updated_at": "2023-01-01T00:00:00Z"
         }
 
-    @patch('PermutiveAPI.Source.RequestHelper.get_static')
+    @patch('PermutiveAPI.Import.RequestHelper.get_static')
     def test_get_by_id(self, mock_get):
         # Arrange
         mock_response = MagicMock()
@@ -50,7 +52,7 @@ class TestImport(unittest.TestCase):
         self.assertIsInstance(result, Import)
         self.assertEqual(result.id, "import-123")
 
-    @patch('PermutiveAPI.Source.RequestHelper.get_static')
+    @patch('PermutiveAPI.Import.RequestHelper.get_static')
     def test_list(self, mock_get):
         # Arrange
         mock_response = MagicMock()
@@ -103,7 +105,7 @@ class TestSegment(unittest.TestCase):
         }
         self.segment = Segment(**self.segment_data)
 
-    @patch('PermutiveAPI.Source.RequestHelper.post_static')
+    @patch('PermutiveAPI.Segment.RequestHelper.post_static')
     def test_create(self, mock_post):
         # Arrange
         mock_response = MagicMock()
@@ -118,7 +120,7 @@ class TestSegment(unittest.TestCase):
         mock_post.assert_called_once()
         self.assertEqual(segment_to_create.id, "seg-123")
 
-    @patch('PermutiveAPI.Source.RequestHelper.patch_static')
+    @patch('PermutiveAPI.Segment.RequestHelper.patch_static')
     def test_update(self, mock_patch):
         # Arrange
         mock_response = MagicMock()
@@ -131,7 +133,7 @@ class TestSegment(unittest.TestCase):
         # Assert
         mock_patch.assert_called_once()
 
-    @patch('PermutiveAPI.Source.RequestHelper.delete_static')
+    @patch('PermutiveAPI.Segment.RequestHelper.delete_static')
     def test_delete(self, mock_delete):
         # Arrange
         mock_response = MagicMock()
@@ -145,7 +147,7 @@ class TestSegment(unittest.TestCase):
         mock_delete.assert_called_once()
         self.assertTrue(result)
 
-    @patch('PermutiveAPI.Source.RequestHelper.get_static')
+    @patch('PermutiveAPI.Segment.RequestHelper.get_static')
     def test_get_by_code(self, mock_get):
         # Arrange
         mock_response = MagicMock()
@@ -159,7 +161,7 @@ class TestSegment(unittest.TestCase):
         mock_get.assert_called_once()
         self.assertEqual(result.code, "S123")
 
-    @patch('PermutiveAPI.Source.RequestHelper.get_static')
+    @patch('PermutiveAPI.Segment.RequestHelper.get_static')
     def test_get_by_id(self, mock_get):
         # Arrange
         mock_response = MagicMock()
@@ -173,7 +175,7 @@ class TestSegment(unittest.TestCase):
         mock_get.assert_called_once()
         self.assertEqual(result.id, "seg-123")
 
-    @patch('PermutiveAPI.Source.RequestHelper.get_static')
+    @patch('PermutiveAPI.Segment.RequestHelper.get_static')
     def test_list(self, mock_get):
         # Arrange
         mock_response = MagicMock()
