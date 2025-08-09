@@ -108,19 +108,15 @@ class Import(JSONSerializable):
         if response is None:
             raise ValueError("Response is None")
         imports = response.json()
-        return ImportList.from_json(imports['items'])
-<<<<<<< HEAD
 
+        def create_import(item):
+            source_data = item.get('source')
+            if source_data:
+                source_instance = Source.from_json(source_data)
+                item['source'] = source_instance
+            return cls(**item)
 
-import json
-from pathlib import Path
-from typing import Type, Union
-
-
-from pathlib import Path
-from typing import Any, overload, Type
-=======
->>>>>>> Refactor from_json for stricter type safety
+        return ImportList([create_import(item) for item in imports['items']])
 
 
 class ImportList(List[Import],

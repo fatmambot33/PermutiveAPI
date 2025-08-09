@@ -266,19 +266,9 @@ class Cohort(JSONSerializable):
         response = RequestHelper.get_static(api_key, url)
         if response is None:
             raise ValueError("Response is None")
-        return CohortList.from_json(response.json())
-<<<<<<< HEAD
-
-
-import json
-from pathlib import Path
-from typing import Type, Union
-
-
-from pathlib import Path
-from typing import Any, overload, Type
-=======
->>>>>>> Refactor from_json for stricter type safety
+        cohort_list = CohortList([Cohort(**cohort)
+                                 for cohort in response.json()])
+        return cohort_list
 
 
 class CohortList(List[Cohort], JSONSerializable):
