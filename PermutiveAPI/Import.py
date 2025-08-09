@@ -84,7 +84,7 @@ class Import(JSONSerializable):
                                             api_key=api_key)
         if not response:
             raise ValueError('Unable to get_import')
-        return cls(**response.json())
+        return cls.from_json(response.json())
 
     @classmethod
     def list(cls,

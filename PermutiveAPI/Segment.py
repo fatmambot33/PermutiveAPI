@@ -1,7 +1,9 @@
 """Segment management for the Permutive API."""
 
+import json
 import logging
-from typing import Dict, List, Optional
+from pathlib import Path
+from typing import Dict, List, Optional, Type, Union
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -160,11 +162,7 @@ class Segment(JSONSerializable):
                                             )
         if not response:
             raise ValueError('Unable to get_segment')
-        segment = Segment.from_json(response.json())
-        if isinstance(segment, Segment):
-            return segment
-        else:
-            raise ValueError('Segment not found or invalid response format')
+        return Segment.from_json(response.json())
 
     @staticmethod
     def get_by_id(import_id: str,
@@ -198,15 +196,11 @@ class Segment(JSONSerializable):
                                             api_key=api_key)
         if not response:
             raise ValueError('Unable to get_by_id')
-        segment = Segment.from_json(response.json())
-        if isinstance(segment, Segment):
-            return segment
-        else:
-            raise ValueError('Segment not found or invalid response format')
+        return Segment.from_json(response.json())
 
     @staticmethod
     def list(import_id: str,
-             api_key: str) -> List['Segment']:
+             api_key: str) -> "SegmentList":
         """Retrieve a list of segments for a given import ID.
 
         Parameters
@@ -218,7 +212,7 @@ class Segment(JSONSerializable):
 
         Returns
         -------
-        List[Segment]
+        SegmentList
             A list of Segment objects retrieved from the API.
 
         Raises
@@ -242,8 +236,7 @@ class Segment(JSONSerializable):
             data = response.json()
 
             # Extract elements and add them to the list
-            all_segments.extend([Segment.from_json(element)
-                                for element in data.get('elements', [])])
+            all_segments.extend(data.get('elements', []))
 
             # Check for next_token in the pagination metadata
             next_token = data.get('pagination', {}).get('next_token')
@@ -251,12 +244,39 @@ class Segment(JSONSerializable):
             if not next_token:
                 break  # Stop when there are no more pages
 
-        return all_segments
+        return SegmentList.from_json(all_segments)
 
 
 class SegmentList(List[Segment],
                   JSONSerializable):
     """Custom list that holds Segment objects and provides caching and serialization."""
+    @classmethod
+    def from_json(
+        cls: Type["SegmentList"],
+        data: Union[dict, list[dict], str, Path],
+    ) -> "SegmentList":
+        """Deserialize a list of segments from various JSON representations."""
+        if isinstance(data, dict):
+            raise TypeError(f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Segment class for single objects.")
+        if isinstance(data, (str, Path)):
+            try:
+                if isinstance(data, Path):
+                    content = data.read_text(encoding="utf-8")
+                else:
+                    content = data
+                loaded_data = json.loads(content)
+                if not isinstance(loaded_data, list):
+                    raise TypeError(f"JSON content from {type(data).__name__} did not decode to a list.")
+                data = loaded_data
+            except Exception as e:
+                raise TypeError(f"Failed to parse JSON from input: {e}")
+
+        if isinstance(data, list):
+            return cls([Segment.from_json(item) for item in data])
+
+        raise TypeError(
+            f"`from_json()` expected a list of dicts, JSON string, or Path, but got {type(data).__name__}"
+        )
 
     def __init__(self,
                  items_list: Optional[List[Segment]] = None):
