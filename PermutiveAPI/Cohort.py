@@ -309,6 +309,10 @@ class CohortList(List[Cohort], JSONSerializable):
         self._name_dictionary_cache = {
             cohort.name: cohort for cohort in self if cohort.name}
 
+        self._tag_dictionary_cache = defaultdict(list)
+        self._workspace_dictionary_cache = defaultdict(list)
+        self._segment_type_dictionary_cache = defaultdict(list)
+
         for cohort in self:
             if cohort.tags:
                 for tag in cohort.tags:

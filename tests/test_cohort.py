@@ -152,5 +152,33 @@ class TestCohortList(unittest.TestCase):
         self.assertEqual(len(self.cohort_list.segment_type_dictionary["s1"]), 2)
         self.assertEqual(len(self.cohort_list.segment_type_dictionary["s2"]), 1)
 
+    def test_rebuild_cache(self):
+        """Ensure caches are rebuilt to match the current list state."""
+        self.cohort_list.pop(0)
+        new_cohort = Cohort(id="c4", name="Cohort 4", code="C4", tags=["t3"], workspace_id="w3", segment_type="s3")
+        self.cohort_list.append(new_cohort)
+        self.cohort_list.rebuild_cache()
+
+        self.assertNotIn("c1", self.cohort_list.id_dictionary)
+        self.assertIn("c4", self.cohort_list.id_dictionary)
+
+        self.assertNotIn("C1", self.cohort_list.code_dictionary)
+        self.assertIn("C4", self.cohort_list.code_dictionary)
+
+        self.assertNotIn("Cohort 1", self.cohort_list.name_dictionary)
+        self.assertIn("Cohort 4", self.cohort_list.name_dictionary)
+
+        self.assertEqual(len(self.cohort_list.tag_dictionary["t1"]), 1)
+        self.assertEqual(len(self.cohort_list.tag_dictionary["t2"]), 2)
+        self.assertEqual(len(self.cohort_list.tag_dictionary["t3"]), 1)
+
+        self.assertEqual(len(self.cohort_list.workspace_dictionary["w1"]), 1)
+        self.assertEqual(len(self.cohort_list.workspace_dictionary["w2"]), 1)
+        self.assertEqual(len(self.cohort_list.workspace_dictionary["w3"]), 1)
+
+        self.assertEqual(len(self.cohort_list.segment_type_dictionary["s1"]), 1)
+        self.assertEqual(len(self.cohort_list.segment_type_dictionary["s2"]), 1)
+        self.assertEqual(len(self.cohort_list.segment_type_dictionary["s3"]), 1)
+
 if __name__ == '__main__':
     unittest.main()
