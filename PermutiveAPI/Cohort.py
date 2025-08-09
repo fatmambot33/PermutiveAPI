@@ -274,6 +274,7 @@ class CohortList(List[Cohort], JSONSerializable):
 
     It provides caching mechanisms for quick lookups by id, code, name, etc.
     """
+
     @classmethod
     def from_json(
         cls: Type["CohortList"],
@@ -320,32 +321,6 @@ class CohortList(List[Cohort], JSONSerializable):
         self._segment_type_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(
             list)
         self.rebuild_cache()
-
-    @overload
-    @classmethod
-    def from_json(cls: Type["CohortList"], data: dict) -> "CohortList": ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type["CohortList"],
-                  data: list[dict]) -> "CohortList": ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type["CohortList"], data: str) -> "CohortList": ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type["CohortList"], data: Path) -> "CohortList": ...
-
-    @classmethod
-    def from_json(cls: Type["CohortList"], data: Any) -> "CohortList":
-        """Deserialize workspace data from various JSON representations."""
-        result = super().from_json(data)
-        if isinstance(result, cls):
-            return result
-        # This should be dead code at runtime if my analysis is correct
-        raise TypeError(f"Expected {cls.__name__}, got {type(result).__name__}")
 
     def rebuild_cache(self):
         """Rebuild all caches based on the current state of the list.
