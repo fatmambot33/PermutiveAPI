@@ -114,6 +114,7 @@ class Import(JSONSerializable):
 class ImportList(List[Import],
                  JSONSerializable):
     """A class representing a list of Import objects with additional functionality for caching and serialization."""
+
     @classmethod
     def from_json(
         cls: Type["ImportList"],
@@ -163,32 +164,6 @@ class ImportList(List[Import],
         self._identifier_dictionary_cache: DefaultDict[str, ImportList] = defaultdict(
             ImportList)
         self.rebuild_cache()
-
-    @overload
-    @classmethod
-    def from_json(cls: Type["ImportList"], data: dict) -> "ImportList": ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type["ImportList"],
-                  data: list[dict]) -> "ImportList": ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type["ImportList"], data: str) -> "ImportList": ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type["ImportList"], data: Path) -> "ImportList": ...
-
-    @classmethod
-    def from_json(cls: Type["ImportList"], data: Any) -> "ImportList":
-        """Deserialize workspace data from various JSON representations."""
-        result = super().from_json(data)
-        if isinstance(result, cls):
-            return result
-        # This should be dead code at runtime if my analysis is correct
-        raise TypeError(f"Expected {cls.__name__}, got {type(result).__name__}")
 
     def rebuild_cache(self):
         """Rebuild all caches based on the current state of the list."""

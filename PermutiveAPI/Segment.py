@@ -250,6 +250,7 @@ class Segment(JSONSerializable):
 class SegmentList(List[Segment],
                   JSONSerializable):
     """Custom list that holds Segment objects and provides caching and serialization."""
+
     @classmethod
     def from_json(
         cls: Type["SegmentList"],
