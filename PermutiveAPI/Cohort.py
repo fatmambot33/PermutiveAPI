@@ -30,6 +30,8 @@ class Cohort(JSONSerializable):
         Tags associated with the cohort.
     description : Optional[str]
         A description of the cohort.
+    subject_entity_level : Optional[str]
+        The entity level for the cohort's subjects. Defaults to None.
     state : Optional[str]
         The state of the cohort.
     segment_type : Optional[str]
