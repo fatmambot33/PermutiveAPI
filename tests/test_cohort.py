@@ -26,8 +26,8 @@ class TestCohort(unittest.TestCase):
         cohort = Cohort(name="T", query={"type": "and", "conditions": []})
         self.assertIsNotNone(cohort.created_at)
         self.assertIsNotNone(cohort.last_updated_at)
-        self.assertEqual(cohort.created_at.tzinfo, timezone.utc)
-        self.assertEqual(cohort.last_updated_at.tzinfo, timezone.utc)
+        self.assertEqual(cohort.created_at.tzinfo, timezone.utc) # type: ignore
+        self.assertEqual(cohort.last_updated_at.tzinfo, timezone.utc) # type: ignore
 
     @patch('PermutiveAPI.Cohort.RequestHelper.post_static')
     def test_create_cohort(self, mock_post):

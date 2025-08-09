@@ -72,7 +72,7 @@ class TestImport(unittest.TestCase):
         source = Source(**self.source_data)
         imp = Import(id="imp", name="N", code="C", relation="r", identifiers=[], source=source)
         self.assertIsNotNone(imp.updated_at)
-        self.assertEqual(imp.updated_at.tzinfo, timezone.utc)
+        self.assertEqual(imp.updated_at.tzinfo, timezone.utc) # type: ignore
 
 class TestImportList(unittest.TestCase):
     def setUp(self):
@@ -123,6 +123,7 @@ class TestSegment(unittest.TestCase):
             "import_id": "import-123",
             "name": "Test Segment",
             "code": "S123",
+            "cpm":0.0
         }
         self.segment = Segment(**self.segment_data)
 
@@ -229,12 +230,12 @@ class TestSegment(unittest.TestCase):
     def test_default_updated_at_timezone(self):
         seg = Segment(import_id="import-123", name="Test Segment", code="S123")
         self.assertIsNotNone(seg.updated_at)
-        self.assertEqual(seg.updated_at.tzinfo, timezone.utc)
+        self.assertEqual(seg.updated_at.tzinfo, timezone.utc) # type: ignore
 
 class TestSegmentList(unittest.TestCase):
     def setUp(self):
         self.segments_data = [
-            {"id": "seg1", "name": "Segment 1", "code": "S1", "import_id": "imp1"},
+            {"id": "seg1", "name": "Segment 1", "code": "S1", "import_id": "imp1","cpm":0.0},
             {"id": "seg2", "name": "Segment 2", "code": "S2", "import_id": "imp1"},
             {"id": "seg3", "name": "Segment 3", "code": "S3", "import_id": "imp2"},
         ]
