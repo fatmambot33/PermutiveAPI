@@ -114,16 +114,21 @@ class WorkspaceList(List[Workspace], JSONSerializable):
     @classmethod
     def from_json(
         cls: Type["WorkspaceList"],
-        data: Union[list[dict], str, Path],
+        data: Union[dict, list[dict], str, Path],
     ) -> "WorkspaceList":
         """Deserialize a list of workspaces from various JSON representations."""
+        if isinstance(data, dict):
+            raise TypeError(f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Workspace class for single objects.")
         if isinstance(data, (str, Path)):
             try:
                 if isinstance(data, Path):
                     content = data.read_text(encoding="utf-8")
                 else:
                     content = data
-                data = json.loads(content)
+                loaded_data = json.loads(content)
+                if not isinstance(loaded_data, list):
+                    raise TypeError(f"JSON content from {type(data).__name__} did not decode to a list.")
+                data = loaded_data
             except Exception as e:
                 raise TypeError(f"Failed to parse JSON from input: {e}")
 
