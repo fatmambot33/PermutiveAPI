@@ -1,7 +1,9 @@
 """Import management for the Permutive API."""
 
+import json
 import logging
-from typing import Dict, List, Optional, DefaultDict, TYPE_CHECKING
+from pathlib import Path
+from typing import Dict, List, Optional, DefaultDict, TYPE_CHECKING, Type, Union
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
@@ -107,6 +109,7 @@ class Import(JSONSerializable):
             raise ValueError("Response is None")
         imports = response.json()
         return ImportList.from_json(imports['items'])
+<<<<<<< HEAD
 
 
 import json
@@ -116,6 +119,8 @@ from typing import Type, Union
 
 from pathlib import Path
 from typing import Any, overload, Type
+=======
+>>>>>>> Refactor from_json for stricter type safety
 
 
 class ImportList(List[Import],

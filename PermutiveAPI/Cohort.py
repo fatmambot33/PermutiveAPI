@@ -1,7 +1,9 @@
 """Cohort management utilities for the Permutive API."""
 
+import json
 import logging
-from typing import Dict, List, Optional, Union
+from pathlib import Path
+from typing import Dict, List, Optional, Union, Type
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable
@@ -270,6 +272,7 @@ class Cohort(JSONSerializable):
         if response is None:
             raise ValueError("Response is None")
         return CohortList.from_json(response.json())
+<<<<<<< HEAD
 
 
 import json
@@ -279,6 +282,8 @@ from typing import Type, Union
 
 from pathlib import Path
 from typing import Any, overload, Type
+=======
+>>>>>>> Refactor from_json for stricter type safety
 
 
 class CohortList(List[Cohort], JSONSerializable):
