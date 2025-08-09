@@ -1,7 +1,9 @@
 """Import management for the Permutive API."""
 
+import json
 import logging
-from typing import Dict, List, Optional, DefaultDict, TYPE_CHECKING
+from pathlib import Path
+from typing import Dict, List, Optional, DefaultDict, TYPE_CHECKING, Type, Union
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
@@ -82,7 +84,7 @@ class Import(JSONSerializable):
                                             api_key=api_key)
         if not response:
             raise ValueError('Unable to get_import')
-        return cls(**response.json())
+        return cls.from_json(response.json())
 
     @classmethod
     def list(cls,
@@ -106,20 +108,46 @@ class Import(JSONSerializable):
         if response is None:
             raise ValueError("Response is None")
         imports = response.json()
-
-        def create_import(item):
-            source_data = item.get('source')
-            if source_data:
-                source_instance = Source.from_json(source_data)
-                item['source'] = source_instance
-            return cls(**item)
-
-        return ImportList([create_import(item) for item in imports['items']])
+        return ImportList.from_json(imports['items'])
 
 
 class ImportList(List[Import],
                  JSONSerializable):
     """A class representing a list of Import objects with additional functionality for caching and serialization."""
+    @classmethod
+    def from_json(
+        cls: Type["ImportList"],
+        data: Union[dict, list[dict], str, Path],
+    ) -> "ImportList":
+        """Deserialize a list of imports from various JSON representations."""
+        if isinstance(data, dict):
+            raise TypeError(f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Import class for single objects.")
+        if isinstance(data, (str, Path)):
+            try:
+                if isinstance(data, Path):
+                    content = data.read_text(encoding="utf-8")
+                else:
+                    content = data
+                loaded_data = json.loads(content)
+                if not isinstance(loaded_data, list):
+                    raise TypeError(f"JSON content from {type(data).__name__} did not decode to a list.")
+                data = loaded_data
+            except Exception as e:
+                raise TypeError(f"Failed to parse JSON from input: {e}")
+
+        if isinstance(data, list):
+            # Special handling for 'source' which is a nested JSONSerializable
+            def create_import(item):
+                source_data = item.get('source')
+                if source_data:
+                    source_instance = Source.from_json(source_data)
+                    item['source'] = source_instance
+                return Import.from_json(item)
+            return cls([create_import(item) for item in data])
+
+        raise TypeError(
+            f"`from_json()` expected a list of dicts, JSON string, or Path, but got {type(data).__name__}"
+        )
 
     def __init__(self, items_list: Optional[List[Import]] = None):
         """Initialize the ImportList with optional items.

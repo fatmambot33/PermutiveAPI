@@ -411,149 +411,141 @@ class RequestHelper:
         raise e
 
 
-class FileHelper:
-    """A collection of helper functions for file operations."""
+def check_filepath(filepath: str):
+    """Check if the directory of a filepath exists and create it if needed.
 
-    @staticmethod
-    def check_filepath(filepath: str):
-        """Check if the directory of a filepath exists and create it if needed.
-
-        Parameters
-        ----------
-        filepath : str
-            The path to the file.
-        """
-        if not os.path.exists(os.path.dirname(filepath)) and len(os.path.dirname(filepath)) > 0:
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-
-    @staticmethod
-    def split_filepath(fullfilepath):
-        """Split a filepath into its path, name, and extension.
-
-        Parameters
-        ----------
-        fullfilepath : str
-            The full path to the file.
-
-        Returns
-        -------
-        tuple
-            A tuple containing the path, name, and extension.
-        """
-        p = pathlib.Path(fullfilepath)
-        file_path = str(p.parent)+'/'
-        file_name = p.name
-        file_extension = ''
-        for suffix in p.suffixes:
-            file_name = file_name.replace(suffix, '')
-            file_extension = file_extension+suffix
-        return file_path, file_name, file_extension
-
-    @staticmethod
-    def file_exists(fullfilepath: str) -> bool:
-        """Check if a file exists, accounting for variations in the filename.
-
-        Parameters
-        ----------
-        fullfilepath : str
-            The full path to the file.
-
-        Returns
-        -------
-        bool
-            ``True`` if the file exists, ``False`` otherwise.
-        """
-        file_path, file_name, file_extension = FileHelper.split_filepath(
-            fullfilepath)
-
-        pattern_with_suffix = os.path.join(
-            file_path, f"{file_name}-*{file_extension}"
-        )
-        pattern_exact = os.path.join(file_path, f"{file_name}{file_extension}")
-        return len(glob(pattern_with_suffix) + glob(pattern_exact)) > 0
+    Parameters
+    ----------
+    filepath : str
+        The path to the file.
+    """
+    if not os.path.exists(os.path.dirname(filepath)) and len(os.path.dirname(filepath)) > 0:
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
 
-class ListHelper:
-    """A collection of helper functions for list operations."""
+def split_filepath(fullfilepath):
+    """Split a filepath into its path, name, and extension.
 
-    @staticmethod
-    def chunk_list(lst, n):
-        """Split a list into chunks of a specified size.
+    Parameters
+    ----------
+    fullfilepath : str
+        The full path to the file.
 
-        Parameters
-        ----------
-        lst : list
-            The list to split.
-        n : int
-            The size of each chunk.
+    Returns
+    -------
+    tuple
+        A tuple containing the path, name, and extension.
+    """
+    p = pathlib.Path(fullfilepath)
+    file_path = str(p.parent)+'/'
+    file_name = p.name
+    file_extension = ''
+    for suffix in p.suffixes:
+        file_name = file_name.replace(suffix, '')
+        file_extension = file_extension+suffix
+    return file_path, file_name, file_extension
 
-        Returns
-        -------
-        list
-            A list of chunks.
-        """
-        return [lst[i:i + n] for i in range(0, len(lst), n)]
 
-    @staticmethod
-    def convert_list(val):
-        """Convert a string representation of a list into a list.
+def file_exists(fullfilepath: str) -> bool:
+    """Check if a file exists, accounting for variations in the filename.
 
-        Parameters
-        ----------
-        val : str
-            The string to convert.
+    Parameters
+    ----------
+    fullfilepath : str
+        The full path to the file.
 
-        Returns
-        -------
-        list
-            The converted list.
-        """
-        if isinstance(val, str):
-            return ast.literal_eval(val)
-        else:
-            return val
+    Returns
+    -------
+    bool
+        ``True`` if the file exists, ``False`` otherwise.
+    """
+    file_path, file_name, file_extension = split_filepath(
+        fullfilepath)
 
-    @staticmethod
-    def compare_list(list1: List[str], list2: List[str]):
-        """Compare two lists for equality, ignoring order.
+    pattern_with_suffix = os.path.join(
+        file_path, f"{file_name}-*{file_extension}"
+    )
+    pattern_exact = os.path.join(file_path, f"{file_name}{file_extension}")
+    return len(glob(pattern_with_suffix) + glob(pattern_exact)) > 0
 
-        Parameters
-        ----------
-        list1 : List[str]
-            The first list.
-        list2 : List[str]
-            The second list.
 
-        Returns
-        -------
-        bool
-            ``True`` if the lists are equal, ``False`` otherwise.
-        """
-        return set(list1) == set(list2)
+def chunk_list(lst, n):
+    """Split a list into chunks of a specified size.
 
-    @staticmethod
-    def merge_list(lst1: List, lst2: Optional[Union[int, str, List]] = None) -> List:
-        """Merge two lists, removing duplicates and sorting the result.
+    Parameters
+    ----------
+    lst : list
+        The list to split.
+    n : int
+        The size of each chunk.
 
-        Parameters
-        ----------
-        lst1 : List
-            The first list.
-        lst2 : Optional[Union[int, str, List]], optional
-            The second list. Defaults to None.
+    Returns
+    -------
+    list
+        A list of chunks.
+    """
+    return [lst[i:i + n] for i in range(0, len(lst), n)]
 
-        Returns
-        -------
-        List
-            The merged list.
-        """
-        if isinstance(lst2, str) or isinstance(lst2, int):
-            lst2 = [lst2]
-        if not lst2:
-            lst2 = []
-        lst = list(filter(None, list(dict.fromkeys(lst1+lst2))))
-        lst.sort()
-        return lst
+
+def convert_list(val):
+    """Convert a string representation of a list into a list.
+
+    Parameters
+    ----------
+    val : str
+        The string to convert.
+
+    Returns
+    -------
+    list
+        The converted list.
+    """
+    if isinstance(val, str):
+        return ast.literal_eval(val)
+    else:
+        return val
+
+
+def compare_list(list1: List[str], list2: List[str]):
+    """Compare two lists for equality, ignoring order.
+
+    Parameters
+    ----------
+    list1 : List[str]
+        The first list.
+    list2 : List[str]
+        The second list.
+
+    Returns
+    -------
+    bool
+        ``True`` if the lists are equal, ``False`` otherwise.
+    """
+    return set(list1) == set(list2)
+
+
+def merge_list(lst1: List, lst2: Optional[Union[int, str, List]] = None) -> List:
+    """Merge two lists, removing duplicates and sorting the result.
+
+    Parameters
+    ----------
+    lst1 : List
+        The first list.
+    lst2 : Optional[Union[int, str, List]], optional
+        The second list. Defaults to None.
+
+    Returns
+    -------
+    List
+        The merged list.
+    """
+    if isinstance(lst2, str) or isinstance(lst2, int):
+        lst2 = [lst2]
+    if not lst2:
+        lst2 = []
+    lst = list(filter(None, list(dict.fromkeys(lst1+lst2))))
+    lst.sort()
+    return lst
 
 
 T = TypeVar('T', bound='JSONSerializable')
@@ -666,7 +658,7 @@ class JSONSerializable:
 
     def to_json_file(self, filepath: str):
         """Serialize the object to a JSON file using CustomJSONEncoder."""
-        FileHelper.check_filepath(filepath=filepath)
+        check_filepath(filepath=filepath)
         with open(file=filepath, mode='w', encoding='utf-8') as f:
             json.dump(self.to_json(), f, ensure_ascii=False,
                       indent=4, cls=customJSONEncoder)
@@ -674,9 +666,7 @@ class JSONSerializable:
     @classmethod
     def from_json_file(cls: Type[T], filepath: str) -> T:
         """Create an instance of the class from a JSON file."""
-        with open(file=filepath, mode='r') as json_file:
-            data = json.load(json_file)
-            return cls.from_json(data)
+        return cls.from_json(Path(filepath))
 
     @overload
     @classmethod
@@ -684,19 +674,15 @@ class JSONSerializable:
 
     @overload
     @classmethod
-    def from_json(cls: Type[T], data: list[dict]) -> list[T]: ...
+    def from_json(cls: Type[T], data: str) -> T: ...
 
     @overload
     @classmethod
-    def from_json(cls: Type[T], data: str) -> Union[T, List[T]]: ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type[T], data: Path) -> Union[T, List[T]]: ...
+    def from_json(cls: Type[T], data: Path) -> T: ...
 
     @classmethod
-    def from_json(cls: Type[T], data: Any) -> Union[T, List[T]]:
-        """Handle JSON deserialization from dict, list[dict], JSON string, or file path."""
+    def from_json(cls: Type[T], data: Any) -> T:
+        """Handle JSON deserialization from dict, JSON string, or file path."""
         # Load if input is a string or path
         if isinstance(data, (str, Path)):
             try:
@@ -708,28 +694,10 @@ class JSONSerializable:
             except Exception as e:
                 raise TypeError(f"Failed to parse JSON from input: {e}")
 
-        # If list of dicts and cls is a list subclass
-        if isinstance(data, list):
-            if issubclass(cls, list):
-                try:
-                    # type: ignore[attr-defined]
-                    base_args = get_args(cls.__orig_bases__[0])  # type: ignore
-                    if not base_args:
-                        raise TypeError(
-                            "Cannot determine list item type for deserialization")
-                    item_type = base_args[0]
-                except Exception as e:
-                    raise TypeError(
-                        f"Failed to resolve list item type for {cls.__name__}: {e}")
-                # type: ignore
-                return cls([item_type.from_json(item) for item in data])
-            else:
-                return [cls.from_json(item) for item in data]
-
         # Single dict
         if isinstance(data, dict):
             return cls(**data)
 
         raise TypeError(
-            f"`from_json()` expected a dict, list of dicts, JSON string, or Path, but got {type(data).__name__}"
+            f"`from_json()` expected a dict, JSON string, or Path, but got {type(data).__name__}"
         )
