@@ -10,13 +10,9 @@ if TYPE_CHECKING:
     from PermutiveAPI.Audience.Segment import SegmentList
 from datetime import datetime, timezone
 from collections import defaultdict
-
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable
+from PermutiveAPI.Audience import _API_ENDPOINT
 from PermutiveAPI.Audience.Source import Source
-
-
-_API_VERSION = "v1"
-_API_ENDPOINT = f'https://api.permutive.app/audience-api/{_API_VERSION}/imports'
 
 
 @dataclass
@@ -122,7 +118,8 @@ class ImportList(List[Import],
     ) -> "ImportList":
         """Deserialize a list of imports from various JSON representations."""
         if isinstance(data, dict):
-            raise TypeError(f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Import class for single objects.")
+            raise TypeError(
+                f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Import class for single objects.")
         if isinstance(data, (str, Path)):
             try:
                 if isinstance(data, Path):
@@ -131,7 +128,8 @@ class ImportList(List[Import],
                     content = data
                 loaded_data = json.loads(content)
                 if not isinstance(loaded_data, list):
-                    raise TypeError(f"JSON content from {type(data).__name__} did not decode to a list.")
+                    raise TypeError(
+                        f"JSON content from {type(data).__name__} did not decode to a list.")
                 data = loaded_data
             except Exception as e:
                 raise TypeError(f"Failed to parse JSON from input: {e}")

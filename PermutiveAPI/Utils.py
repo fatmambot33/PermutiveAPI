@@ -8,7 +8,7 @@ import json
 import pathlib
 from glob import glob
 import ast
-from typing import Dict, List, Optional, Any, Union, Type, TypeVar, Callable, get_args, overload
+from typing import Dict, List, Optional, Any, Union, Type, TypeVar, Callable, overload
 import logging
 import os
 import urllib.parse

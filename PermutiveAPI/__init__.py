@@ -8,7 +8,8 @@ the repository root for installation and full usage documentation.
 from PermutiveAPI.Audience.Source import Source
 from PermutiveAPI.Audience.Import import Import, ImportList
 from PermutiveAPI.Audience.Segment import Segment, SegmentList
-from PermutiveAPI.User import Identity, Alias
+from PermutiveAPI.Identify.Identity import Identity
+from PermutiveAPI.Identify.Alias import Alias
 from PermutiveAPI.Cohort import Cohort, CohortList
 from PermutiveAPI.Workspace import Workspace, WorkspaceList
 from PermutiveAPI.Utils import customJSONEncoder

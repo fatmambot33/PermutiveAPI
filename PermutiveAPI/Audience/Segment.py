@@ -7,11 +7,9 @@ from typing import Dict, List, Optional, Type, Union
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
+from PermutiveAPI.Audience import _API_ENDPOINT
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable
 
-
-_API_VERSION = "v1"
-_API_ENDPOINT = f'https://api.permutive.app/audience-api/{_API_VERSION}/imports'
 _API_PAYLOAD = ['name', 'code', 'description', 'cpm', 'categories']
 
 
@@ -258,7 +256,8 @@ class SegmentList(List[Segment],
     ) -> "SegmentList":
         """Deserialize a list of segments from various JSON representations."""
         if isinstance(data, dict):
-            raise TypeError(f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Segment class for single objects.")
+            raise TypeError(
+                f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Segment class for single objects.")
         if isinstance(data, (str, Path)):
             try:
                 if isinstance(data, Path):
@@ -267,7 +266,8 @@ class SegmentList(List[Segment],
                     content = data
                 loaded_data = json.loads(content)
                 if not isinstance(loaded_data, list):
-                    raise TypeError(f"JSON content from {type(data).__name__} did not decode to a list.")
+                    raise TypeError(
+                        f"JSON content from {type(data).__name__} did not decode to a list.")
                 data = loaded_data
             except Exception as e:
                 raise TypeError(f"Failed to parse JSON from input: {e}")

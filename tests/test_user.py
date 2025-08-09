@@ -5,7 +5,9 @@ from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from PermutiveAPI.User import Alias, Identity
+from PermutiveAPI.Identify.Alias import Alias
+
+from PermutiveAPI.Identify.Identity import Identity
 
 
 class TestAlias(unittest.TestCase):

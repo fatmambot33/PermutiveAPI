@@ -6,31 +6,12 @@ from dataclasses import dataclass
 
 from requests import Response
 
+from PermutiveAPI.Identify import _API_ENDPOINT
+from PermutiveAPI.Identify.Alias import Alias
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable
 
 
-_API_VERSION = 'v2.0'
-_API_ENDPOINT = f'https://api.permutive.com/{_API_VERSION}/identify'
 _API_PAYLOAD = ["user_id", "aliases"]
-
-
-@dataclass
-class Alias(JSONSerializable):
-    """Dataclass for the Alias entity in the Permutive ecosystem.
-
-    Attributes
-    ----------
-    id : str
-        The ID of the alias.
-    tag : str
-        The tag of the alias.
-    priority : int
-        The priority of the alias.
-    """
-
-    id: str
-    tag: str
-    priority: int
 
 
 @dataclass
