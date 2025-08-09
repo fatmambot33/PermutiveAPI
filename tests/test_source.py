@@ -94,6 +94,21 @@ class TestImportList(unittest.TestCase):
         self.assertEqual(len(self.import_list.identifier_dictionary["id1"]), 2)
         self.assertEqual(len(self.import_list.identifier_dictionary["id2"]), 2)
 
+    def test_rebuild_cache_after_mutation(self):
+        new_import = Import(id="imp4", name="Import 4", code="I4", relation="r4", identifiers=["id2"], source=Source(id="src-1", state={}, type="type"))
+        self.import_list.append(new_import)
+        self.import_list.pop(0)
+        self.import_list.rebuild_cache()
+        self.assertNotIn("imp1", self.import_list.id_dictionary)
+        self.assertIn("imp4", self.import_list.id_dictionary)
+        self.assertNotIn("Import 1", self.import_list.name_dictionary)
+        self.assertIn("Import 4", self.import_list.name_dictionary)
+        self.assertEqual(len(self.import_list.identifier_dictionary["id1"]), 1)
+        self.assertEqual(self.import_list.identifier_dictionary["id1"][0].id, "imp2")
+        id2_ids = [imp.id for imp in self.import_list.identifier_dictionary["id2"]]
+        self.assertEqual(len(id2_ids), len(set(id2_ids)))
+        self.assertCountEqual(id2_ids, ["imp2", "imp3", "imp4"])
+
 class TestSegment(unittest.TestCase):
     def setUp(self):
         self.api_key = "test_api_key"

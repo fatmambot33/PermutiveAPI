@@ -136,6 +136,9 @@ class ImportList(List[Import],
 
     def rebuild_cache(self):
         """Rebuild all caches based on the current state of the list."""
+        self._id_dictionary_cache = {}
+        self._name_dictionary_cache = {}
+        self._identifier_dictionary_cache = defaultdict(ImportList)
         for _import in self:
             self._id_dictionary_cache[_import.id] = _import
             self._name_dictionary_cache[_import.name] = _import
