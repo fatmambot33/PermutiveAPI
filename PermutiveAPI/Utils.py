@@ -46,10 +46,14 @@ class RequestHelper:
         """
         Initialise the RequestHelper.
 
-        Args:
-            api_key (str): The API key for authentication.
-            api_endpoint (str): The API endpoint.
-            payload_keys (Optional[List[str]]): A list of keys to include in the payload.
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+        api_endpoint : str
+            The API endpoint.
+        payload_keys : Optional[List[str]], optional
+            A list of keys to include in the payload. Defaults to None.
         """
         self.api_key = api_key
         self.api_endpoint = api_endpoint
@@ -62,12 +66,17 @@ class RequestHelper:
         """
         Generate a URL with the API key appended as a query parameter.
 
-        Args:
-            url (str): The URL to append the key to.
-            api_key (str): The API key.
+        Parameters
+        ----------
+        url : str
+            The URL to append the key to.
+        api_key : str
+            The API key.
 
-        Returns:
-            str: The URL with the API key.
+        Returns
+        -------
+        str
+            The URL with the API key.
         """
         return f"{url}{'&' if '?' in url else '?'}k={api_key}"
 
@@ -78,12 +87,17 @@ class RequestHelper:
         """
         Perform a GET request with retry logic.
 
-        Args:
-            api_key (str): The API key for authentication.
-            url (str): The URL to send the request to.
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+        url : str
+            The URL to send the request to.
 
-        Returns:
-            Optional[Response]: The response from the server, or None if the request fails.
+        Returns
+        -------
+        Optional[Response]
+            The response from the server, or None if the request fails.
         """
         return RequestHelper._with_retry(requests.get, url, api_key)
 
@@ -94,13 +108,19 @@ class RequestHelper:
         """
         Perform a POST request with retry logic.
 
-        Args:
-            api_key (str): The API key for authentication.
-            url (str): The URL to send the request to.
-            data (dict): The data to send in the request body.
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+        url : str
+            The URL to send the request to.
+        data : dict
+            The data to send in the request body.
 
-        Returns:
-            Optional[Response]: The response from the server, or None if the request fails.
+        Returns
+        -------
+        Optional[Response]
+            The response from the server, or None if the request fails.
         """
         return RequestHelper._with_retry(requests.post, url, api_key, json=data)
 
@@ -111,13 +131,19 @@ class RequestHelper:
         """
         Perform a PATCH request with retry logic.
 
-        Args:
-            api_key (str): The API key for authentication.
-            url (str): The URL to send the request to.
-            data (dict): The data to send in the request body.
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+        url : str
+            The URL to send the request to.
+        data : dict
+            The data to send in the request body.
 
-        Returns:
-            Optional[Response]: The response from the server, or None if the request fails.
+        Returns
+        -------
+        Optional[Response]
+            The response from the server, or None if the request fails.
         """
         return RequestHelper._with_retry(requests.patch, url, api_key, json=data)
 
@@ -127,12 +153,17 @@ class RequestHelper:
         """
         Perform a DELETE request with retry logic.
 
-        Args:
-            api_key (str): The API key for authentication.
-            url (str): The URL to send the request to.
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+        url : str
+            The URL to send the request to.
 
-        Returns:
-            Optional[Response]: The response from the server, or None if the request fails.
+        Returns
+        -------
+        Optional[Response]
+            The response from the server, or None if the request fails.
         """
         return RequestHelper._with_retry(requests.delete, url, api_key)
 
@@ -141,11 +172,15 @@ class RequestHelper:
         """
         Perform a GET request using the instance's API key.
 
-        Args:
-            url (str): The URL to send the request to.
+        Parameters
+        ----------
+        url : str
+            The URL to send the request to.
 
-        Returns:
-            Optional[Response]: The response from the server, or None if the request fails.
+        Returns
+        -------
+        Optional[Response]
+            The response from the server, or None if the request fails.
         """
         return RequestHelper.get_static(self.api_key, url)
 
@@ -155,12 +190,17 @@ class RequestHelper:
         """
         Perform a POST request using the instance's API key.
 
-        Args:
-            url (str): The URL to send the request to.
-            data (dict): The data to send in the request body.
+        Parameters
+        ----------
+        url : str
+            The URL to send the request to.
+        data : dict
+            The data to send in the request body.
 
-        Returns:
-            Optional[Response]: The response from the server, or None if the request fails.
+        Returns
+        -------
+        Optional[Response]
+            The response from the server, or None if the request fails.
         """
         return RequestHelper.post_static(self.api_key, url, data)
 
@@ -170,12 +210,17 @@ class RequestHelper:
         """
         Perform a PATCH request using the instance's API key.
 
-        Args:
-            url (str): The URL to send the request to.
-            data (dict): The data to send in the request body.
+        Parameters
+        ----------
+        url : str
+            The URL to send the request to.
+        data : dict
+            The data to send in the request body.
 
-        Returns:
-            Optional[Response]: The response from the server, or None if the request fails.
+        Returns
+        -------
+        Optional[Response]
+            The response from the server, or None if the request fails.
         """
         return RequestHelper.patch_static(self.api_key, url, data)
 
@@ -184,11 +229,15 @@ class RequestHelper:
         """
         Perform a DELETE request using the instance's API key.
 
-        Args:
-            url (str): The URL to send the request to.
+        Parameters
+        ----------
+        url : str
+            The URL to send the request to.
 
-        Returns:
-            Optional[Response]: The response from the server, or None if the request fails.
+        Returns
+        -------
+        Optional[Response]
+            The response from the server, or None if the request fails.
         """
         return RequestHelper.delete_static(self.api_key, url)
 
@@ -199,12 +248,17 @@ class RequestHelper:
         """
         Convert a dataclass object to a dictionary payload.
 
-        Args:
-            dataclass_obj (Any): The dataclass object to convert.
-            api_payload (Optional[List[str]]): A list of keys to include in the payload.
+        Parameters
+        ----------
+        dataclass_obj : Any
+            The dataclass object to convert.
+        api_payload : Optional[List[str]], optional
+            A list of keys to include in the payload. Defaults to None.
 
-        Returns:
-            Dict[str, Any]: The dictionary payload.
+        Returns
+        -------
+        Dict[str, Any]
+            The dictionary payload.
         """
         dataclass_dict = vars(dataclass_obj)
         filtered_dict = {k: v for k, v in dataclass_dict.items(
@@ -297,12 +351,17 @@ class RequestHelper:
         """
         Handle exceptions and HTTP errors.
 
-        Args:
-            e (Exception): The exception to handle.
-            response (Optional[Response]): The HTTP response.
+        Parameters
+        ----------
+        e : Exception
+            The exception to handle.
+        response : Optional[Response]
+            The HTTP response.
 
-        Returns:
-            Optional[Response]: The response if it can be handled, otherwise None.
+        Returns
+        -------
+        Optional[Response]
+            The response if it can be handled, otherwise None.
         """
         if response:
             status = response.status_code
@@ -354,11 +413,10 @@ class FileHelper:
     def check_filepath(filepath: str):
         """Check if the directory of a filepath exists and create it if needed.
 
-        Args:
-            filepath (str): The path to the file.
-
-        Returns:
-            None
+        Parameters
+        ----------
+        filepath : str
+            The path to the file.
         """
         if not os.path.exists(os.path.dirname(filepath)) and len(os.path.dirname(filepath)) > 0:
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -367,11 +425,15 @@ class FileHelper:
     def split_filepath(fullfilepath):
         """Split a filepath into its path, name, and extension.
 
-        Args:
-            fullfilepath (str): The full path to the file.
+        Parameters
+        ----------
+        fullfilepath : str
+            The full path to the file.
 
-        Returns:
-            tuple: A tuple containing the path, name, and extension.
+        Returns
+        -------
+        tuple
+            A tuple containing the path, name, and extension.
         """
         p = pathlib.Path(fullfilepath)
         file_path = str(p.parent)+'/'
@@ -386,11 +448,15 @@ class FileHelper:
     def file_exists(fullfilepath):
         """Check if a file exists, accounting for variations in the filename.
 
-        Args:
-            fullfilepath (str): The full path to the file.
+        Parameters
+        ----------
+        fullfilepath : str
+            The full path to the file.
 
-        Returns:
-            bool: ``True`` if the file exists, ``False`` otherwise.
+        Returns
+        -------
+        bool
+            ``True`` if the file exists, ``False`` otherwise.
         """
         file_path, file_name, file_extension = FileHelper.split_filepath(
             fullfilepath)
@@ -407,12 +473,17 @@ class ListHelper:
     def chunk_list(lst, n):
         """Split a list into chunks of a specified size.
 
-        Args:
-            lst (list): The list to split.
-            n (int): The size of each chunk.
+        Parameters
+        ----------
+        lst : list
+            The list to split.
+        n : int
+            The size of each chunk.
 
-        Returns:
-            list: A list of chunks.
+        Returns
+        -------
+        list
+            A list of chunks.
         """
         return [lst[i:i + n] for i in range(0, len(lst), n)]
 
@@ -420,11 +491,15 @@ class ListHelper:
     def convert_list(val):
         """Convert a string representation of a list into a list.
 
-        Args:
-            val (str): The string to convert.
+        Parameters
+        ----------
+        val : str
+            The string to convert.
 
-        Returns:
-            list: The converted list.
+        Returns
+        -------
+        list
+            The converted list.
         """
         if isinstance(val, str):
             return ast.literal_eval(val)
@@ -435,12 +510,17 @@ class ListHelper:
     def compare_list(list1: List[str], list2: List[str]):
         """Compare two lists for equality, ignoring order.
 
-        Args:
-            list1 (List[str]): The first list.
-            list2 (List[str]): The second list.
+        Parameters
+        ----------
+        list1 : List[str]
+            The first list.
+        list2 : List[str]
+            The second list.
 
-        Returns:
-            bool: ``True`` if the lists are equal, ``False`` otherwise.
+        Returns
+        -------
+        bool
+            ``True`` if the lists are equal, ``False`` otherwise.
         """
         return set(list1) == set(list2)
 
@@ -448,12 +528,17 @@ class ListHelper:
     def merge_list(lst1: List, lst2: Optional[Union[int, str, List]] = None) -> List:
         """Merge two lists, removing duplicates and sorting the result.
 
-        Args:
-            lst1 (List): The first list.
-            lst2 (Optional[Union[int, str, List]]): The second list.
+        Parameters
+        ----------
+        lst1 : List
+            The first list.
+        lst2 : Optional[Union[int, str, List]], optional
+            The second list. Defaults to None.
 
-        Returns:
-            List: The merged list.
+        Returns
+        -------
+        List
+            The merged list.
         """
         if isinstance(lst2, str) or isinstance(lst2, int):
             lst2 = [lst2]

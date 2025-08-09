@@ -3,7 +3,6 @@
 import logging
 from typing import List, Optional
 from dataclasses import dataclass
-from datetime import datetime
 
 from requests import Response
 
@@ -17,15 +16,16 @@ _API_PAYLOAD = ["user_id", "aliases"]
 
 @dataclass
 class Alias(JSONSerializable):
-    """
-    Dataclass for the Alias entity in the Permutive ecosystem.
+    """Dataclass for the Alias entity in the Permutive ecosystem.
 
-    :param id: The ID of the alias.
-    :type id: str
-    :param tag: The tag of the alias.
-    :type tag: str
-    :param priority: The priority of the alias.
-    :type priority: int
+    Attributes
+    ----------
+    id : str
+        The ID of the alias.
+    tag : str
+        The tag of the alias.
+    priority : int
+        The priority of the alias.
     """
 
     id: str
@@ -35,13 +35,14 @@ class Alias(JSONSerializable):
 
 @dataclass
 class Identity(JSONSerializable):
-    """
-    Dataclass for the Identity entity in the Permutive ecosystem.
+    """Dataclass for the Identity entity in the Permutive ecosystem.
 
-    :param user_id: The user's ID.
-    :type user_id: str
-    :param aliases: A list of aliases for the user.
-    :type aliases: List[Alias]
+    Attributes
+    ----------
+    user_id : str
+        The user's ID.
+    aliases : List[Alias]
+        A list of aliases for the user.
     """
 
     user_id: str
@@ -54,11 +55,15 @@ class Identity(JSONSerializable):
         This method sends a POST request to the Permutive API to identify a user
         with the given aliases.
 
-        Args:
-            api_key (str): The API key for authentication.
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
 
-        Returns:
-            Response: The response from the Permutive API.
+        Returns
+        -------
+        Optional[Response]
+            The response from the Permutive API.
         """
         logging.debug(f"UserAPI::identify::{self.user_id}")
 

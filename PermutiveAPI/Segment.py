@@ -15,18 +15,26 @@ _API_PAYLOAD = ['name', 'code', 'description', 'cpm', 'categories']
 
 @dataclass
 class Segment(JSONSerializable):
-    """
-    Represent a segment in the Permutive API.
+    """Represent a segment in the Permutive API.
 
-    Attributes:
-        code (str): The code of the segment.
-        name (str): The name of the segment.
-        import_id (str): The import ID of the segment.
-        id (Optional[str]): The ID of the segment.
-        description (Optional[str]): The description of the segment.
-        cpm (Optional[float]): The cost per mille of the segment.
-        categories (Optional[List[str]]): Categories associated with the segment.
-        updated_at (Optional[datetime]): When the segment was last updated.
+    Attributes
+    ----------
+    code : str
+        The code of the segment.
+    name : str
+        The name of the segment.
+    import_id : str
+        The import ID of the segment.
+    id : Optional[str]
+        The ID of the segment.
+    description : Optional[str]
+        The description of the segment.
+    cpm : Optional[float]
+        The cost per mille of the segment.
+    categories : Optional[List[str]]
+        Categories associated with the segment.
+    updated_at : Optional[datetime]
+        When the segment was last updated.
     """
 
     code: str
@@ -42,14 +50,15 @@ class Segment(JSONSerializable):
                api_key: str):
         """Create a new segment using the provided private key.
 
-        Args:
-            api_key (str): The private key used for authentication.
+        Parameters
+        ----------
+        api_key : str
+            The private key used for authentication.
 
-        Returns:
-            None
-
-        Raises:
-            ValueError: If the segment creation fails.
+        Raises
+        ------
+        ValueError
+            If the segment creation fails.
         """
         logging.debug(
             f"SegmentAPI::create_segment::{self.import_id}::{self.name}")
@@ -70,14 +79,15 @@ class Segment(JSONSerializable):
                api_key: str):
         """Update the segment using the provided private key.
 
-        Args:
-            api_key (str): The private key used for authentication.
+        Parameters
+        ----------
+        api_key : str
+            The private key used for authentication.
 
-        Returns:
-            None
-
-        Raises:
-            ValueError: If the segment update fails.
+        Raises
+        ------
+        ValueError
+            If the segment update fails.
         """
         logging.debug(
             f"SegmentAPI::update_segment::{self.import_id}::{self.name}")
@@ -97,12 +107,16 @@ class Segment(JSONSerializable):
                api_key: str) -> bool:
         """Delete a segment using the provided private key.
 
-        Args:
-            api_key (str): The private key used for authentication.
+        Parameters
+        ----------
+        api_key : str
+            The private key used for authentication.
 
-        Returns:
-            bool: ``True`` if the segment was successfully deleted (status code
-                204), otherwise ``False``.
+        Returns
+        -------
+        bool
+            ``True`` if the segment was successfully deleted (status code
+            204), otherwise ``False``.
         """
         logging.debug(
             f"SegmentAPI::delete_segment::{self.import_id:}::{self.id}")
@@ -119,16 +133,24 @@ class Segment(JSONSerializable):
                     api_key: str) -> 'Segment':
         """Retrieve a segment by its code.
 
-        Args:
-            import_id (str): The ID of the import.
-            segment_code (str): The code of the segment to retrieve.
-            api_key (str): The private key for authentication.
+        Parameters
+        ----------
+        import_id : str
+            The ID of the import.
+        segment_code : str
+            The code of the segment to retrieve.
+        api_key : str
+            The private key for authentication.
 
-        Returns:
-            Segment: The segment object retrieved by the given code.
+        Returns
+        -------
+        Segment
+            The segment object retrieved by the given code.
 
-        Raises:
-            ValueError: If the segment cannot be retrieved.
+        Raises
+        ------
+        ValueError
+            If the segment cannot be retrieved.
         """
         logging.debug(
             f"SegmentAPI::get_segment_by_code::{import_id}::{segment_code}")
@@ -149,16 +171,24 @@ class Segment(JSONSerializable):
                   api_key: str) -> 'Segment':
         """Retrieve a segment by its ID.
 
-        Args:
-            import_id (str): The ID of the import.
-            segment_id (str): The ID of the segment to retrieve.
-            api_key (str): The private key for authentication.
+        Parameters
+        ----------
+        import_id : str
+            The ID of the import.
+        segment_id : str
+            The ID of the segment to retrieve.
+        api_key : str
+            The private key for authentication.
 
-        Returns:
-            Segment: The segment object retrieved by the given ID.
+        Returns
+        -------
+        Segment
+            The segment object retrieved by the given ID.
 
-        Raises:
-            ValueError: If the segment cannot be retrieved.
+        Raises
+        ------
+        ValueError
+            If the segment cannot be retrieved.
         """
         logging.debug(
             f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
@@ -178,16 +208,22 @@ class Segment(JSONSerializable):
              api_key: str) -> List['Segment']:
         """Retrieve a list of segments for a given import ID.
 
-        Args:
-            import_id (str): The ID of the import to retrieve segments for.
-            api_key (str): The private key used for authentication.
+        Parameters
+        ----------
+        import_id : str
+            The ID of the import to retrieve segments for.
+        api_key : str
+            The private key used for authentication.
 
-        Returns:
-            List[Segment]: A list of Segment objects retrieved from the API.
+        Returns
+        -------
+        List[Segment]
+            A list of Segment objects retrieved from the API.
 
-        Raises:
-            requests.exceptions.RequestException: If an error occurs while making
-                the API request.
+        Raises
+        ------
+        requests.exceptions.RequestException
+            If an error occurs while making the API request.
         """
         logging.debug(f"SegmentAPI::list")
 
@@ -219,35 +255,22 @@ class Segment(JSONSerializable):
 
 class SegmentList(List[Segment],
                   JSONSerializable):
-    """
-    Custom list that holds Segment objects and provides caching and serialization.
-
-    Attributes:
-        _id_dictionary_cache (Dict[str, Segment]): Cache mapping segment IDs to objects.
-        _name_dictionary_cache (Dict[str, Segment]): Cache mapping segment names to objects.
-        _code_dictionary_cache (Dict[str, Segment]): Cache mapping segment codes to objects.
-    """
+    """Custom list that holds Segment objects and provides caching and serialization."""
 
     def __init__(self,
                  items_list: Optional[List[Segment]] = None):
         """Initialize the SegmentList with an optional list of Segment objects.
 
-        Args:
-            items_list (Optional[List[Segment]]): Segment objects to initialize
-                with.
-
-        Returns:
-            None
+        Parameters
+        ----------
+        items_list : Optional[List[Segment]], optional
+            Segment objects to initialize with. Defaults to None.
         """
         super().__init__(items_list if items_list is not None else [])
         self.rebuild_cache()
 
     def rebuild_cache(self):
-        """Rebuild all caches based on the current state of the list.
-
-        Returns:
-            None
-        """
+        """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache = {
             segment.id: segment for segment in self if segment.id}
         self._name_dictionary_cache = {
@@ -259,13 +282,10 @@ class SegmentList(List[Segment],
     def id_dictionary(self) -> Dict[str, Segment]:
         """Return a dictionary of segments indexed by their IDs.
 
-        This method checks if the cache for the ID dictionary is empty. If it is,
-        it rebuilds the cache by calling the ``rebuild_cache`` method. Finally, it
-        returns the cached dictionary of segments.
-
-        Returns:
-            Dict[str, Segment]: A dictionary mapping segment IDs to Segment
-                objects.
+        Returns
+        -------
+        Dict[str, Segment]
+            A dictionary mapping segment IDs to Segment objects.
         """
         if not self._id_dictionary_cache:
             self.rebuild_cache()
@@ -275,13 +295,10 @@ class SegmentList(List[Segment],
     def name_dictionary(self) -> Dict[str, Segment]:
         """Return a dictionary of segments indexed by their names.
 
-        This method checks if the cache for the name dictionary is empty. If it is,
-        it rebuilds the cache by calling the ``rebuild_cache`` method. Finally, it
-        returns the cached dictionary of segments.
-
-        Returns:
-            Dict[str, Segment]: A dictionary where the keys are segment names and
-                the values are Segment objects.
+        Returns
+        -------
+        Dict[str, Segment]
+            A dictionary where the keys are segment names and the values are Segment objects.
         """
         if not self._name_dictionary_cache:
             self.rebuild_cache()
@@ -291,13 +308,10 @@ class SegmentList(List[Segment],
     def code_dictionary(self) -> Dict[str, Segment]:
         """Return a dictionary of segments indexed by their codes.
 
-        This method checks if the cache for the code dictionary is empty. If it is,
-        it rebuilds the cache by calling the ``rebuild_cache`` method. Finally, it
-        returns the cached dictionary of segments.
-
-        Returns:
-            Dict[str, Segment]: A dictionary where the keys are segment codes and
-                the values are Segment objects.
+        Returns
+        -------
+        Dict[str, Segment]
+            A dictionary where the keys are segment codes and the values are Segment objects.
         """
         if not self._code_dictionary_cache:
             self.rebuild_cache()
@@ -306,7 +320,9 @@ class SegmentList(List[Segment],
     def to_list(self) -> List[Segment]:
         """Return the list of segments.
 
-        Returns:
-            List[Segment]: The underlying list of segments.
+        Returns
+        -------
+        List[Segment]
+            The underlying list of segments.
         """
         return list(self)

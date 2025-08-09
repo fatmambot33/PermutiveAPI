@@ -1,7 +1,6 @@
-
 """Convenience imports for interacting with the Permutive API.
 
-The :mod:`PermutiveAPI` package exposes classes for managing users, imports,
+The `PermutiveAPI` package exposes classes for managing users, imports,
 cohorts and workspaces through Permutive's REST API.  Refer to ``README.md`` in
 the repository root for installation and full usage documentation.
 """

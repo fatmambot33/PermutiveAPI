@@ -8,29 +8,34 @@ from PermutiveAPI.Utils import JSONSerializable
 
 @dataclass
 class Source(JSONSerializable):
-    """
-    Dataclass for the Source entity in the Permutive ecosystem.
+    """Dataclass for the Source entity in the Permutive ecosystem.
 
-    Attributes:
-        id (str): Unique identifier for the source.
-        state (Dict): State information of the source.
-        type (str): Type of the source.
-        schema_id (Optional[str]): Schema identifier associated with the source.
-        cohorts (Optional[List[str]]): List of cohorts associated with the source.
-        bucket (Optional[str]): Bucket information for the source.
-        permissions (Optional[Dict]): Permissions associated with the source.
-        phase (Optional[str]): Phase information of the source.
-        errors (Optional[List[str]]): List of errors associated with the source.
-        advertiser_name (Optional[str]): Name of the advertiser associated with the source.
-        organization_id (Optional[str]): Organization identifier associated with the source.
-        version (Optional[str]): Version information of the source.
-
-    Methods:
-        __str__(): Return a pretty-printed JSON string representation of the source.
-        to_json() -> dict: Convert the source object to a JSON-serializable dictionary.
-        to_json_file(filepath: str): Writes the JSON representation of the source to a file.
-        from_json_file(filepath: str) -> 'Source': Create a Source object from a JSON file.
-
+    Attributes
+    ----------
+    id : str
+        Unique identifier for the source.
+    state : Dict
+        State information of the source.
+    type : str
+        Type of the source.
+    schema_id : Optional[str]
+        Schema identifier associated with the source.
+    cohorts : Optional[List[str]]
+        List of cohorts associated with the source.
+    bucket : Optional[str]
+        Bucket information for the source.
+    permissions : Optional[Dict]
+        Permissions associated with the source.
+    phase : Optional[str]
+        Phase information of the source.
+    errors : Optional[List[str]]
+        List of errors associated with the source.
+    advertiser_name : Optional[str]
+        Name of the advertiser associated with the source.
+    organization_id : Optional[str]
+        Organization identifier associated with the source.
+    version : Optional[str]
+        Version information of the source.
     """
 
     id: str
