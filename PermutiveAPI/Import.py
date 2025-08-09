@@ -2,7 +2,7 @@
 
 import logging
 from typing import Dict, List, Optional, DefaultDict, TYPE_CHECKING
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
     from PermutiveAPI.Segment import SegmentList
@@ -54,7 +54,7 @@ class Import(JSONSerializable):
     description: Optional[str] = None
     inheritance: Optional[str] = None
     segments: Optional['SegmentList'] = None
-    updated_at: Optional[datetime] = datetime.now()
+    updated_at: Optional[datetime] = field(default_factory=datetime.now)
 
     @classmethod
     def get_by_id(cls,
