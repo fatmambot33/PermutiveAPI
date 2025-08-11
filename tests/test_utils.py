@@ -1,7 +1,9 @@
 """Tests for helper utilities in :mod:`PermutiveAPI.Utils`."""
 
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -11,6 +13,15 @@ from requests.exceptions import RequestException
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from PermutiveAPI.Utils import RequestHelper, merge_list, split_filepath, file_exists
+
+
+@dataclass
+class PayloadExample:
+    """Dataclass for payload serialization tests."""
+
+    zero: int
+    flag: bool
+    none_val: Optional[str] = None
 
 
 class TestRequestHelper(unittest.TestCase):
@@ -38,6 +49,24 @@ class TestRequestHelper(unittest.TestCase):
             with self.assertRaises(RequestException):
                 RequestHelper.get_static("abc123", "https://api.example.com")
             self.assertEqual(mock_get.call_count, 2)
+
+    def test_to_payload_static_keeps_zero(self) -> None:
+        """Retain zero values in the serialized payload."""
+        payload = RequestHelper.to_payload_static(
+            PayloadExample(zero=0, flag=True)
+        )
+        self.assertIn("zero", payload)
+        self.assertEqual(payload["zero"], 0)
+        self.assertNotIn("none_val", payload)
+
+    def test_to_payload_static_keeps_false(self) -> None:
+        """Retain ``False`` boolean values in the serialized payload."""
+        payload = RequestHelper.to_payload_static(
+            PayloadExample(zero=1, flag=False)
+        )
+        self.assertIn("flag", payload)
+        self.assertIs(payload["flag"], False)
+        self.assertNotIn("none_val", payload)
 
 
 class TestListUtils(unittest.TestCase):
