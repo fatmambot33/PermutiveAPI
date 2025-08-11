@@ -32,7 +32,7 @@ class Workspace(JSONSerializable):
     api_key: str
 
     @property
-    def isTopLevel(self) -> bool:
+    def is_top_level(self) -> bool:
         """Determine if the workspace is the top-level workspace.
 
         Returns
@@ -203,6 +203,6 @@ class WorkspaceList(List[Workspace], JSONSerializable):
             If no top-level workspace is found.
         """
         for workspace in self:
-            if workspace.isTopLevel:
+            if workspace.is_top_level:
                 return workspace
         raise ValueError("No Top-Level Workspace found")
