@@ -254,6 +254,9 @@ class RequestHelper:
         """
         Convert a dataclass object to a dictionary payload.
 
+        Fields with ``None`` values are omitted. If ``api_payload`` is provided,
+        only keys included in this list are kept.
+
         Parameters
         ----------
         dataclass_obj : Any
@@ -267,8 +270,11 @@ class RequestHelper:
             The dictionary payload.
         """
         dataclass_dict = vars(dataclass_obj)
-        filtered_dict = {k: v for k, v in dataclass_dict.items(
-        ) if v and (api_payload is None or k in api_payload)}
+        filtered_dict = {
+            k: v
+            for k, v in dataclass_dict.items()
+            if v is not None and (api_payload is None or k in api_payload)
+        }
         filtered_dict_string = json.dumps(
             filtered_dict, indent=4, cls=customJSONEncoder)
         return json.loads(filtered_dict_string)
