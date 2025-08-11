@@ -1,5 +1,7 @@
 # PermutiveAPI
 
+[![Python CI](https://github.com/fatmambo33/PermutiveAPI/actions/workflows/ci.yml/badge.svg)](https://github.com/fatmambo33/PermutiveAPI/actions/workflows/ci.yml)
+
 PermutiveAPI is a Python module to interact with the Permutive API. It provides a set of classes and methods to manage users, imports, cohorts, and workspaces within the Permutive ecosystem.
 
 ## Installation
@@ -33,10 +35,22 @@ inside this JSON is used to authenticate API calls.
 
 ### Importing the Module
 
-To use the PermutiveAPI module, import the necessary classes:
+To use the PermutiveAPI module, import the necessary classes. The main classes are exposed at the top level of the `PermutiveAPI` package:
 
 ```python
-from PermutiveAPI import Import, ImportList, Segment, SegmentList, Identity, Alias, Cohort, CohortList, Workspace, WorkspaceList
+from PermutiveAPI import (
+    Alias,
+    Cohort,
+    CohortList,
+    Identity,
+    Import,
+    ImportList,
+    Segment,
+    SegmentList,
+    Source,
+    Workspace,
+    WorkspaceList,
+)
 ```
 
 ### Managing Users
@@ -44,8 +58,6 @@ from PermutiveAPI import Import, ImportList, Segment, SegmentList, Identity, Ali
 You can manage user identities and aliases using the `Identity` and `Alias` classes:
 
 ```python
-from PermutiveAPI.User import Identity, Alias
-
 # Create an alias
 alias = Alias(id="alias_id", tag="alias_tag", priority=1)
 
@@ -61,13 +73,14 @@ identity.identify(api_key="your_private_key")
 
 ### Managing Imports
 
-You can manage imports using the `Import` and `ImportList` classes:
+You can manage imports using the `Import` and `ImportList` classes. An `Import` object may also contain a `Source` object.
 
 ```python
-from PermutiveAPI.Import import Import, ImportList
-
 # Fetch an import by ID
 import_instance = Import.get_by_id(id="import_id", api_key="your_api_key")
+
+# The source of the import can be accessed via the .source attribute
+source_info = import_instance.source
 
 # List all imports
 imports = Import.list(api_key="your_api_key")
@@ -78,8 +91,6 @@ imports = Import.list(api_key="your_api_key")
 You can manage cohorts using the `Cohort` and `CohortList` classes:
 
 ```python
-from PermutiveAPI.Cohort import Cohort, CohortList
-
 # Create a new cohort
 cohort = Cohort(name="cohort_name", query={"property": "value"})
 cohort.create(api_key="your_api_key")
@@ -96,8 +107,6 @@ cohorts = Cohort.list(api_key="your_api_key")
 You can manage workspaces using the `Workspace` and `WorkspaceList` classes:
 
 ```python
-from PermutiveAPI.Workspace import Workspace, WorkspaceList
-
 # Create a workspace instance
 workspace = Workspace(name="workspace_name", organization_id="org_id", workspace_id="workspace_id", api_key="your_api_key")
 

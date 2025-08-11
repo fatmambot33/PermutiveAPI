@@ -24,25 +24,21 @@ import time
 class RequestHelper:
     """A utility class for making HTTP requests to a RESTful API."""
 
-    DEFAULT_HEADERS = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-    }
+    DEFAULT_HEADERS = {"Accept": "application/json", "Content-Type": "application/json"}
     SENSITIVE_QUERY_KEYS = ("k", "api_key", "token", "access_token", "key")
     SUCCESS_RANGE = range(200, 300)
 
-    MAX_RETRIES = 3          # Max retry attempts
-    BACKOFF_FACTOR = 2       # Exponential backoff multiplier
-    INITIAL_DELAY = 1        # Initial retry delay (seconds)
+    MAX_RETRIES = 3  # Max retry attempts
+    BACKOFF_FACTOR = 2  # Exponential backoff multiplier
+    INITIAL_DELAY = 1  # Initial retry delay (seconds)
 
     api_key: str
     api_endpoint: str
     payload_keys: Optional[List[str]] = None
 
-    def __init__(self,
-                 api_key: str,
-                 api_endpoint: str,
-                 payload_keys: Optional[List[str]] = None) -> None:
+    def __init__(
+        self, api_key: str, api_endpoint: str, payload_keys: Optional[List[str]] = None
+    ) -> None:
         """
         Initialise the RequestHelper.
 
@@ -61,8 +57,7 @@ class RequestHelper:
 
     # -------- URL Helper --------
     @staticmethod
-    def generate_url_with_key(url: str,
-                              api_key: str) -> str:
+    def generate_url_with_key(url: str, api_key: str) -> str:
         """
         Generate a URL with the API key appended as a ``k`` query parameter.
 
@@ -88,8 +83,7 @@ class RequestHelper:
 
     # -------- Public Request Methods --------
     @staticmethod
-    def get_static(api_key: str,
-                   url: str) -> Optional[Response]:
+    def get_static(api_key: str, url: str) -> Optional[Response]:
         """
         Perform a GET request with retry logic.
 
@@ -108,9 +102,7 @@ class RequestHelper:
         return RequestHelper._with_retry(requests.get, url, api_key)
 
     @staticmethod
-    def post_static(api_key: str,
-                    url: str,
-                    data: dict) -> Optional[Response]:
+    def post_static(api_key: str, url: str, data: dict) -> Optional[Response]:
         """
         Perform a POST request with retry logic.
 
@@ -131,9 +123,7 @@ class RequestHelper:
         return RequestHelper._with_retry(requests.post, url, api_key, json=data)
 
     @staticmethod
-    def patch_static(api_key: str,
-                     url: str,
-                     data: dict) -> Optional[Response]:
+    def patch_static(api_key: str, url: str, data: dict) -> Optional[Response]:
         """
         Perform a PATCH request with retry logic.
 
@@ -154,8 +144,7 @@ class RequestHelper:
         return RequestHelper._with_retry(requests.patch, url, api_key, json=data)
 
     @staticmethod
-    def delete_static(api_key: str,
-                      url: str) -> Optional[Response]:
+    def delete_static(api_key: str, url: str) -> Optional[Response]:
         """
         Perform a DELETE request with retry logic.
 
@@ -173,8 +162,7 @@ class RequestHelper:
         """
         return RequestHelper._with_retry(requests.delete, url, api_key)
 
-    def get(self,
-            url) -> Optional[Response]:
+    def get(self, url) -> Optional[Response]:
         """
         Perform a GET request using the instance's API key.
 
@@ -190,9 +178,7 @@ class RequestHelper:
         """
         return RequestHelper.get_static(self.api_key, url)
 
-    def post(self,
-             url: str,
-             data: dict) -> Optional[Response]:
+    def post(self, url: str, data: dict) -> Optional[Response]:
         """
         Perform a POST request using the instance's API key.
 
@@ -210,9 +196,7 @@ class RequestHelper:
         """
         return RequestHelper.post_static(self.api_key, url, data)
 
-    def patch(self,
-              url: str,
-              data: dict) -> Optional[Response]:
+    def patch(self, url: str, data: dict) -> Optional[Response]:
         """
         Perform a PATCH request using the instance's API key.
 
@@ -230,8 +214,7 @@ class RequestHelper:
         """
         return RequestHelper.patch_static(self.api_key, url, data)
 
-    def delete(self,
-               url: str) -> Optional[Response]:
+    def delete(self, url: str) -> Optional[Response]:
         """
         Perform a DELETE request using the instance's API key.
 
@@ -249,8 +232,9 @@ class RequestHelper:
 
     # -------- Payload Helper --------
     @staticmethod
-    def to_payload_static(dataclass_obj: Any,
-                          api_payload: Optional[List[str]] = None) -> Dict[str, Any]:
+    def to_payload_static(
+        dataclass_obj: Any, api_payload: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
         """
         Convert a dataclass object to a dictionary payload.
 
@@ -276,15 +260,15 @@ class RequestHelper:
             if v is not None and (api_payload is None or k in api_payload)
         }
         filtered_dict_string = json.dumps(
-            filtered_dict, indent=4, cls=customJSONEncoder)
+            filtered_dict, indent=4, cls=customJSONEncoder
+        )
         return json.loads(filtered_dict_string)
 
     # -------- Retry Wrapper --------
     @staticmethod
-    def _with_retry(method: Callable,
-                    url: str,
-                    api_key: str,
-                    **kwargs) -> Optional[Response]:
+    def _with_retry(
+        method: Callable, url: str, api_key: str, **kwargs
+    ) -> Optional[Response]:
         """Retry logic for transient errors and rate limiting."""
         url = RequestHelper.generate_url_with_key(url, api_key)
         attempt = 0
@@ -293,43 +277,47 @@ class RequestHelper:
 
         while attempt < RequestHelper.MAX_RETRIES:
             try:
-                response = method(
-                    url, headers=RequestHelper.DEFAULT_HEADERS, **kwargs)
+                response = method(url, headers=RequestHelper.DEFAULT_HEADERS, **kwargs)
                 if response.status_code in RequestHelper.SUCCESS_RANGE:
                     return response
 
                 # Handle transient errors & rate limiting
                 if response.status_code == 429:
-                    retry_after = int(
-                        response.headers.get("Retry-After", delay))
+                    retry_after = int(response.headers.get("Retry-After", delay))
                     logging.warning(
-                        f"429 Too Many Requests: retrying in {retry_after}s (attempt {attempt+1})")
+                        f"429 Too Many Requests: retrying in {retry_after}s (attempt {attempt+1})"
+                    )
                     time.sleep(retry_after)
                 elif 500 <= response.status_code < 600:
                     logging.warning(
-                        f"{response.status_code} Server Error: retrying in {delay}s (attempt {attempt+1})")
+                        f"{response.status_code} Server Error: retrying in {delay}s (attempt {attempt+1})"
+                    )
                     time.sleep(delay)
                     delay *= RequestHelper.BACKOFF_FACTOR
                 else:
                     # Non-retryable error
-                    return RequestHelper.handle_exception(RequestException(f"HTTP {response.status_code}"), response)
+                    return RequestHelper.handle_exception(
+                        RequestException(f"HTTP {response.status_code}"), response
+                    )
 
             except RequestException as e:
                 if attempt >= RequestHelper.MAX_RETRIES - 1:
                     raise
                 logging.warning(
-                    f"Request failed ({e}), retrying in {delay}s (attempt {attempt+1})")
+                    f"Request failed ({e}), retrying in {delay}s (attempt {attempt+1})"
+                )
                 time.sleep(delay)
                 delay *= RequestHelper.BACKOFF_FACTOR
 
             attempt += 1
 
-        return RequestHelper.handle_exception(RequestException("Max retries reached"), response)
+        return RequestHelper.handle_exception(
+            RequestException("Max retries reached"), response
+        )
 
     # -------- Exception Handling --------
     @staticmethod
-    def _redact_sensitive_data(message: str,
-                               response: Response) -> str:
+    def _redact_sensitive_data(message: str, response: Response) -> str:
         # Redact sensitive data from both the message and any query parameters in the URL
         if hasattr(response, "request") and hasattr(response.request, "url"):
             parsed_url = urllib.parse.urlparse(response.request.url)
@@ -343,9 +331,19 @@ class RequestHelper:
         for key in RequestHelper.SENSITIVE_QUERY_KEYS:
             # Redact patterns like 'key=secret' or '"key": "secret"'
             # key=secret (in URLs)
-            message = re.sub(rf'({key})=([^\s&"\']+)', rf'\1=[REDACTED]', message, flags=re.IGNORECASE)
+            message = re.sub(
+                rf'({key})=([^\s&"\']+)',
+                rf"\1=[REDACTED]",
+                message,
+                flags=re.IGNORECASE,
+            )
             # "key": "secret" (in JSON)
-            message = re.sub(rf'("{key}"\s*:\s*")[^"]+(")', rf'\1[REDACTED]\2', message, flags=re.IGNORECASE)
+            message = re.sub(
+                rf'("{key}"\s*:\s*")[^"]+(")',
+                rf"\1[REDACTED]\2",
+                message,
+                flags=re.IGNORECASE,
+            )
         return message
 
     @staticmethod
@@ -357,8 +355,9 @@ class RequestHelper:
             return "Could not parse error message"
 
     @staticmethod
-    def handle_exception(e: Exception,
-                         response: Optional[Response]) -> Optional[Response]:
+    def handle_exception(
+        e: Exception, response: Optional[Response]
+    ) -> Optional[Response]:
         """
         Handle exceptions and HTTP errors.
 
@@ -386,18 +385,23 @@ class RequestHelper:
                 msg = RequestHelper._redact_sensitive_data(msg, response)
                 redacted_url = ""
                 if hasattr(response, "request") and response.request.url:
-                    redacted_url = RequestHelper._redact_sensitive_data(response.request.url, response)
-                logging.warning(f"400 Bad Request: {msg}" + (f" [URL: {redacted_url}]" if redacted_url else ""))
+                    redacted_url = RequestHelper._redact_sensitive_data(
+                        response.request.url, response
+                    )
+                logging.warning(
+                    f"400 Bad Request: {msg}"
+                    + (f" [URL: {redacted_url}]" if redacted_url else "")
+                )
                 return response
 
             if status == 401:
-                logging.error(
-                    "401 Unauthorized: Invalid API key or credentials.")
+                logging.error("401 Unauthorized: Invalid API key or credentials.")
                 return None
 
             if status == 403:
                 logging.error(
-                    "403 Forbidden: You don't have permission for this resource.")
+                    "403 Forbidden: You don't have permission for this resource."
+                )
                 return None
 
             if status == 404:
@@ -409,8 +413,7 @@ class RequestHelper:
                 return None
 
             if 500 <= status < 600:
-                logging.error(
-                    f"{status} Server Error: API unavailable after retries.")
+                logging.error(f"{status} Server Error: API unavailable after retries.")
                 return None
 
         logging.error(f"An unexpected error occurred: {e}")
@@ -425,7 +428,10 @@ def check_filepath(filepath: str):
     filepath : str
         The path to the file.
     """
-    if not os.path.exists(os.path.dirname(filepath)) and len(os.path.dirname(filepath)) > 0:
+    if (
+        not os.path.exists(os.path.dirname(filepath))
+        and len(os.path.dirname(filepath)) > 0
+    ):
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
 
@@ -443,12 +449,12 @@ def split_filepath(fullfilepath):
         A tuple containing the path, name, and extension.
     """
     p = pathlib.Path(fullfilepath)
-    file_path = str(p.parent)+'/'
+    file_path = str(p.parent) + "/"
     file_name = p.name
-    file_extension = ''
+    file_extension = ""
     for suffix in p.suffixes:
-        file_name = file_name.replace(suffix, '')
-        file_extension = file_extension+suffix
+        file_name = file_name.replace(suffix, "")
+        file_extension = file_extension + suffix
     return file_path, file_name, file_extension
 
 
@@ -465,12 +471,9 @@ def file_exists(fullfilepath: str) -> bool:
     bool
         ``True`` if the file exists, ``False`` otherwise.
     """
-    file_path, file_name, file_extension = split_filepath(
-        fullfilepath)
+    file_path, file_name, file_extension = split_filepath(fullfilepath)
 
-    pattern_with_suffix = os.path.join(
-        file_path, f"{file_name}-*{file_extension}"
-    )
+    pattern_with_suffix = os.path.join(file_path, f"{file_name}-*{file_extension}")
     pattern_exact = os.path.join(file_path, f"{file_name}{file_extension}")
     return len(glob(pattern_with_suffix) + glob(pattern_exact)) > 0
 
@@ -490,7 +493,7 @@ def chunk_list(lst, n):
     list
         A list of chunks.
     """
-    return [lst[i:i + n] for i in range(0, len(lst), n)]
+    return [lst[i : i + n] for i in range(0, len(lst), n)]
 
 
 def convert_list(val):
@@ -549,12 +552,12 @@ def merge_list(lst1: List, lst2: Optional[Union[int, str, List]] = None) -> List
         lst2 = [lst2]
     if not lst2:
         lst2 = []
-    lst = list(filter(None, list(dict.fromkeys(lst1+lst2))))
+    lst = list(filter(None, list(dict.fromkeys(lst1 + lst2))))
     lst.sort()
     return lst
 
 
-T = TypeVar('T', bound='JSONSerializable')
+T = TypeVar("T", bound="JSONSerializable")
 
 
 def json_default(value: Any):
@@ -617,9 +620,7 @@ class JSONSerializable:
 
     def __str__(self) -> str:
         """Pretty-print JSON when calling print(object)."""
-        return json.dumps(self.to_json(),
-                          indent=4,
-                          cls=customJSONEncoder)
+        return json.dumps(self.to_json(), indent=4, cls=customJSONEncoder)
 
     def to_json(self) -> Union[dict[str, Any], list[Any]]:
         """Convert the object to a JSON-serializable format."""
@@ -628,19 +629,31 @@ class JSONSerializable:
             if isinstance(v, JSONSerializable):
                 return v.to_json()
             elif isinstance(v, list):
-                return [serialize_value(item) for item in v if item not in (None, [], {})]
+                return [
+                    serialize_value(item) for item in v if item not in (None, [], {})
+                ]
             elif isinstance(v, dict):
-                return {key: serialize_value(value) for key, value in v.items() if value not in (None, [], {})}
+                return {
+                    key: serialize_value(value)
+                    for key, value in v.items()
+                    if value not in (None, [], {})
+                }
             else:
                 return json_default(v)
 
         # Case 1: if self is a dict-like object
         if isinstance(self, dict):
-            return {k: serialize_value(v) for k, v in self.items() if not str(k).startswith("_")}
+            return {
+                k: serialize_value(v)
+                for k, v in self.items()
+                if not str(k).startswith("_")
+            }
 
         # Case 2: if self is a list-like object
         elif isinstance(self, list):
-            return [serialize_value(item) for item in self if item not in (None, [], {})]
+            return [
+                serialize_value(item) for item in self if item not in (None, [], {})
+            ]
 
         # Case 3: if self is a dataclass
         elif is_dataclass(self):
@@ -657,21 +670,45 @@ class JSONSerializable:
 
         # Case 4: fallback to __dict__ if available
         elif hasattr(self, "__dict__"):
-            return {k: serialize_value(v) for k, v in self.__dict__.items() if not k.startswith("_")}
+            return {
+                k: serialize_value(v)
+                for k, v in self.__dict__.items()
+                if not k.startswith("_")
+            }
 
         # Final fallback for unsupported objects — raise error instead of returning str/float
         raise TypeError(f"{type(self).__name__} is not JSON-serializable")
 
     def to_json_file(self, filepath: str):
-        """Serialize the object to a JSON file using CustomJSONEncoder."""
+        """
+        Serialize the object to a JSON file.
+
+        Parameters
+        ----------
+        filepath : str
+            The path to the output JSON file.
+        """
         check_filepath(filepath=filepath)
-        with open(file=filepath, mode='w', encoding='utf-8') as f:
-            json.dump(self.to_json(), f, ensure_ascii=False,
-                      indent=4, cls=customJSONEncoder)
+        with open(file=filepath, mode="w", encoding="utf-8") as f:
+            json.dump(
+                self.to_json(), f, ensure_ascii=False, indent=4, cls=customJSONEncoder
+            )
 
     @classmethod
     def from_json_file(cls: Type[T], filepath: str) -> T:
-        """Create an instance of the class from a JSON file."""
+        """
+        Create an instance of the class from a JSON file.
+
+        Parameters
+        ----------
+        filepath : str
+            The path to the input JSON file.
+
+        Returns
+        -------
+        T
+            An instance of the class.
+        """
         return cls.from_json(Path(filepath))
 
     @overload
@@ -688,7 +725,25 @@ class JSONSerializable:
 
     @classmethod
     def from_json(cls: Type[T], data: Any) -> T:
-        """Handle JSON deserialization from dict, JSON string, or file path."""
+        """
+        Create an instance from a dictionary, JSON string, or file path.
+
+        Parameters
+        ----------
+        data : Union[dict, str, Path]
+            The data to deserialize. Can be a dictionary, a JSON-formatted
+            string, or a path to a JSON file.
+
+        Returns
+        -------
+        T
+            An instance of the class.
+
+        Raises
+        ------
+        TypeError
+            If the input data is not a dict, string, or Path, or if parsing fails.
+        """
         # Load if input is a string or path
         if isinstance(data, (str, Path)):
             try:

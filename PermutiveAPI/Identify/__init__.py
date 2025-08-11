@@ -1,4 +1,3 @@
-
 """Identify API endpoint constants."""
 
 _API_VERSION = "v2.0"

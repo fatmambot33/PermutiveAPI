@@ -51,13 +51,13 @@ class Workspace(JSONSerializable):
         CohortList
             Cached list of cohorts.
         """
-        if not hasattr(self, '_cohort_cache'):
+        if not hasattr(self, "_cohort_cache"):
             self._cohort_cache = Cohort.list(
-                include_child_workspaces=False, api_key=self.api_key)
+                include_child_workspaces=False, api_key=self.api_key
+            )
         return self._cohort_cache
 
-    def list_cohorts(self,
-                     include_child_workspaces: bool = False) -> CohortList:
+    def list_cohorts(self, include_child_workspaces: bool = False) -> CohortList:
         """Retrieve a list of cohorts for the workspace.
 
         Parameters
@@ -70,8 +70,9 @@ class Workspace(JSONSerializable):
         CohortList
             A list of cohorts.
         """
-        return Cohort.list(include_child_workspaces=include_child_workspaces,
-                           api_key=self.api_key)
+        return Cohort.list(
+            include_child_workspaces=include_child_workspaces, api_key=self.api_key
+        )
 
     @property
     def imports(self) -> "ImportList":
@@ -82,12 +83,11 @@ class Workspace(JSONSerializable):
         ImportList
             Cached list of imports.
         """
-        if not hasattr(self, '_import_cache'):
+        if not hasattr(self, "_import_cache"):
             self._import_cache = Import.list(api_key=self.api_key)
         return self._import_cache
 
-    def list_segments(self,
-                      import_id: str) -> List[Segment]:
+    def list_segments(self, import_id: str) -> List[Segment]:
         """Retrieve a list of segments for a given import.
 
         Parameters
@@ -100,8 +100,8 @@ class Workspace(JSONSerializable):
         List[Segment]
             A list of segments.
         """
-        return Segment.list(import_id=import_id,
-                            api_key=self.api_key)
+        return Segment.list(import_id=import_id, api_key=self.api_key)
+
 
 class WorkspaceList(List[Workspace], JSONSerializable):
     """Manage a collection of Workspace objects."""
@@ -113,7 +113,9 @@ class WorkspaceList(List[Workspace], JSONSerializable):
     ) -> "WorkspaceList":
         """Deserialize a list of workspaces from various JSON representations."""
         if isinstance(data, dict):
-            raise TypeError(f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Workspace class for single objects.")
+            raise TypeError(
+                f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Workspace class for single objects."
+            )
         if isinstance(data, (str, Path)):
             try:
                 if isinstance(data, Path):
@@ -122,7 +124,9 @@ class WorkspaceList(List[Workspace], JSONSerializable):
                     content = data
                 loaded_data = json.loads(content)
                 if not isinstance(loaded_data, list):
-                    raise TypeError(f"JSON content from {type(data).__name__} did not decode to a list.")
+                    raise TypeError(
+                        f"JSON content from {type(data).__name__} did not decode to a list."
+                    )
                 data = loaded_data
             except Exception as e:
                 raise TypeError(f"Failed to parse JSON from input: {e}")
@@ -134,8 +138,7 @@ class WorkspaceList(List[Workspace], JSONSerializable):
             f"`from_json()` expected a list of dicts, JSON string, or Path, but got {type(data).__name__}"
         )
 
-    def __init__(self,
-                 items_list: Optional[List[Workspace]] = None):
+    def __init__(self, items_list: Optional[List[Workspace]] = None):
         """Initialize the WorkspaceList with an optional list of Workspace objects.
 
         Parameters
@@ -151,9 +154,13 @@ class WorkspaceList(List[Workspace], JSONSerializable):
     def rebuild_cache(self):
         """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache = {
-            workspace.workspace_id: workspace for workspace in self if workspace.workspace_id}
+            workspace.workspace_id: workspace
+            for workspace in self
+            if workspace.workspace_id
+        }
         self._name_dictionary_cache = {
-            workspace.name: workspace for workspace in self if workspace.name}
+            workspace.name: workspace for workspace in self if workspace.name
+        }
 
     @property
     def id_dictionary(self) -> Dict[str, Workspace]:

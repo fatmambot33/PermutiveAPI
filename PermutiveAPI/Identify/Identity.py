@@ -29,8 +29,7 @@ class Identity(JSONSerializable):
     user_id: str
     aliases: List[Alias]
 
-    def identify(self,
-                 api_key: str) -> Optional[Response]:
+    def identify(self, api_key: str) -> Optional[Response]:
         """Identify a user in Permutive.
 
         This method sends a POST request to the Permutive API to identify a user
@@ -50,7 +49,8 @@ class Identity(JSONSerializable):
 
         url = f"{_API_ENDPOINT}"
 
-        return RequestHelper.post_static(api_key=api_key,
-                                         url=url,
-                                         data=RequestHelper.to_payload_static(self,
-                                                                              _API_PAYLOAD))
+        return RequestHelper.post_static(
+            api_key=api_key,
+            url=url,
+            data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
+        )

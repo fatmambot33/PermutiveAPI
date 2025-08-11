@@ -48,18 +48,16 @@ class Import(JSONSerializable):
     code: str
     relation: str
     identifiers: List[str]
-    source: 'Source'
+    source: "Source"
     description: Optional[str] = None
     inheritance: Optional[str] = None
-    segments: Optional['SegmentList'] = None
+    segments: Optional["SegmentList"] = None
     updated_at: Optional[datetime] = field(
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )
 
     @classmethod
-    def get_by_id(cls,
-                  id: str,
-                  api_key: str) -> 'Import':
+    def get_by_id(cls, id: str, api_key: str) -> "Import":
         """Fetch a specific import by its ID.
 
         Parameters
@@ -76,15 +74,13 @@ class Import(JSONSerializable):
         """
         logging.debug(f"AudienceAPI::get_import::{id}")
         url = f"{_API_ENDPOINT}/{id}"
-        response = RequestHelper.get_static(url=url,
-                                            api_key=api_key)
+        response = RequestHelper.get_static(url=url, api_key=api_key)
         if not response:
-            raise ValueError('Unable to get_import')
+            raise ValueError("Unable to get_import")
         return cls.from_json(response.json())
 
     @classmethod
-    def list(cls,
-             api_key: str) -> 'ImportList':
+    def list(cls, api_key: str) -> "ImportList":
         """Retrieve a list of all imports.
 
         Parameters
@@ -99,16 +95,14 @@ class Import(JSONSerializable):
         """
         logging.debug(f"AudienceAPI::list_imports")
         url = _API_ENDPOINT
-        response = RequestHelper.get_static(
-            api_key=api_key, url=url)
+        response = RequestHelper.get_static(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         imports = response.json()
-        return ImportList.from_json(imports['items'])
+        return ImportList.from_json(imports["items"])
 
 
-class ImportList(List[Import],
-                 JSONSerializable):
+class ImportList(List[Import], JSONSerializable):
     """A class representing a list of Import objects with additional functionality for caching and serialization."""
 
     @classmethod
@@ -119,7 +113,8 @@ class ImportList(List[Import],
         """Deserialize a list of imports from various JSON representations."""
         if isinstance(data, dict):
             raise TypeError(
-                f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Import class for single objects.")
+                f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Import class for single objects."
+            )
         if isinstance(data, (str, Path)):
             try:
                 if isinstance(data, Path):
@@ -129,7 +124,8 @@ class ImportList(List[Import],
                 loaded_data = json.loads(content)
                 if not isinstance(loaded_data, list):
                     raise TypeError(
-                        f"JSON content from {type(data).__name__} did not decode to a list.")
+                        f"JSON content from {type(data).__name__} did not decode to a list."
+                    )
                 data = loaded_data
             except Exception as e:
                 raise TypeError(f"Failed to parse JSON from input: {e}")
@@ -137,11 +133,12 @@ class ImportList(List[Import],
         if isinstance(data, list):
             # Special handling for 'source' which is a nested JSONSerializable
             def create_import(item):
-                source_data = item.get('source')
+                source_data = item.get("source")
                 if source_data:
                     source_instance = Source.from_json(source_data)
-                    item['source'] = source_instance
+                    item["source"] = source_instance
                 return Import.from_json(item)
+
             return cls([create_import(item) for item in data])
 
         raise TypeError(
@@ -160,7 +157,8 @@ class ImportList(List[Import],
         self._id_dictionary_cache: Dict[str, Import] = {}
         self._name_dictionary_cache: Dict[str, Import] = {}
         self._identifier_dictionary_cache: DefaultDict[str, ImportList] = defaultdict(
-            ImportList)
+            ImportList
+        )
         self.rebuild_cache()
 
     def rebuild_cache(self):
@@ -201,7 +199,7 @@ class ImportList(List[Import],
         return self._name_dictionary_cache
 
     @property
-    def identifier_dictionary(self) -> Dict[str, 'ImportList']:
+    def identifier_dictionary(self) -> Dict[str, "ImportList"]:
         """Return a dictionary of imports indexed by their identifiers.
 
         Returns

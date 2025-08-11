@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from PermutiveAPI.Audience import _API_ENDPOINT
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable
 
-_API_PAYLOAD = ['name', 'code', 'description', 'cpm', 'categories']
+_API_PAYLOAD = ["name", "code", "description", "cpm", "categories"]
 
 
 @dataclass
@@ -48,8 +48,7 @@ class Segment(JSONSerializable):
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )
 
-    def create(self,
-               api_key: str):
+    def create(self, api_key: str):
         """Create a new segment using the provided private key.
 
         Parameters
@@ -62,22 +61,23 @@ class Segment(JSONSerializable):
         ValueError
             If the segment creation fails.
         """
-        logging.debug(
-            f"SegmentAPI::create_segment::{self.import_id}::{self.name}")
+        logging.debug(f"SegmentAPI::create_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments"
-        response = RequestHelper.post_static(api_key=api_key,
-                                             url=url,
-                                             data=RequestHelper.to_payload_static(dataclass_obj=self,
-                                                                                  api_payload=_API_PAYLOAD))
+        response = RequestHelper.post_static(
+            api_key=api_key,
+            url=url,
+            data=RequestHelper.to_payload_static(
+                dataclass_obj=self, api_payload=_API_PAYLOAD
+            ),
+        )
         if not response:
-            raise ValueError('Unable to create_segment')
+            raise ValueError("Unable to create_segment")
 
         new_segment = Segment.from_json(response.json())
         if isinstance(new_segment, Segment):
             self.__dict__.update(new_segment.__dict__)
 
-    def update(self,
-               api_key: str):
+    def update(self, api_key: str):
         """Update the segment using the provided private key.
 
         Parameters
@@ -90,22 +90,23 @@ class Segment(JSONSerializable):
         ValueError
             If the segment update fails.
         """
-        logging.debug(
-            f"SegmentAPI::update_segment::{self.import_id}::{self.name}")
+        logging.debug(f"SegmentAPI::update_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
-        response = RequestHelper.patch_static(api_key=api_key,
-                                              url=url,
-                                              data=RequestHelper.to_payload_static(dataclass_obj=self,
-                                                                                   api_payload=_API_PAYLOAD))
+        response = RequestHelper.patch_static(
+            api_key=api_key,
+            url=url,
+            data=RequestHelper.to_payload_static(
+                dataclass_obj=self, api_payload=_API_PAYLOAD
+            ),
+        )
         if not response:
-            raise ValueError('Unable to update_segment')
+            raise ValueError("Unable to update_segment")
 
         updated_segment = Segment.from_json(response.json())
         if isinstance(updated_segment, Segment):
             self.__dict__.update(updated_segment.__dict__)
 
-    def delete(self,
-               api_key: str) -> bool:
+    def delete(self, api_key: str) -> bool:
         """Delete a segment using the provided private key.
 
         Parameters
@@ -119,19 +120,15 @@ class Segment(JSONSerializable):
             ``True`` if the segment was successfully deleted (status code
             204), otherwise ``False``.
         """
-        logging.debug(
-            f"SegmentAPI::delete_segment::{self.import_id}::{self.id}")
+        logging.debug(f"SegmentAPI::delete_segment::{self.import_id}::{self.id}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
-        response = RequestHelper.delete_static(api_key=api_key,
-                                               url=url)
+        response = RequestHelper.delete_static(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         return response.status_code == 204
 
     @staticmethod
-    def get_by_code(import_id: str,
-                    segment_code: str,
-                    api_key: str) -> 'Segment':
+    def get_by_code(import_id: str, segment_code: str, api_key: str) -> "Segment":
         """Retrieve a segment by its code.
 
         Parameters
@@ -153,19 +150,15 @@ class Segment(JSONSerializable):
         ValueError
             If the segment cannot be retrieved.
         """
-        logging.debug(
-            f"SegmentAPI::get_segment_by_code::{import_id}::{segment_code}")
+        logging.debug(f"SegmentAPI::get_segment_by_code::{import_id}::{segment_code}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/code/{segment_code}"
-        response = RequestHelper.get_static(url=url, api_key=api_key
-                                            )
+        response = RequestHelper.get_static(url=url, api_key=api_key)
         if not response:
-            raise ValueError('Unable to get_segment')
+            raise ValueError("Unable to get_segment")
         return Segment.from_json(response.json())
 
     @staticmethod
-    def get_by_id(import_id: str,
-                  segment_id: str,
-                  api_key: str) -> 'Segment':
+    def get_by_id(import_id: str, segment_id: str, api_key: str) -> "Segment":
         """Retrieve a segment by its ID.
 
         Parameters
@@ -187,18 +180,15 @@ class Segment(JSONSerializable):
         ValueError
             If the segment cannot be retrieved.
         """
-        logging.debug(
-            f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
+        logging.debug(f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/{segment_id}"
-        response = RequestHelper.get_static(url=url,
-                                            api_key=api_key)
+        response = RequestHelper.get_static(url=url, api_key=api_key)
         if not response:
-            raise ValueError('Unable to get_by_id')
+            raise ValueError("Unable to get_by_id")
         return Segment.from_json(response.json())
 
     @staticmethod
-    def list(import_id: str,
-             api_key: str) -> "SegmentList":
+    def list(import_id: str, api_key: str) -> "SegmentList":
         """Retrieve a list of segments for a given import ID.
 
         Parameters
@@ -226,18 +216,19 @@ class Segment(JSONSerializable):
 
         while True:
             # Construct the URL with the pagination token
-            url = f"{base_url}?pagination_token={next_token}" if next_token else base_url
-            response = RequestHelper.get_static(
-                api_key=api_key, url=url)
+            url = (
+                f"{base_url}?pagination_token={next_token}" if next_token else base_url
+            )
+            response = RequestHelper.get_static(api_key=api_key, url=url)
             if response is None:
                 raise ValueError("Response is None")
             data = response.json()
 
             # Extract elements and add them to the list
-            all_segments.extend(data.get('elements', []))
+            all_segments.extend(data.get("elements", []))
 
             # Check for next_token in the pagination metadata
-            next_token = data.get('pagination', {}).get('next_token')
+            next_token = data.get("pagination", {}).get("next_token")
 
             if not next_token:
                 break  # Stop when there are no more pages
@@ -245,8 +236,7 @@ class Segment(JSONSerializable):
         return SegmentList.from_json(all_segments)
 
 
-class SegmentList(List[Segment],
-                  JSONSerializable):
+class SegmentList(List[Segment], JSONSerializable):
     """Custom list that holds Segment objects and provides caching and serialization."""
 
     @classmethod
@@ -257,7 +247,8 @@ class SegmentList(List[Segment],
         """Deserialize a list of segments from various JSON representations."""
         if isinstance(data, dict):
             raise TypeError(
-                f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Segment class for single objects.")
+                f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Segment class for single objects."
+            )
         if isinstance(data, (str, Path)):
             try:
                 if isinstance(data, Path):
@@ -267,7 +258,8 @@ class SegmentList(List[Segment],
                 loaded_data = json.loads(content)
                 if not isinstance(loaded_data, list):
                     raise TypeError(
-                        f"JSON content from {type(data).__name__} did not decode to a list.")
+                        f"JSON content from {type(data).__name__} did not decode to a list."
+                    )
                 data = loaded_data
             except Exception as e:
                 raise TypeError(f"Failed to parse JSON from input: {e}")
@@ -279,8 +271,7 @@ class SegmentList(List[Segment],
             f"`from_json()` expected a list of dicts, JSON string, or Path, but got {type(data).__name__}"
         )
 
-    def __init__(self,
-                 items_list: Optional[List[Segment]] = None):
+    def __init__(self, items_list: Optional[List[Segment]] = None):
         """Initialize the SegmentList with an optional list of Segment objects.
 
         Parameters
@@ -294,11 +285,14 @@ class SegmentList(List[Segment],
     def rebuild_cache(self):
         """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache = {
-            segment.id: segment for segment in self if segment.id}
+            segment.id: segment for segment in self if segment.id
+        }
         self._name_dictionary_cache = {
-            segment.name: segment for segment in self if segment.name}
+            segment.name: segment for segment in self if segment.name
+        }
         self._code_dictionary_cache = {
-            segment.code: segment for segment in self if segment.code}
+            segment.code: segment for segment in self if segment.code
+        }
 
     @property
     def id_dictionary(self) -> Dict[str, Segment]:
