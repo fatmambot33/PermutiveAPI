@@ -242,7 +242,7 @@ class SegmentList(List[Segment], JSONSerializable):
     @classmethod
     def from_json(
         cls: Type["SegmentList"],
-        data: Union[dict, list[dict], str, Path],
+        data: Union[dict, List[dict], str, Path],
     ) -> "SegmentList":
         """Deserialize a list of segments from various JSON representations."""
         if isinstance(data, dict):

@@ -622,7 +622,7 @@ class JSONSerializable:
         """Pretty-print JSON when calling print(object)."""
         return json.dumps(self.to_json(), indent=4, cls=customJSONEncoder)
 
-    def to_json(self) -> Union[dict[str, Any], list[Any]]:
+    def to_json(self) -> Union[Dict[str, Any], List[Any]]:
         """Convert the object to a JSON-serializable format."""
 
         def serialize_value(v):

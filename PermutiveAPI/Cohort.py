@@ -268,7 +268,7 @@ class CohortList(List[Cohort], JSONSerializable):
     @classmethod
     def from_json(
         cls: Type["CohortList"],
-        data: Union[dict, list[dict], str, Path],
+        data: Union[dict, List[dict], str, Path],
     ) -> "CohortList":
         """Deserialize a list of cohorts from various JSON representations."""
         if isinstance(data, dict):
