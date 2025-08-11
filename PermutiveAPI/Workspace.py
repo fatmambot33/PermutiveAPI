@@ -109,7 +109,7 @@ class WorkspaceList(List[Workspace], JSONSerializable):
     @classmethod
     def from_json(
         cls: Type["WorkspaceList"],
-        data: Union[dict, list[dict], str, Path],
+        data: Union[dict, List[dict], str, Path],
     ) -> "WorkspaceList":
         """Deserialize a list of workspaces from various JSON representations."""
         if isinstance(data, dict):

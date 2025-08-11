@@ -108,7 +108,7 @@ class ImportList(List[Import], JSONSerializable):
     @classmethod
     def from_json(
         cls: Type["ImportList"],
-        data: Union[dict, list[dict], str, Path],
+        data: Union[dict, List[dict], str, Path],
     ) -> "ImportList":
         """Deserialize a list of imports from various JSON representations."""
         if isinstance(data, dict):
