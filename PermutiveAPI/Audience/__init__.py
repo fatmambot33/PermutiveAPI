@@ -1,4 +1,3 @@
-
 """Audience API endpoint constants."""
 
 _API_VERSION = "v1"
