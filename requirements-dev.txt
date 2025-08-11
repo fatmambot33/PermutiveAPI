@@ -2,3 +2,5 @@
 pydocstyle
 pytest-pydocstyle
 pyright
+black
+pytest-cov

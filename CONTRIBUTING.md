@@ -14,9 +14,9 @@ Thank you for considering contributing to this project! The following guidelines
    python3 -m venv venv
    source venv/bin/activate
    ```
-3. **Install dependencies**
+3. **Install development dependencies**
    ```sh
-   pip install -r requirements.txt
+   pip install -r requirements-dev.txt
    ```
 4. **Install the package in editable mode** (optional)
    ```sh
@@ -25,20 +25,27 @@ Thank you for considering contributing to this project! The following guidelines
 
 ## Code Style and Linting
 
-This repository does not enforce a specific code style, but we recommend using [Black](https://github.com/psf/black) for formatting and [Flake8](https://flake8.pycqa.org/) for linting.
+Before committing, please run the following checks to ensure code quality and consistency. The CI pipeline enforces these checks.
 
-Run the linters before committing changes:
-```sh
-black .
-flake8
-```
+- **Formatting with Black:**
+  ```sh
+  black .
+  ```
+- **Docstring Style with pydocstyle:**
+  ```sh
+  pydocstyle PermutiveAPI
+  ```
+- **Static Type Checking with pyright:**
+  ```sh
+  pyright PermutiveAPI
+  ```
 
 ## Running Tests
 
-This project uses Python's built-in `unittest` framework. To run the test suite, navigate to the root directory of the project and run the following command:
+This project uses `pytest` for testing. To run the test suite, navigate to the root directory of the project and run the following command:
 
 ```sh
-python -m unittest discover tests
+pytest
 ```
 
 This will automatically discover and run all tests within the `tests` directory. Please ensure all tests pass before submitting a pull request.

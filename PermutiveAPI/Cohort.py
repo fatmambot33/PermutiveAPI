@@ -10,7 +10,7 @@ from PermutiveAPI.Utils import RequestHelper, JSONSerializable
 from collections import defaultdict
 
 _API_VERSION = "v2"
-_API_ENDPOINT = f'https://api.permutive.app/cohorts-api/{_API_VERSION}/cohorts/'
+_API_ENDPOINT = f"https://api.permutive.app/cohorts-api/{_API_VERSION}/cohorts/"
 _API_PAYLOAD = ["id", "name", "query", "description", "tags"]
 
 
@@ -72,8 +72,7 @@ class Cohort(JSONSerializable):
     request_id: Optional[str] = None
     error: Optional[str] = None
 
-    def create(self,
-               api_key: str) -> None:
+    def create(self, api_key: str) -> None:
         """Create a new cohort in Permutive.
 
         The method sends a POST request to the Permutive API to create a new cohort
@@ -91,14 +90,15 @@ class Cohort(JSONSerializable):
         """
         logging.debug(f"CohortAPI::create::{self.name}")
         if not self.query:
-            raise ValueError('query must be specified')
+            raise ValueError("query must be specified")
         if self.id:
             logging.warning("id is specified")
         url = f"{_API_ENDPOINT}"
-        response = RequestHelper.post_static(api_key=api_key,
-                                             url=url,
-                                             data=RequestHelper.to_payload_static(self,
-                                                                                  _API_PAYLOAD))
+        response = RequestHelper.post_static(
+            api_key=api_key,
+            url=url,
+            data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
+        )
         if response is None:
             raise ValueError("Response is None")
         created = Cohort.from_json(response.json())
@@ -106,8 +106,7 @@ class Cohort(JSONSerializable):
             self.id = created.id
             self.code = created.code
 
-    def update(self,
-               api_key: str) -> "Cohort":
+    def update(self, api_key: str) -> "Cohort":
         """Update an existing cohort in Permutive.
 
         This method sends a PATCH request to the Permutive API to update a cohort.
@@ -129,15 +128,16 @@ class Cohort(JSONSerializable):
             raise ValueError("Cohort ID must be specified for update.")
         url = f"{_API_ENDPOINT}{self.id}"
 
-        response = RequestHelper.patch_static(api_key=api_key,
-                                              url=url,
-                                              data=RequestHelper.to_payload_static(self, _API_PAYLOAD))
+        response = RequestHelper.patch_static(
+            api_key=api_key,
+            url=url,
+            data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
+        )
         if response is None:
             raise ValueError("Response is None")
         return Cohort.from_json(response.json())
 
-    def delete(self,
-               api_key: str) -> None:
+    def delete(self, api_key: str) -> None:
         """Delete a cohort from Permutive.
 
         This method sends a DELETE request to the Permutive API to delete the cohort
@@ -156,12 +156,10 @@ class Cohort(JSONSerializable):
         if not self.id:
             raise ValueError("Cohort ID must be specified for deletion.")
         url = f"{_API_ENDPOINT}{self.id}"
-        RequestHelper.delete_static(api_key=api_key,
-                                    url=url)
+        RequestHelper.delete_static(api_key=api_key, url=url)
 
     @staticmethod
-    def get_by_id(id: str,
-                  api_key: str) -> 'Cohort':
+    def get_by_id(id: str, api_key: str) -> "Cohort":
         """Fetch a specific cohort from the API using its ID.
 
         Parameters
@@ -183,16 +181,13 @@ class Cohort(JSONSerializable):
         """
         logging.debug(f"CohortAPI::get::{id}")
         url = f"{_API_ENDPOINT}{id}"
-        response = RequestHelper.get_static(api_key=api_key,
-                                            url=url)
+        response = RequestHelper.get_static(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         return Cohort.from_json(response.json())
 
     @staticmethod
-    def get_by_name(name: str,
-                    api_key: str
-                    ) -> Optional['Cohort']:
+    def get_by_name(name: str, api_key: str) -> Optional["Cohort"]:
         """Retrieve a cohort by its name.
 
         This method searches for a cohort with the specified name.
@@ -211,14 +206,11 @@ class Cohort(JSONSerializable):
         """
         logging.debug(f"CohortAPI::get_by_name::{name}")
 
-        cohorts = Cohort.list(include_child_workspaces=True,
-                              api_key=api_key)
+        cohorts = Cohort.list(include_child_workspaces=True, api_key=api_key)
         return cohorts.name_dictionary.get(name)
 
     @staticmethod
-    def get_by_code(
-            code: Union[int, str],
-            api_key: str) -> Optional['Cohort']:
+    def get_by_code(code: Union[int, str], api_key: str) -> Optional["Cohort"]:
         """Retrieve a cohort by its code.
 
         This method searches for a cohort with the specified code.
@@ -236,13 +228,11 @@ class Cohort(JSONSerializable):
             The matching cohort if found, otherwise ``None``.
         """
         logging.debug(f"CohortAPI::get_by_code::{code}")
-        cohorts = Cohort.list(include_child_workspaces=True,
-                              api_key=api_key)
+        cohorts = Cohort.list(include_child_workspaces=True, api_key=api_key)
         return cohorts.code_dictionary.get(str(code))
 
     @staticmethod
-    def list(api_key: str,
-             include_child_workspaces: bool = False) -> 'CohortList':
+    def list(api_key: str, include_child_workspaces: bool = False) -> "CohortList":
         """Fetch all cohorts from the API.
 
         Parameters
@@ -282,7 +272,9 @@ class CohortList(List[Cohort], JSONSerializable):
     ) -> "CohortList":
         """Deserialize a list of cohorts from various JSON representations."""
         if isinstance(data, dict):
-            raise TypeError(f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Cohort class for single objects.")
+            raise TypeError(
+                f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Cohort class for single objects."
+            )
         if isinstance(data, (str, Path)):
             try:
                 if isinstance(data, Path):
@@ -291,7 +283,9 @@ class CohortList(List[Cohort], JSONSerializable):
                     content = data
                 loaded_data = json.loads(content)
                 if not isinstance(loaded_data, list):
-                    raise TypeError(f"JSON content from {type(data).__name__} did not decode to a list.")
+                    raise TypeError(
+                        f"JSON content from {type(data).__name__} did not decode to a list."
+                    )
                 data = loaded_data
             except Exception as e:
                 raise TypeError(f"Failed to parse JSON from input: {e}")
@@ -316,10 +310,8 @@ class CohortList(List[Cohort], JSONSerializable):
         self._code_dictionary_cache: Dict[str, Cohort] = {}
         self._name_dictionary_cache: Dict[str, Cohort] = {}
         self._tag_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(list)
-        self._workspace_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(
-            list)
-        self._segment_type_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(
-            list)
+        self._workspace_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(list)
+        self._segment_type_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(list)
         self.rebuild_cache()
 
     def rebuild_cache(self):
@@ -329,12 +321,13 @@ class CohortList(List[Cohort], JSONSerializable):
         -------
         None
         """
-        self._id_dictionary_cache = {
-            cohort.id: cohort for cohort in self if cohort.id}
+        self._id_dictionary_cache = {cohort.id: cohort for cohort in self if cohort.id}
         self._code_dictionary_cache = {
-            cohort.code: cohort for cohort in self if cohort.code}
+            cohort.code: cohort for cohort in self if cohort.code
+        }
         self._name_dictionary_cache = {
-            cohort.name: cohort for cohort in self if cohort.name}
+            cohort.name: cohort for cohort in self if cohort.name
+        }
 
         self._tag_dictionary_cache = defaultdict(list)
         self._workspace_dictionary_cache = defaultdict(list)
@@ -345,11 +338,9 @@ class CohortList(List[Cohort], JSONSerializable):
                 for tag in cohort.tags:
                     self._tag_dictionary_cache[tag].append(cohort)
             if cohort.segment_type:
-                self._segment_type_dictionary_cache[cohort.segment_type].append(
-                    cohort)
+                self._segment_type_dictionary_cache[cohort.segment_type].append(cohort)
             if cohort.workspace_id:
-                self._workspace_dictionary_cache[cohort.workspace_id].append(
-                    cohort)
+                self._workspace_dictionary_cache[cohort.workspace_id].append(cohort)
 
     @property
     def id_dictionary(self) -> Dict[str, Cohort]:

@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from PermutiveAPI.Cohort import Cohort, CohortList
 
+
 class TestCohort(unittest.TestCase):
 
     def setUp(self):
@@ -18,7 +19,7 @@ class TestCohort(unittest.TestCase):
             "query": {"type": "and", "conditions": []},
             "description": "A test cohort",
             "tags": ["tag1", "tag2"],
-            "code": "C123"
+            "code": "C123",
         }
         self.cohort = Cohort(**self.cohort_data)
 
@@ -26,10 +27,10 @@ class TestCohort(unittest.TestCase):
         cohort = Cohort(name="T", query={"type": "and", "conditions": []})
         self.assertIsNotNone(cohort.created_at)
         self.assertIsNotNone(cohort.last_updated_at)
-        self.assertEqual(cohort.created_at.tzinfo, timezone.utc) # type: ignore
-        self.assertEqual(cohort.last_updated_at.tzinfo, timezone.utc) # type: ignore
+        self.assertEqual(cohort.created_at.tzinfo, timezone.utc)  # type: ignore
+        self.assertEqual(cohort.last_updated_at.tzinfo, timezone.utc)  # type: ignore
 
-    @patch('PermutiveAPI.Cohort.RequestHelper.post_static')
+    @patch("PermutiveAPI.Cohort.RequestHelper.post_static")
     def test_create_cohort(self, mock_post):
         # Arrange
         mock_response = MagicMock()
@@ -37,7 +38,9 @@ class TestCohort(unittest.TestCase):
         mock_response.json.return_value = self.cohort_data
         mock_post.return_value = mock_response
 
-        cohort_to_create = Cohort(name="Test Cohort", query={"type": "and", "conditions": []})
+        cohort_to_create = Cohort(
+            name="Test Cohort", query={"type": "and", "conditions": []}
+        )
 
         # Act
         cohort_to_create.create(self.api_key)
@@ -47,7 +50,7 @@ class TestCohort(unittest.TestCase):
         self.assertEqual(cohort_to_create.id, self.cohort_data["id"])
         self.assertEqual(cohort_to_create.code, self.cohort_data["code"])
 
-    @patch('PermutiveAPI.Cohort.RequestHelper.patch_static')
+    @patch("PermutiveAPI.Cohort.RequestHelper.patch_static")
     def test_update_cohort(self, mock_patch):
         # Arrange
         mock_response = MagicMock()
@@ -63,7 +66,7 @@ class TestCohort(unittest.TestCase):
         self.assertIsInstance(updated_cohort, Cohort)
         self.assertEqual(updated_cohort.id, self.cohort_data["id"])
 
-    @patch('PermutiveAPI.Cohort.RequestHelper.delete_static')
+    @patch("PermutiveAPI.Cohort.RequestHelper.delete_static")
     def test_delete_cohort(self, mock_delete):
         # Arrange
         mock_response = MagicMock()
@@ -74,9 +77,12 @@ class TestCohort(unittest.TestCase):
         self.cohort.delete(self.api_key)
 
         # Assert
-        mock_delete.assert_called_once_with(api_key=self.api_key, url=f"https://api.permutive.app/cohorts-api/v2/cohorts/{self.cohort.id}")
+        mock_delete.assert_called_once_with(
+            api_key=self.api_key,
+            url=f"https://api.permutive.app/cohorts-api/v2/cohorts/{self.cohort.id}",
+        )
 
-    @patch('PermutiveAPI.Cohort.RequestHelper.get_static')
+    @patch("PermutiveAPI.Cohort.RequestHelper.get_static")
     def test_get_by_id(self, mock_get):
         # Arrange
         mock_response = MagicMock()
@@ -92,7 +98,7 @@ class TestCohort(unittest.TestCase):
         self.assertEqual(fetched_cohort.id, self.cohort_data["id"])
         self.assertEqual(fetched_cohort.name, self.cohort_data["name"])
 
-    @patch('PermutiveAPI.Cohort.Cohort.list')
+    @patch("PermutiveAPI.Cohort.Cohort.list")
     def test_get_by_name(self, mock_list):
         # Arrange
         mock_list.return_value = CohortList([self.cohort])
@@ -101,15 +107,20 @@ class TestCohort(unittest.TestCase):
         found_cohort = Cohort.get_by_name("Test Cohort", self.api_key)
 
         # Assert
-        mock_list.assert_called_once_with(include_child_workspaces=True, api_key=self.api_key)
+        mock_list.assert_called_once_with(
+            include_child_workspaces=True, api_key=self.api_key
+        )
         self.assertEqual(found_cohort, self.cohort)
 
-    @patch('PermutiveAPI.Cohort.RequestHelper.get_static')
+    @patch("PermutiveAPI.Cohort.RequestHelper.get_static")
     def test_list_cohorts(self, mock_get):
         # Arrange
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = [self.cohort_data, {"id": "cohort-456", "name": "Another Cohort"}]
+        mock_response.json.return_value = [
+            self.cohort_data,
+            {"id": "cohort-456", "name": "Another Cohort"},
+        ]
         mock_get.return_value = mock_response
 
         # Act
@@ -126,9 +137,30 @@ class TestCohortList(unittest.TestCase):
 
     def setUp(self):
         self.cohorts_data = [
-            {"id": "c1", "name": "Cohort 1", "code": "C1", "tags": ["t1"], "workspace_id": "w1", "segment_type": "s1"},
-            {"id": "c2", "name": "Cohort 2", "code": "C2", "tags": ["t1", "t2"], "workspace_id": "w1", "segment_type": "s2"},
-            {"id": "c3", "name": "Cohort 3", "code": "C3", "tags": ["t2"], "workspace_id": "w2", "segment_type": "s1"}
+            {
+                "id": "c1",
+                "name": "Cohort 1",
+                "code": "C1",
+                "tags": ["t1"],
+                "workspace_id": "w1",
+                "segment_type": "s1",
+            },
+            {
+                "id": "c2",
+                "name": "Cohort 2",
+                "code": "C2",
+                "tags": ["t1", "t2"],
+                "workspace_id": "w1",
+                "segment_type": "s2",
+            },
+            {
+                "id": "c3",
+                "name": "Cohort 3",
+                "code": "C3",
+                "tags": ["t2"],
+                "workspace_id": "w2",
+                "segment_type": "s1",
+            },
         ]
         self.cohorts = [Cohort(**data) for data in self.cohorts_data]
         self.cohort_list = CohortList(self.cohorts)
@@ -163,7 +195,14 @@ class TestCohortList(unittest.TestCase):
     def test_rebuild_cache(self):
         """Ensure caches are rebuilt to match the current list state."""
         self.cohort_list.pop(0)
-        new_cohort = Cohort(id="c4", name="Cohort 4", code="C4", tags=["t3"], workspace_id="w3", segment_type="s3")
+        new_cohort = Cohort(
+            id="c4",
+            name="Cohort 4",
+            code="C4",
+            tags=["t3"],
+            workspace_id="w3",
+            segment_type="s3",
+        )
         self.cohort_list.append(new_cohort)
         self.cohort_list.rebuild_cache()
 
@@ -188,5 +227,6 @@ class TestCohortList(unittest.TestCase):
         self.assertEqual(len(self.cohort_list.segment_type_dictionary["s2"]), 1)
         self.assertEqual(len(self.cohort_list.segment_type_dictionary["s3"]), 1)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

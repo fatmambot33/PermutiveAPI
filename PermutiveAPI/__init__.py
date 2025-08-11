@@ -15,15 +15,17 @@ from PermutiveAPI.Workspace import Workspace, WorkspaceList
 from PermutiveAPI.Utils import customJSONEncoder
 
 
-__all__ = ["Cohort",
-           "CohortList",
-           "Import",
-           "ImportList",
-           "Segment",
-           "SegmentList",
-           "Source",
-           "Workspace",
-           "WorkspaceList",
-           "Identity",
-           "Alias",
-           "customJSONEncoder"]
+__all__ = [
+    "Cohort",
+    "CohortList",
+    "Import",
+    "ImportList",
+    "Segment",
+    "SegmentList",
+    "Source",
+    "Workspace",
+    "WorkspaceList",
+    "Identity",
+    "Alias",
+    "customJSONEncoder",
+]

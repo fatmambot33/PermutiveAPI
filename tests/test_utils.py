@@ -52,18 +52,14 @@ class TestRequestHelper(unittest.TestCase):
 
     def test_to_payload_static_keeps_zero(self) -> None:
         """Retain zero values in the serialized payload."""
-        payload = RequestHelper.to_payload_static(
-            PayloadExample(zero=0, flag=True)
-        )
+        payload = RequestHelper.to_payload_static(PayloadExample(zero=0, flag=True))
         self.assertIn("zero", payload)
         self.assertEqual(payload["zero"], 0)
         self.assertNotIn("none_val", payload)
 
     def test_to_payload_static_keeps_false(self) -> None:
         """Retain ``False`` boolean values in the serialized payload."""
-        payload = RequestHelper.to_payload_static(
-            PayloadExample(zero=1, flag=False)
-        )
+        payload = RequestHelper.to_payload_static(PayloadExample(zero=1, flag=False))
         self.assertIn("flag", payload)
         self.assertIs(payload["flag"], False)
         self.assertNotIn("none_val", payload)
