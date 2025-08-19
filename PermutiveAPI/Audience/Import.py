@@ -154,21 +154,21 @@ class ImportList(List[Import], JSONSerializable):
             Import objects to initialize with. Defaults to None.
         """
         super().__init__(items_list if items_list is not None else [])
+
+        self._rebuild_cache()
+
+    def _rebuild_cache(self):
+        """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache: Dict[str, Import] = {}
         self._name_dictionary_cache: Dict[str, Import] = {}
+        self._code_dictionary_cache: Dict[str, Import] = {}
         self._identifier_dictionary_cache: DefaultDict[str, ImportList] = defaultdict(
             ImportList
         )
-        self.rebuild_cache()
-
-    def rebuild_cache(self):
-        """Rebuild all caches based on the current state of the list."""
-        self._id_dictionary_cache = {}
-        self._name_dictionary_cache = {}
-        self._identifier_dictionary_cache = defaultdict(ImportList)
         for _import in self:
             self._id_dictionary_cache[_import.id] = _import
             self._name_dictionary_cache[_import.name] = _import
+            self._code_dictionary_cache[_import.code] = _import
             for identifier in _import.identifiers:
                 self._identifier_dictionary_cache[identifier].append(_import)
 
@@ -182,7 +182,7 @@ class ImportList(List[Import], JSONSerializable):
             Mapping of import IDs to ``Import`` objects.
         """
         if not self._id_dictionary_cache:
-            self.rebuild_cache()
+            self._rebuild_cache()
         return self._id_dictionary_cache
 
     @property
@@ -195,8 +195,21 @@ class ImportList(List[Import], JSONSerializable):
             Mapping of import names to ``Import`` objects.
         """
         if not self._name_dictionary_cache:
-            self.rebuild_cache()
+            self._rebuild_cache()
         return self._name_dictionary_cache
+    
+    @property
+    def code_dictionary(self) -> Dict[str, Import]:
+        """Return a dictionary of imports indexed by their names.
+
+        Returns
+        -------
+        Dict[str, Import]
+            Mapping of import names to ``Import`` objects.
+        """
+        if not self._code_dictionary_cache:
+            self._rebuild_cache()
+        return self._code_dictionary_cache
 
     @property
     def identifier_dictionary(self) -> Dict[str, "ImportList"]:
@@ -208,5 +221,5 @@ class ImportList(List[Import], JSONSerializable):
             Mapping of identifiers to lists of imports.
         """
         if not self._identifier_dictionary_cache:
-            self.rebuild_cache()
+            self._rebuild_cache()
         return self._identifier_dictionary_cache
