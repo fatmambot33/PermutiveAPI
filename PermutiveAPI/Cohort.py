@@ -323,7 +323,7 @@ class CohortList(List[Cohort], JSONSerializable):
         """
         self._id_dictionary_cache = {cohort.id: cohort for cohort in self if cohort.id}
         self._code_dictionary_cache = {
-            cohort.code: cohort for cohort in self if cohort.code
+            str(cohort.code): cohort for cohort in self if cohort.code
         }
         self._name_dictionary_cache = {
             cohort.name: cohort for cohort in self if cohort.name
