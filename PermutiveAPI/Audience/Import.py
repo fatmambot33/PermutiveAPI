@@ -39,6 +39,8 @@ class Import(JSONSerializable):
         An optional inheritance of the import.
     segments : Optional[SegmentList]
         An optional list of segments in the import.
+    created_at : Optional[datetime]
+        The timestamp of the creation.
     updated_at : Optional[datetime]
         The timestamp of the last update.
     """
@@ -52,6 +54,9 @@ class Import(JSONSerializable):
     description: Optional[str] = None
     inheritance: Optional[str] = None
     segments: Optional["SegmentList"] = None
+    created_at: Optional[datetime] = field(
+        default_factory=lambda: datetime.now(tz=timezone.utc)
+    )
     updated_at: Optional[datetime] = field(
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )

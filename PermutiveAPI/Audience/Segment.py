@@ -33,6 +33,8 @@ class Segment(JSONSerializable):
         The cost per mille of the segment.
     categories : Optional[List[str]]
         Categories associated with the segment.
+    created_at : Optional[datetime]
+        When the segment was created.
     updated_at : Optional[datetime]
         When the segment was last updated.
     """
@@ -44,6 +46,9 @@ class Segment(JSONSerializable):
     description: Optional[str] = None
     cpm: Optional[float] = 0.0
     categories: Optional[List[str]] = None
+    created_at: Optional[datetime] = field(
+        default_factory=lambda: datetime.now(tz=timezone.utc)
+    )
     updated_at: Optional[datetime] = field(
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )
