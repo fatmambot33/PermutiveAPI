@@ -41,19 +41,34 @@ class Workspace(JSONSerializable):
         """
         return self.organisation_id == self.workspace_id
 
-    @property
-    def cohorts(self) -> CohortList:
+    def refresh_cohorts(self) -> CohortList:
+        """Re-fetch cohorts from the API and update the cache.
+
+        Returns
+        -------
+        CohortList
+            Updated list of cohorts.
+        """
+        self._cohort_cache = Cohort.list(
+            include_child_workspaces=False, api_key=self.api_key
+        )
+        return self._cohort_cache
+
+    def cohorts(self, force_refresh: bool = False) -> CohortList:
         """Retrieve a cached list of cohorts for the workspace.
+
+        Parameters
+        ----------
+        force_refresh : bool, optional
+            Re-fetch the cohort list if ``True``. Defaults to ``False``.
 
         Returns
         -------
         CohortList
             Cached list of cohorts.
         """
-        if not hasattr(self, "_cohort_cache"):
-            self._cohort_cache = Cohort.list(
-                include_child_workspaces=False, api_key=self.api_key
-            )
+        if force_refresh or not hasattr(self, "_cohort_cache"):
+            self.refresh_cohorts()
         return self._cohort_cache
 
     def list_cohorts(self, include_child_workspaces: bool = False) -> CohortList:
@@ -73,17 +88,32 @@ class Workspace(JSONSerializable):
             include_child_workspaces=include_child_workspaces, api_key=self.api_key
         )
 
-    @property
-    def imports(self) -> "ImportList":
+    def refresh_imports(self) -> "ImportList":
+        """Re-fetch imports from the API and update the cache.
+
+        Returns
+        -------
+        ImportList
+            Updated list of imports.
+        """
+        self._import_cache = Import.list(api_key=self.api_key)
+        return self._import_cache
+
+    def imports(self, force_refresh: bool = False) -> "ImportList":
         """Retrieve a cached list of imports for the workspace.
+
+        Parameters
+        ----------
+        force_refresh : bool, optional
+            Re-fetch the import list if ``True``. Defaults to ``False``.
 
         Returns
         -------
         ImportList
             Cached list of imports.
         """
-        if not hasattr(self, "_import_cache"):
-            self._import_cache = Import.list(api_key=self.api_key)
+        if force_refresh or not hasattr(self, "_import_cache"):
+            self.refresh_imports()
         return self._import_cache
 
     def list_segments(self, import_id: str) -> List[Segment]:
