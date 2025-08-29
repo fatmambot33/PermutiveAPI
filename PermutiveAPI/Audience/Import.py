@@ -119,6 +119,7 @@ class ImportList(List[Import], JSONSerializable):
     ) -> "ImportList":
         """Deserialize a list of imports from various JSON representations."""
         data_list = load_json_list(data, cls.__name__, "Import")
+
         # Special handling for 'source' which is a nested JSONSerializable
         def create_import(item):
             source_data = item.get("source")

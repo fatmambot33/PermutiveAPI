@@ -1,3 +1,6 @@
+import pytest
+from requests.exceptions import RequestException
+
 from PermutiveAPI.Identify.Alias import Alias
 from PermutiveAPI.Identify.Identity import Identity
 
@@ -18,3 +21,31 @@ def test_identity_serialization():
     assert json_data["aliases"][0]["id"] == "a1"
     identity2 = Identity.from_json({"user_id": "user123", "aliases": aliases})
     assert identity2 == identity
+
+
+def test_identify_raises_value_error(monkeypatch):
+    identity = Identity(user_id="user123", aliases=[])
+
+    def fake_post(api_key: str, url: str, data: dict):  # pragma: no cover - test stub
+        return None
+
+    monkeypatch.setattr(
+        "PermutiveAPI.Identify.Identity.RequestHelper.post_static", fake_post
+    )
+
+    with pytest.raises(ValueError):
+        identity.identify("api-key")
+
+
+def test_identify_propagates_exception(monkeypatch):
+    identity = Identity(user_id="user123", aliases=[])
+
+    def fake_post(api_key: str, url: str, data: dict):  # pragma: no cover - test stub
+        raise RequestException("boom")
+
+    monkeypatch.setattr(
+        "PermutiveAPI.Identify.Identity.RequestHelper.post_static", fake_post
+    )
+
+    with pytest.raises(RequestException):
+        identity.identify("api-key")

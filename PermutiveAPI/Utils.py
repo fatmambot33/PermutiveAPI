@@ -611,15 +611,17 @@ def load_json_list(
 
     if isinstance(data, (str, Path)):
         try:
-            content = data.read_text(encoding="utf-8") if isinstance(data, Path) else data
+            content = (
+                data.read_text(encoding="utf-8") if isinstance(data, Path) else data
+            )
             loaded = json.loads(content)
         except Exception as exc:  # pragma: no cover - error path
             raise TypeError(f"Failed to parse JSON from input: {exc}")
         if not isinstance(loaded, list):
             raise TypeError(
-                (
-                    "JSON content from {kind} did not decode to a list."
-                ).format(kind=type(data).__name__)
+                ("JSON content from {kind} did not decode to a list.").format(
+                    kind=type(data).__name__
+                )
             )
         data = loaded
 
