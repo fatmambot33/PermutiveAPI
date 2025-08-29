@@ -107,8 +107,12 @@ class Import(JSONSerializable):
         return ImportList.from_json(imports["items"])
 
 
+
 class ImportList(List[Import], JSONSerializable):
-    """A class representing a list of Import objects with additional functionality for caching and serialization."""
+    """Manage a list of Import objects.
+
+    Provide caching for quick lookup and JSON (de)serialization helpers.
+    """
 
     @classmethod
     def from_json(
@@ -118,7 +122,10 @@ class ImportList(List[Import], JSONSerializable):
         """Deserialize a list of imports from various JSON representations."""
         if isinstance(data, dict):
             raise TypeError(
-                f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Import class for single objects."
+                (
+                    "Cannot create a {name} from a dictionary. "
+                    "Use from_json on the Import class for single objects."
+                ).format(name=cls.__name__)
             )
         if isinstance(data, (str, Path)):
             try:
@@ -129,7 +136,9 @@ class ImportList(List[Import], JSONSerializable):
                 loaded_data = json.loads(content)
                 if not isinstance(loaded_data, list):
                     raise TypeError(
-                        f"JSON content from {type(data).__name__} did not decode to a list."
+                        (
+                            "JSON content from {kind} did not decode to a list."
+                        ).format(kind=type(data).__name__)
                     )
                 data = loaded_data
             except Exception as e:
@@ -147,7 +156,10 @@ class ImportList(List[Import], JSONSerializable):
             return cls([create_import(item) for item in data])
 
         raise TypeError(
-            f"`from_json()` expected a list of dicts, JSON string, or Path, but got {type(data).__name__}"
+            (
+                "`from_json()` expected a list of dicts, JSON string, or Path, "
+                "but got {kind}"
+            ).format(kind=type(data).__name__)
         )
 
     def __init__(self, items_list: Optional[List[Import]] = None):
@@ -202,15 +214,15 @@ class ImportList(List[Import], JSONSerializable):
         if not self._name_dictionary_cache:
             self._rebuild_cache()
         return self._name_dictionary_cache
-    
+
     @property
     def code_dictionary(self) -> Dict[str, Import]:
-        """Return a dictionary of imports indexed by their names.
+        """Return a dictionary of imports indexed by their codes.
 
         Returns
         -------
         Dict[str, Import]
-            Mapping of import names to ``Import`` objects.
+            Mapping of import codes to ``Import`` objects.
         """
         if not self._code_dictionary_cache:
             self._rebuild_cache()

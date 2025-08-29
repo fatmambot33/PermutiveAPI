@@ -273,7 +273,10 @@ class CohortList(List[Cohort], JSONSerializable):
         """Deserialize a list of cohorts from various JSON representations."""
         if isinstance(data, dict):
             raise TypeError(
-                f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Cohort class for single objects."
+                (
+                    "Cannot create a {name} from a dictionary. "
+                    "Use from_json on the Cohort class for single objects."
+                ).format(name=cls.__name__)
             )
         if isinstance(data, (str, Path)):
             try:
@@ -284,7 +287,9 @@ class CohortList(List[Cohort], JSONSerializable):
                 loaded_data = json.loads(content)
                 if not isinstance(loaded_data, list):
                     raise TypeError(
-                        f"JSON content from {type(data).__name__} did not decode to a list."
+                        (
+                            "JSON content from {kind} did not decode to a list."
+                        ).format(kind=type(data).__name__)
                     )
                 data = loaded_data
             except Exception as e:
@@ -294,7 +299,10 @@ class CohortList(List[Cohort], JSONSerializable):
             return cls([Cohort.from_json(item) for item in data])
 
         raise TypeError(
-            f"`from_json()` expected a list of dicts, JSON string, or Path, but got {type(data).__name__}"
+            (
+                "`from_json()` expected a list of dicts, JSON string, or Path, "
+                "but got {kind}"
+            ).format(kind=type(data).__name__)
         )
 
     def __init__(self, items_list: Optional[List[Cohort]] = None):
