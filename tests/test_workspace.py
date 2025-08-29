@@ -81,7 +81,9 @@ def test_workspace_refresh(monkeypatch):
     monkeypatch.setattr(
         Cohort,
         "list",
-        lambda include_child_workspaces=False, api_key="": CohortList.from_json(cohort_data1),
+        lambda include_child_workspaces=False, api_key="": CohortList.from_json(
+            cohort_data1
+        ),
     )
     monkeypatch.setattr(
         Import,
@@ -95,7 +97,9 @@ def test_workspace_refresh(monkeypatch):
     monkeypatch.setattr(
         Cohort,
         "list",
-        lambda include_child_workspaces=False, api_key="": CohortList.from_json(cohort_data2),
+        lambda include_child_workspaces=False, api_key="": CohortList.from_json(
+            cohort_data2
+        ),
     )
     monkeypatch.setattr(
         Import,
