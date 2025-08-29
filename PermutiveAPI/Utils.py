@@ -8,7 +8,18 @@ import json
 import pathlib
 from glob import glob
 import ast
-from typing import Dict, List, Optional, Any, Union, Type, TypeVar, Callable, overload
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Any,
+    Union,
+    Type,
+    TypeVar,
+    Callable,
+    overload,
+    Tuple,
+)
 import logging
 import os
 import urllib.parse
@@ -420,7 +431,7 @@ class RequestHelper:
         raise e
 
 
-def check_filepath(filepath: str):
+def check_filepath(filepath: str) -> None:
     """Check if the directory of a filepath exists and create it if needed.
 
     Parameters
@@ -435,7 +446,7 @@ def check_filepath(filepath: str):
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
 
-def split_filepath(fullfilepath):
+def split_filepath(fullfilepath: str) -> Tuple[str, str, str]:
     """Split a filepath into its path, name, and extension.
 
     Parameters
@@ -478,7 +489,10 @@ def file_exists(fullfilepath: str) -> bool:
     return len(glob(pattern_with_suffix) + glob(pattern_exact)) > 0
 
 
-def chunk_list(lst, n):
+T_co = TypeVar("T_co")
+
+
+def chunk_list(lst: List[T_co], n: int) -> List[List[T_co]]:
     """Split a list into chunks of a specified size.
 
     Parameters
@@ -496,7 +510,7 @@ def chunk_list(lst, n):
     return [lst[i : i + n] for i in range(0, len(lst), n)]
 
 
-def convert_list(val):
+def convert_list(val: Union[str, List[Any]]) -> List[Any]:
     """Convert a string representation of a list into a list.
 
     Parameters
@@ -515,7 +529,7 @@ def convert_list(val):
         return val
 
 
-def compare_list(list1: List[str], list2: List[str]):
+def compare_list(list1: List[str], list2: List[str]) -> bool:
     """Compare two lists for equality, ignoring order.
 
     Parameters
