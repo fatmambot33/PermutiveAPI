@@ -287,9 +287,9 @@ class CohortList(List[Cohort], JSONSerializable):
                 loaded_data = json.loads(content)
                 if not isinstance(loaded_data, list):
                     raise TypeError(
-                        (
-                            "JSON content from {kind} did not decode to a list."
-                        ).format(kind=type(data).__name__)
+                        ("JSON content from {kind} did not decode to a list.").format(
+                            kind=type(data).__name__
+                        )
                     )
                 data = loaded_data
             except Exception as e:

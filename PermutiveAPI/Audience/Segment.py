@@ -46,12 +46,25 @@ class Segment(JSONSerializable):
     description: Optional[str] = None
     cpm: Optional[float] = 0.0
     categories: Optional[List[str]] = None
-    created_at: Optional[datetime] = field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
-    updated_at: Optional[datetime] = field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    def __post_init__(self) -> None:
+        """Normalize timestamps so they are consistent.
+
+        If one of ``created_at`` or ``updated_at`` is missing, copy the other
+        value. If both are missing, initialize both to the same current
+        UTC timestamp. This avoids microsecond-level drift between the two
+        fields and ensures deterministic equality/serialization.
+        """
+        if self.created_at is None and self.updated_at is None:
+            now = datetime.now(tz=timezone.utc)
+            self.created_at = now
+            self.updated_at = now
+        elif self.created_at is None:
+            self.created_at = self.updated_at
+        elif self.updated_at is None:
+            self.updated_at = self.created_at
 
     def create(self, api_key: str):
         """Create a new segment using the provided private key.
