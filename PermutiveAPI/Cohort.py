@@ -1,12 +1,11 @@
 """Cohort management utilities for the Permutive API."""
 
-import json
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Type
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from PermutiveAPI.Utils import RequestHelper, JSONSerializable
+from PermutiveAPI.Utils import RequestHelper, JSONSerializable, load_json_list
 from collections import defaultdict
 
 _API_VERSION = "v2"
@@ -271,39 +270,8 @@ class CohortList(List[Cohort], JSONSerializable):
         data: Union[dict, List[dict], str, Path],
     ) -> "CohortList":
         """Deserialize a list of cohorts from various JSON representations."""
-        if isinstance(data, dict):
-            raise TypeError(
-                (
-                    "Cannot create a {name} from a dictionary. "
-                    "Use from_json on the Cohort class for single objects."
-                ).format(name=cls.__name__)
-            )
-        if isinstance(data, (str, Path)):
-            try:
-                if isinstance(data, Path):
-                    content = data.read_text(encoding="utf-8")
-                else:
-                    content = data
-                loaded_data = json.loads(content)
-                if not isinstance(loaded_data, list):
-                    raise TypeError(
-                        ("JSON content from {kind} did not decode to a list.").format(
-                            kind=type(data).__name__
-                        )
-                    )
-                data = loaded_data
-            except Exception as e:
-                raise TypeError(f"Failed to parse JSON from input: {e}")
-
-        if isinstance(data, list):
-            return cls([Cohort.from_json(item) for item in data])
-
-        raise TypeError(
-            (
-                "`from_json()` expected a list of dicts, JSON string, or Path, "
-                "but got {kind}"
-            ).format(kind=type(data).__name__)
-        )
+        data_list = load_json_list(data, cls.__name__, "Cohort")
+        return cls([Cohort.from_json(item) for item in data_list])
 
     def __init__(self, items_list: Optional[List[Cohort]] = None):
         """Initialize the CohortList.

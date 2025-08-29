@@ -1,3 +1,4 @@
+import json
 from PermutiveAPI.Audience.Source import Source
 from PermutiveAPI.Audience.Segment import Segment, SegmentList
 
@@ -23,12 +24,17 @@ def test_segment_serialization():
     assert recreated == segment
 
 
-def test_segment_list_caches():
+def test_segment_list_caches(tmp_path):
     data = [
         {"code": "c1", "name": "Segment1", "import_id": "imp", "id": "1"},
         {"code": "c2", "name": "Segment2", "import_id": "imp", "id": "2"},
     ]
-    segments = SegmentList.from_json(data)
-    assert segments.id_dictionary["1"].name == "Segment1"
-    assert segments.name_dictionary["Segment2"].id == "2"
-    assert segments.code_dictionary["c1"].id == "1"
+    json_str = json.dumps(data)
+    path = tmp_path / "segments.json"
+    path.write_text(json_str)
+
+    for source in (data, json_str, path):
+        segments = SegmentList.from_json(source)
+        assert segments.id_dictionary["1"].name == "Segment1"
+        assert segments.name_dictionary["Segment2"].id == "2"
+        assert segments.code_dictionary["c1"].id == "1"

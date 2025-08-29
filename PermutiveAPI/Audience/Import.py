@@ -1,6 +1,5 @@
 """Import management for the Permutive API."""
 
-import json
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, DefaultDict, TYPE_CHECKING, Type, Union
@@ -10,7 +9,7 @@ if TYPE_CHECKING:
     from PermutiveAPI.Audience.Segment import SegmentList
 from datetime import datetime, timezone
 from collections import defaultdict
-from PermutiveAPI.Utils import RequestHelper, JSONSerializable
+from PermutiveAPI.Utils import RequestHelper, JSONSerializable, load_json_list
 from PermutiveAPI.Audience import _API_ENDPOINT
 from PermutiveAPI.Audience.Source import Source
 
@@ -119,47 +118,16 @@ class ImportList(List[Import], JSONSerializable):
         data: Union[dict, List[dict], str, Path],
     ) -> "ImportList":
         """Deserialize a list of imports from various JSON representations."""
-        if isinstance(data, dict):
-            raise TypeError(
-                (
-                    "Cannot create a {name} from a dictionary. "
-                    "Use from_json on the Import class for single objects."
-                ).format(name=cls.__name__)
-            )
-        if isinstance(data, (str, Path)):
-            try:
-                if isinstance(data, Path):
-                    content = data.read_text(encoding="utf-8")
-                else:
-                    content = data
-                loaded_data = json.loads(content)
-                if not isinstance(loaded_data, list):
-                    raise TypeError(
-                        ("JSON content from {kind} did not decode to a list.").format(
-                            kind=type(data).__name__
-                        )
-                    )
-                data = loaded_data
-            except Exception as e:
-                raise TypeError(f"Failed to parse JSON from input: {e}")
+        data_list = load_json_list(data, cls.__name__, "Import")
+        # Special handling for 'source' which is a nested JSONSerializable
+        def create_import(item):
+            source_data = item.get("source")
+            if source_data:
+                source_instance = Source.from_json(source_data)
+                item["source"] = source_instance
+            return Import.from_json(item)
 
-        if isinstance(data, list):
-            # Special handling for 'source' which is a nested JSONSerializable
-            def create_import(item):
-                source_data = item.get("source")
-                if source_data:
-                    source_instance = Source.from_json(source_data)
-                    item["source"] = source_instance
-                return Import.from_json(item)
-
-            return cls([create_import(item) for item in data])
-
-        raise TypeError(
-            (
-                "`from_json()` expected a list of dicts, JSON string, or Path, "
-                "but got {kind}"
-            ).format(kind=type(data).__name__)
-        )
+        return cls([create_import(item) for item in data_list])
 
     def __init__(self, items_list: Optional[List[Import]] = None):
         """Initialize the ImportList with optional items.

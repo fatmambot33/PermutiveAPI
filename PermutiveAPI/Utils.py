@@ -557,6 +557,69 @@ def merge_list(lst1: List, lst2: Optional[Union[int, str, List]] = None) -> List
     return lst
 
 
+def load_json_list(
+    data: Union[dict, List[dict], str, Path],
+    list_name: str,
+    item_name: Optional[str] = None,
+) -> List[dict]:
+    """Load a list of dictionaries from various JSON representations.
+
+    Parameters
+    ----------
+    data : Union[dict, List[dict], str, Path]
+        The JSON representation to load.
+    list_name : str
+        Name of the list class for error messages.
+    item_name : Optional[str], optional
+        Name of the item class for error messages. Defaults to the list name
+        with ``'List'`` trimmed.
+
+    Returns
+    -------
+    List[dict]
+        The parsed list of dictionaries.
+
+    Raises
+    ------
+    TypeError
+        If ``data`` cannot be converted to a list of dictionaries.
+    """
+    if item_name is None and list_name.endswith("List"):
+        item_name = list_name[:-4]
+
+    if isinstance(data, dict):
+        raise TypeError(
+            (
+                "Cannot create a {list_name} from a dictionary. "
+                "Use from_json on the {item_name} class for single objects."
+            ).format(list_name=list_name, item_name=item_name or "item")
+        )
+
+    if isinstance(data, (str, Path)):
+        try:
+            content = data.read_text(encoding="utf-8") if isinstance(data, Path) else data
+            loaded = json.loads(content)
+        except Exception as exc:  # pragma: no cover - error path
+            raise TypeError(f"Failed to parse JSON from input: {exc}")
+        if not isinstance(loaded, list):
+            raise TypeError(
+                (
+                    "JSON content from {kind} did not decode to a list."
+                ).format(kind=type(data).__name__)
+            )
+        data = loaded
+
+    if isinstance(data, list):
+        return data
+
+    raise TypeError(
+        (
+            "`from_json()` expected a list of dicts, JSON string, or Path, "
+            "but got {kind}"
+        ).format(kind=type(data).__name__)
+    )
+
+
 T = TypeVar("T", bound="JSONSerializable")
 
 
