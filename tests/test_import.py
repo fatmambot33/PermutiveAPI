@@ -1,8 +1,9 @@
+import json
 from PermutiveAPI.Audience.Import import ImportList
 from PermutiveAPI.Audience.Source import Source
 
 
-def test_import_list_from_json_and_caches():
+def test_import_list_from_json_and_caches(tmp_path):
     data = [
         {
             "id": "1",
@@ -21,8 +22,13 @@ def test_import_list_from_json_and_caches():
             "source": {"id": "s2", "state": {}, "type": "B"},
         },
     ]
-    imports = ImportList.from_json(data)
-    assert imports.id_dictionary["1"].name == "Import1"
-    assert imports.name_dictionary["Import2"].id == "2"
-    assert imports.identifier_dictionary["b"][0].id == "1"
-    assert isinstance(imports[0].source, Source)
+    json_str = json.dumps(data)
+    path = tmp_path / "imports.json"
+    path.write_text(json_str)
+
+    for source in (data, json_str, path):
+        imports = ImportList.from_json(source)
+        assert imports.id_dictionary["1"].name == "Import1"
+        assert imports.name_dictionary["Import2"].id == "2"
+        assert imports.identifier_dictionary["b"][0].id == "1"
+        assert isinstance(imports[0].source, Source)

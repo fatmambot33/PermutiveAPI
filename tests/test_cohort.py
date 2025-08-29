@@ -1,3 +1,4 @@
+import json
 from PermutiveAPI.Cohort import Cohort, CohortList
 
 
@@ -27,7 +28,7 @@ def test_cohort_serialization():
     assert recreated == cohort
 
 
-def test_cohort_list_caches():
+def test_cohort_list_caches(tmp_path):
     data = [
         {
             "name": "C1",
@@ -46,10 +47,15 @@ def test_cohort_list_caches():
             "workspace_id": "w2",
         },
     ]
-    cohorts = CohortList.from_json(data)
-    assert cohorts.id_dictionary["1"].name == "C1"
-    assert cohorts.code_dictionary["c2"].id == "2"
-    assert cohorts.name_dictionary["C2"].code == "c2"
-    assert cohorts.tag_dictionary["t2"][0].id == "2"
-    assert cohorts.segment_type_dictionary["s1"][0].id == "1"
-    assert cohorts.workspace_dictionary["w1"][0].name == "C1"
+    json_str = json.dumps(data)
+    path = tmp_path / "cohorts.json"
+    path.write_text(json_str)
+
+    for source in (data, json_str, path):
+        cohorts = CohortList.from_json(source)
+        assert cohorts.id_dictionary["1"].name == "C1"
+        assert cohorts.code_dictionary["c2"].id == "2"
+        assert cohorts.name_dictionary["C2"].code == "c2"
+        assert cohorts.tag_dictionary["t2"][0].id == "2"
+        assert cohorts.segment_type_dictionary["s1"][0].id == "1"
+        assert cohorts.workspace_dictionary["w1"][0].name == "C1"

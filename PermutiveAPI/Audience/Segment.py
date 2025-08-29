@@ -1,6 +1,5 @@
 """Segment management for the Permutive API."""
 
-import json
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Type, Union
@@ -8,7 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from PermutiveAPI.Audience import _API_ENDPOINT
-from PermutiveAPI.Utils import RequestHelper, JSONSerializable
+from PermutiveAPI.Utils import RequestHelper, JSONSerializable, load_json_list
 
 _API_PAYLOAD = ["name", "code", "description", "cpm", "categories"]
 
@@ -263,31 +262,8 @@ class SegmentList(List[Segment], JSONSerializable):
         data: Union[dict, List[dict], str, Path],
     ) -> "SegmentList":
         """Deserialize a list of segments from various JSON representations."""
-        if isinstance(data, dict):
-            raise TypeError(
-                f"Cannot create a {cls.__name__} from a dictionary. Use from_json on the Segment class for single objects."
-            )
-        if isinstance(data, (str, Path)):
-            try:
-                if isinstance(data, Path):
-                    content = data.read_text(encoding="utf-8")
-                else:
-                    content = data
-                loaded_data = json.loads(content)
-                if not isinstance(loaded_data, list):
-                    raise TypeError(
-                        f"JSON content from {type(data).__name__} did not decode to a list."
-                    )
-                data = loaded_data
-            except Exception as e:
-                raise TypeError(f"Failed to parse JSON from input: {e}")
-
-        if isinstance(data, list):
-            return cls([Segment.from_json(item) for item in data])
-
-        raise TypeError(
-            f"`from_json()` expected a list of dicts, JSON string, or Path, but got {type(data).__name__}"
-        )
+        data_list = load_json_list(data, cls.__name__, "Segment")
+        return cls([Segment.from_json(item) for item in data_list])
 
     def __init__(self, items_list: Optional[List[Segment]] = None):
         """Initialize the SegmentList with an optional list of Segment objects.

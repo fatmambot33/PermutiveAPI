@@ -1,3 +1,4 @@
+import json
 from PermutiveAPI.Workspace import Workspace, WorkspaceList
 from PermutiveAPI.Cohort import Cohort, CohortList
 from PermutiveAPI.Audience.Import import Import, ImportList
@@ -11,7 +12,7 @@ def test_workspace_serialization_and_properties():
     assert Workspace.from_json(ws.to_json()) == ws
 
 
-def test_workspace_list_caches_and_master():
+def test_workspace_list_caches_and_master(tmp_path):
     data = [
         {
             "name": "Main",
@@ -26,6 +27,7 @@ def test_workspace_list_caches_and_master():
             "api_key": "k2",
         },
     ]
+
     workspaces = WorkspaceList.from_json(data)
     assert workspaces.master_workspace.name == "Main"
     assert workspaces.id_dictionary["child"].name == "Child"
