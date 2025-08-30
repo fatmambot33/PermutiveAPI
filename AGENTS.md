@@ -5,8 +5,9 @@ This repository uses a small set of quality gates to keep the codebase healthy.
 ## Commit Checklist
 Before committing, ensure all of the following pass:
 - `pydocstyle PermutiveAPI`
+- `black --check .`
 - `pyright PermutiveAPI`
-- `pytest -q`
+- `pytest -q --cov=PermutiveAPI --cov-report=term-missing --cov-fail-under=70`
 
 ## Directory Layout
 - Production code lives in `PermutiveAPI/`.
