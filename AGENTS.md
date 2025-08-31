@@ -1,20 +1,16 @@
-# AGENTS
+# AGENTS.md
 
-This repository uses a small set of quality gates to keep the codebase healthy.
+These instructions apply to any automated agent contributing to this repository.
 
-## Commit Checklist
-Before committing, ensure all of the following pass:
-- `pydocstyle PermutiveAPI`
-- `black --check .`
-- `pyright PermutiveAPI`
-- `pytest -q --cov=PermutiveAPI --cov-report=term-missing --cov-fail-under=70`
+## 1. Code Style
 
-## Directory Layout
-- Production code lives in `PermutiveAPI/`.
-- Tests live in `tests/`.
+- Use standard PEP 8 formatting for all Python code.
+- Write commit messages in the imperative mood (e.g., "Add feature" not "Added feature").
+- Keep the implementation Pythonic and maintainable.
 
-## Style Notes
-- Use **NumPy-style** docstrings following [PEP 257](https://peps.python.org/pep-0257/) conventions.
+## 2. Docstring Style
+
+- Use **NumPy-style** docstrings following [PEP 257](httpshttps://peps.python.org/pep-0257/) conventions.
 - **Do not** use `:param` / `:type` syntax (reST/Sphinx style) or Google-style `Args`.
 - Always include type hints in function signatures and **do not** duplicate them in docstrings.
 - Begin docstrings with a **short, one-line summary**, followed by a blank line and an optional extended description.
@@ -24,53 +20,62 @@ Before committing, ensure all of the following pass:
   - `Raises`
   - `Examples`
 - Document all public classes, methods, and functions.
+- **For classes, the main docstring should include a `Methods` section summarizing each public method and its one-line description.**
 - For optional parameters, note the default value in the description.
 - Use present tense and active voice (“Return…”, “Fetch…”).
-- Keep the implementation Pythonic and maintainable.
-- Write commit messages in the imperative mood.
 
-### Function Example
-```python
-def connect(host: str, port: int = 5432) -> bool:
-    """
-    Connect to a database server.
+## 3. Code Quality and Testing
 
-    Parameters
-    ----------
-    host : str
-        Hostname or IP address of the server.
-    port : int, optional
-        Port number to connect to. Defaults to 5432.
+Before running tests, install the development dependencies:
 
-    Returns
-    -------
-    bool
-        True if the connection is successful, False otherwise.
-
-    Raises
-    ------
-    ConnectionError
-        If the server is unreachable.
-
-    Examples
-    --------
-    >>> connect("localhost")
-    True
-    """
+```bash
+pip install -r requirements-dev.txt
 ```
-### Class Example
-```python
-class Import:
-    """
-    Represents an Import in the system.
 
-    Attributes
-    ----------
-    id : str
-        Unique identifier of the import.
-    name : str
-        Display name of the import.
-    active : bool
-        Whether the import is active.
-    """
+To ensure your changes will pass the automated checks in our Continuous Integration (CI) pipeline, run the following commands locally before committing. All checks must pass.
+
+**Style Checks:**
+```bash
+pydocstyle PermutiveAPI
+black --check .
 ```
+
+**Static Type Analysis:**
+```bash
+pyright PermutiveAPI
+```
+
+**Unit Tests and Coverage:**
+```bash
+pytest -q --cov=PermutiveAPI --cov-report=term-missing --cov-fail-under=70
+```
+
+## 4. Directory Layout
+
+- Production code lives in `PermutiveAPI/`.
+- Tests live in `tests/`.
+- Keep imports relative within the package (e.g., `from PermutiveAPI...`).
+
+## 5. Pull Request Messages
+
+Each pull request should include:
+
+1. **Summary** – brief description of the change.
+2. **Testing** – commands run and confirmation that the tests passed.
+
+Example PR body:
+
+```
+### Summary
+- add new helper to utils.list
+- expand tests for list chunking
+
+### Testing
+- `pytest` (all tests passed)
+```
+
+## 6. General Guidelines
+
+- Avoid pushing large data files to the repository.
+- Prefer small, focused commits over sweeping changes.
+- Update or add tests whenever you modify functionality.
