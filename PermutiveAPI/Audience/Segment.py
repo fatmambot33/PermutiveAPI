@@ -54,6 +54,8 @@ class Segment(JSONSerializable):
     """
 
     code: str
+    _request_helper = RequestHelper
+
     name: str
     import_id: str
     id: Optional[str] = None
@@ -95,7 +97,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::create_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments"
-        response = RequestHelper.post_static(
+        response = Segment._request_helper.post_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(
@@ -124,7 +126,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::update_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
-        response = RequestHelper.patch_static(
+        response = Segment._request_helper.patch_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(
@@ -154,7 +156,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::delete_segment::{self.import_id}::{self.id}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
-        response = RequestHelper.delete_static(api_key=api_key, url=url)
+        response = Segment._request_helper.delete_static(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         return response.status_code == 204
@@ -184,7 +186,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::get_segment_by_code::{import_id}::{segment_code}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/code/{segment_code}"
-        response = RequestHelper.get_static(url=url, api_key=api_key)
+        response = Segment._request_helper.get_static(url=url, api_key=api_key)
         if not response:
             raise ValueError("Unable to get_segment")
         return Segment.from_json(response.json())
@@ -214,7 +216,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/{segment_id}"
-        response = RequestHelper.get_static(url=url, api_key=api_key)
+        response = Segment._request_helper.get_static(url=url, api_key=api_key)
         if not response:
             raise ValueError("Unable to get_by_id")
         return Segment.from_json(response.json())
@@ -251,7 +253,7 @@ class Segment(JSONSerializable):
             url = (
                 f"{base_url}?pagination_token={next_token}" if next_token else base_url
             )
-            response = RequestHelper.get_static(api_key=api_key, url=url)
+            response = Segment._request_helper.get_static(api_key=api_key, url=url)
             if response is None:
                 raise ValueError("Response is None")
             data = response.json()

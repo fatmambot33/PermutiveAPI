@@ -51,6 +51,8 @@ class Import(JSONSerializable):
         Retrieve a list of all imports.
     """
 
+    _request_helper = RequestHelper
+
     id: str
     name: str
     code: str
@@ -85,13 +87,13 @@ class Import(JSONSerializable):
         """
         logging.debug(f"AudienceAPI::get_import::{id}")
         url = f"{_API_ENDPOINT}/{id}"
-        response = RequestHelper.get_static(url=url, api_key=api_key)
+        response = Import._request_helper.get_static(url=url, api_key=api_key)
         if not response:
             raise ValueError("Unable to get_import")
         return cls.from_json(response.json())
 
-    @classmethod
-    def list(cls, api_key: str) -> "ImportList":
+    @staticmethod
+    def list(api_key: str) -> "ImportList":
         """Retrieve a list of all imports.
 
         Parameters
@@ -106,7 +108,7 @@ class Import(JSONSerializable):
         """
         logging.debug(f"AudienceAPI::list_imports")
         url = _API_ENDPOINT
-        response = RequestHelper.get_static(api_key=api_key, url=url)
+        response = Import._request_helper.get_static(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         imports = response.json()

@@ -1,9 +1,7 @@
 import json
 import pytest
 from unittest.mock import Mock, patch
-import PermutiveAPI.Cohort
 from PermutiveAPI.Cohort import Cohort, CohortList
-from PermutiveAPI.Utils import RequestHelper
 
 
 def test_cohort_serialization():
@@ -65,7 +63,7 @@ def test_cohort_list_caches(tmp_path):
         assert cohorts.workspace_dictionary["w1"][0].name == "C1"
 
 
-@patch("PermutiveAPI.Cohort.RequestHelper")
+@patch.object(Cohort, "_request_helper")
 def test_cohort_create(mock_request_helper):
     cohort = Cohort(name="New Cohort", query={"type": "test"})
     mock_response = Mock()
@@ -83,7 +81,7 @@ def test_cohort_create(mock_request_helper):
     mock_request_helper.post_static.assert_called_once()
 
 
-@patch("PermutiveAPI.Cohort.RequestHelper")
+@patch.object(Cohort, "_request_helper")
 def test_cohort_create_with_id_warning(mock_request_helper, caplog):
     cohort = Cohort(name="New Cohort", query={"type": "test"}, id="existing-id")
     mock_response = Mock()
@@ -98,7 +96,7 @@ def test_cohort_create_with_id_warning(mock_request_helper, caplog):
     assert "id is specified" in caplog.text
 
 
-@patch("PermutiveAPI.Cohort.RequestHelper")
+@patch.object(Cohort, "_request_helper")
 def test_cohort_update(mock_request_helper):
     cohort = Cohort(name="C1", id="1")
     mock_response = Mock()
@@ -111,7 +109,7 @@ def test_cohort_update(mock_request_helper):
     mock_request_helper.patch_static.assert_called_once()
 
 
-@patch("PermutiveAPI.Cohort.RequestHelper")
+@patch.object(Cohort, "_request_helper")
 def test_cohort_delete(mock_request_helper):
     cohort = Cohort(name="C1", id="1")
     mock_request_helper.delete_static.return_value = Mock(status_code=204)
@@ -121,7 +119,7 @@ def test_cohort_delete(mock_request_helper):
     mock_request_helper.delete_static.assert_called_once()
 
 
-@patch("PermutiveAPI.Cohort.RequestHelper")
+@patch.object(Cohort, "_request_helper")
 def test_cohort_get_by_id(mock_request_helper):
     mock_response = Mock()
     mock_response.json.return_value = {"id": "1", "name": "Test Cohort"}
@@ -133,7 +131,7 @@ def test_cohort_get_by_id(mock_request_helper):
     mock_request_helper.get_static.assert_called_once()
 
 
-@patch("PermutiveAPI.Cohort.Cohort.list")
+@patch.object(Cohort, "list")
 def test_get_by_name(mock_list):
     cohorts_data = [
         {"name": "C1", "id": "1"},
@@ -145,7 +143,7 @@ def test_get_by_name(mock_list):
     assert result.id == "1"
 
 
-@patch("PermutiveAPI.Cohort.Cohort.list")
+@patch.object(Cohort, "list")
 def test_get_by_code(mock_list):
     cohorts_data = [
         {"name": "C1", "id": "1", "code": "101"},
@@ -157,7 +155,7 @@ def test_get_by_code(mock_list):
     assert result.id == "1"
 
 
-@patch("PermutiveAPI.Cohort.RequestHelper")
+@patch.object(Cohort, "_request_helper")
 def test_cohort_list_with_children(mock_request_helper):
     mock_response = Mock()
     mock_response.json.return_value = [{"id": "1", "name": "Child Cohort"}]

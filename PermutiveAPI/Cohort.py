@@ -68,6 +68,8 @@ class Cohort(JSONSerializable):
         Fetch all cohorts from the API.
     """
 
+    _request_helper = RequestHelper
+
     name: str
     id: Optional[str] = None
     code: Optional[str] = None
@@ -110,7 +112,7 @@ class Cohort(JSONSerializable):
         if self.id:
             logging.warning("id is specified")
         url = f"{_API_ENDPOINT}"
-        response = RequestHelper.post_static(
+        response = Cohort._request_helper.post_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
@@ -144,7 +146,7 @@ class Cohort(JSONSerializable):
             raise ValueError("Cohort ID must be specified for update.")
         url = f"{_API_ENDPOINT}{self.id}"
 
-        response = RequestHelper.patch_static(
+        response = Cohort._request_helper.patch_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
@@ -172,7 +174,7 @@ class Cohort(JSONSerializable):
         if not self.id:
             raise ValueError("Cohort ID must be specified for deletion.")
         url = f"{_API_ENDPOINT}{self.id}"
-        RequestHelper.delete_static(api_key=api_key, url=url)
+        Cohort._request_helper.delete_static(api_key=api_key, url=url)
 
     @staticmethod
     def get_by_id(id: str, api_key: str) -> "Cohort":
@@ -197,7 +199,7 @@ class Cohort(JSONSerializable):
         """
         logging.debug(f"CohortAPI::get::{id}")
         url = f"{_API_ENDPOINT}{id}"
-        response = RequestHelper.get_static(api_key=api_key, url=url)
+        response = Cohort._request_helper.get_static(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         return Cohort.from_json(response.json())
@@ -269,7 +271,7 @@ class Cohort(JSONSerializable):
         if include_child_workspaces:
             url += "?include-child-workspaces=true"
 
-        response = RequestHelper.get_static(api_key, url)
+        response = Cohort._request_helper.get_static(api_key, url)
         if response is None:
             raise ValueError("Response is None")
         return CohortList.from_json(response.json())

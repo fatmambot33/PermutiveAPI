@@ -1,10 +1,9 @@
 import json
 import pytest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from datetime import datetime, timezone
 from PermutiveAPI.Audience.Source import Source
 from PermutiveAPI.Audience.Segment import Segment, SegmentList
-from PermutiveAPI.Utils import RequestHelper
 
 
 def test_source_serialization():
@@ -60,13 +59,7 @@ def test_segment_post_init():
     assert segment3.updated_at == now
 
 
-@pytest.fixture
-def mock_request_helper(monkeypatch):
-    mock = Mock(spec=RequestHelper)
-    monkeypatch.setattr("PermutiveAPI.Audience.Segment.RequestHelper", mock)
-    return mock
-
-
+@patch.object(Segment, "_request_helper")
 def test_segment_create(mock_request_helper):
     segment = Segment(code="c1", name="Segment1", import_id="imp1")
     mock_response = Mock()
@@ -84,6 +77,7 @@ def test_segment_create(mock_request_helper):
     mock_request_helper.post_static.assert_called_once()
 
 
+@patch.object(Segment, "_request_helper")
 def test_segment_create_failure(mock_request_helper):
     segment = Segment(code="c1", name="Segment1", import_id="imp1")
     mock_request_helper.post_static.return_value = None
@@ -92,6 +86,7 @@ def test_segment_create_failure(mock_request_helper):
         segment.create(api_key="test-key")
 
 
+@patch.object(Segment, "_request_helper")
 def test_segment_update(mock_request_helper):
     segment = Segment(code="c1", name="Segment1", import_id="imp1", id="seg-id")
     mock_response = Mock()
@@ -109,6 +104,7 @@ def test_segment_update(mock_request_helper):
     mock_request_helper.patch_static.assert_called_once()
 
 
+@patch.object(Segment, "_request_helper")
 def test_segment_delete(mock_request_helper):
     segment = Segment(code="c1", name="Segment1", import_id="imp1", id="seg-id")
     mock_response = Mock()
@@ -121,6 +117,7 @@ def test_segment_delete(mock_request_helper):
     mock_request_helper.delete_static.assert_called_once()
 
 
+@patch.object(Segment, "_request_helper")
 def test_segment_get_by_id(mock_request_helper):
     mock_response = Mock()
     mock_response.json.return_value = {
@@ -139,6 +136,7 @@ def test_segment_get_by_id(mock_request_helper):
     mock_request_helper.get_static.assert_called_once()
 
 
+@patch.object(Segment, "_request_helper")
 def test_segment_list_pagination(mock_request_helper):
     # Mock first page response
     mock_response_page1 = Mock()

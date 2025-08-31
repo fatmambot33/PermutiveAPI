@@ -1,5 +1,6 @@
 import json
-from PermutiveAPI.Audience.Import import ImportList
+from unittest.mock import Mock, patch
+from PermutiveAPI.Audience.Import import Import, ImportList
 from PermutiveAPI.Audience.Source import Source
 
 
@@ -32,3 +33,27 @@ def test_import_list_from_json_and_caches(tmp_path):
         assert imports.name_dictionary["Import2"].id == "2"
         assert imports.identifier_dictionary["b"][0].id == "1"
         assert isinstance(imports[0].source, Source)
+
+
+@patch.object(Import, "_request_helper")
+def test_import_list_method(mock_request_helper):
+    mock_response = Mock()
+    mock_response.json.return_value = {
+        "items": [
+            {
+                "id": "1",
+                "name": "Import1",
+                "code": "c1",
+                "relation": "r1",
+                "identifiers": ["i1"],
+                "source": {"id": "s1", "state": {}, "type": "t1"},
+            }
+        ]
+    }
+    mock_request_helper.get_static.return_value = mock_response
+
+    imports = Import.list(api_key="test-key")
+
+    assert len(imports) == 1
+    assert imports[0].name == "Import1"
+    mock_request_helper.get_static.assert_called_once()
