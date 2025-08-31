@@ -714,7 +714,9 @@ class JSONSerializable(Generic[JSONOutput]):
     def to_json(self) -> JSONOutput:
         """Convert the object to a JSON-serializable format."""
 
-        def serialize_value(v) -> Union[Dict[str, Any], List[Any], str, int, float, None]:
+        def serialize_value(
+            v,
+        ) -> Union[Dict[str, Any], List[Any], str, int, float, None]:
             if isinstance(v, JSONSerializable):
                 return v.to_json()
             elif isinstance(v, list):
