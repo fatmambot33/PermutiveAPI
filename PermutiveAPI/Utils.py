@@ -489,7 +489,6 @@ def split_filepath(fullfilepath: str) -> Tuple[str, str, str]:
     return path, name, ext
 
 
-
 T_co = TypeVar("T_co")
 
 

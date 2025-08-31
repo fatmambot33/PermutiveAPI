@@ -7,11 +7,13 @@ from PermutiveAPI.Audience.Segment import Segment, SegmentList
 
 
 def test_source_serialization():
+    """Test that Source objects can be serialized and deserialized."""
     source = Source(id="s1", state={"active": True}, type="typeA")
     assert Source.from_json(source.to_json()) == source
 
 
 def test_segment_serialization():
+    """Test that Segment objects can be serialized and deserialized."""
     segment = Segment(code="c1", name="Segment1", import_id="imp1", id="1")
     json_data = segment.to_json()
     assert json_data["code"] == "c1"
@@ -28,6 +30,7 @@ def test_segment_serialization():
 
 
 def test_segment_list_caches(tmp_path):
+    """Test that SegmentList caches are populated correctly."""
     data = [
         {"code": "c1", "name": "Segment1", "import_id": "imp", "id": "1"},
         {"code": "c2", "name": "Segment2", "import_id": "imp", "id": "2"},
@@ -44,6 +47,7 @@ def test_segment_list_caches(tmp_path):
 
 
 def test_segment_post_init():
+    """Test the __post_init__ logic for timestamp normalization."""
     # Test case 1: both created_at and updated_at are None
     segment1 = Segment(code="c1", name="n1", import_id="i1")
     assert segment1.created_at is not None
@@ -61,6 +65,7 @@ def test_segment_post_init():
 
 @patch.object(Segment, "_request_helper")
 def test_segment_create(mock_request_helper):
+    """Test successful creation of a segment."""
     segment = Segment(code="c1", name="Segment1", import_id="imp1")
     mock_response = Mock()
     mock_response.json.return_value = {
@@ -79,6 +84,7 @@ def test_segment_create(mock_request_helper):
 
 @patch.object(Segment, "_request_helper")
 def test_segment_create_failure(mock_request_helper):
+    """Test that creating a segment raises an error on failure."""
     segment = Segment(code="c1", name="Segment1", import_id="imp1")
     mock_request_helper.post_static.return_value = None
 
@@ -88,6 +94,7 @@ def test_segment_create_failure(mock_request_helper):
 
 @patch.object(Segment, "_request_helper")
 def test_segment_update(mock_request_helper):
+    """Test successful update of a segment."""
     segment = Segment(code="c1", name="Segment1", import_id="imp1", id="seg-id")
     mock_response = Mock()
     mock_response.json.return_value = {
@@ -106,6 +113,7 @@ def test_segment_update(mock_request_helper):
 
 @patch.object(Segment, "_request_helper")
 def test_segment_delete(mock_request_helper):
+    """Test successful deletion of a segment."""
     segment = Segment(code="c1", name="Segment1", import_id="imp1", id="seg-id")
     mock_response = Mock()
     mock_response.status_code = 204
@@ -119,6 +127,7 @@ def test_segment_delete(mock_request_helper):
 
 @patch.object(Segment, "_request_helper")
 def test_segment_get_by_id(mock_request_helper):
+    """Test retrieving a segment by its ID."""
     mock_response = Mock()
     mock_response.json.return_value = {
         "id": "seg-id",
@@ -138,6 +147,7 @@ def test_segment_get_by_id(mock_request_helper):
 
 @patch.object(Segment, "_request_helper")
 def test_segment_list_pagination(mock_request_helper):
+    """Test that the list method correctly handles pagination."""
     # Mock first page response
     mock_response_page1 = Mock()
     mock_response_page1.json.return_value = {
@@ -164,6 +174,7 @@ def test_segment_list_pagination(mock_request_helper):
 
 
 def test_segment_list_cache_rebuild():
+    """Test that SegmentList caches are rebuilt when accessed."""
     segments = SegmentList([])
     # Caches start empty
     assert not segments._id_dictionary_cache

@@ -5,6 +5,7 @@ from PermutiveAPI.Audience.Import import Import, ImportList
 
 
 def test_workspace_serialization_and_properties():
+    """Test Workspace serialization and property access."""
     ws = Workspace(
         name="Main", organisation_id="org1", workspace_id="org1", api_key="k"
     )
@@ -13,6 +14,7 @@ def test_workspace_serialization_and_properties():
 
 
 def test_workspace_list_caches_and_master(tmp_path):
+    """Test WorkspaceList caching and master workspace detection."""
     data = [
         {
             "name": "Main",
@@ -35,6 +37,7 @@ def test_workspace_list_caches_and_master(tmp_path):
 
 
 def test_workspace_refresh(monkeypatch):
+    """Test the refresh logic for cohorts and imports within a workspace."""
     ws = Workspace(
         name="Main", organisation_id="org1", workspace_id="org1", api_key="k"
     )

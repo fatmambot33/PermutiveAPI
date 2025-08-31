@@ -6,6 +6,7 @@ from PermutiveAPI.Identify.Identity import Identity
 
 
 def test_alias_serialization():
+    """Test that Alias objects can be serialized and deserialized."""
     alias = Alias(id="a1", tag="email", priority=1)
     json_data = alias.to_json()
     assert json_data == {"id": "a1", "tag": "email", "priority": 1}
@@ -14,6 +15,7 @@ def test_alias_serialization():
 
 
 def test_identity_serialization():
+    """Test that Identity objects can be serialized and deserialized."""
     aliases = [Alias(id="a1", tag="email", priority=1)]
     identity = Identity(user_id="user123", aliases=aliases)
     json_data = identity.to_json()
@@ -24,6 +26,7 @@ def test_identity_serialization():
 
 
 def test_identify_raises_value_error(monkeypatch):
+    """Test that identify raises ValueError on a None response."""
     identity = Identity(user_id="user123", aliases=[])
 
     def fake_post(api_key: str, url: str, data: dict):  # pragma: no cover - test stub
@@ -38,6 +41,7 @@ def test_identify_raises_value_error(monkeypatch):
 
 
 def test_identify_propagates_exception(monkeypatch):
+    """Test that exceptions from the request helper are propagated."""
     identity = Identity(user_id="user123", aliases=[])
 
     def fake_post(api_key: str, url: str, data: dict):  # pragma: no cover - test stub

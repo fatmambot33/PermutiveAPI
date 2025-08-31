@@ -44,6 +44,7 @@ class MockResponse(Response):
 def _make_response(
     url: str, status: int, content: bytes = b"", headers: dict | None = None
 ) -> Response:
+    """Create a mock `requests.Response` object for testing."""
     req = PreparedRequest()
     req.prepare_url(url, None)
     resp = MockResponse()
@@ -55,6 +56,7 @@ def _make_response(
 
 
 def test_generate_url_with_key():
+    """Test that the API key is correctly added to a URL."""
     url = "https://api.com/resource?existing=1"
     result = RequestHelper.generate_url_with_key(url, "abc")
     parsed = urllib.parse.urlparse(result)
@@ -64,6 +66,7 @@ def test_generate_url_with_key():
 
 
 def test_redact_and_extract_error():
+    """Test redaction of sensitive data and extraction of error messages."""
     resp = _make_response(
         "https://api.com?api_key=secret&token=t", 400, b"{'error':{'cause':'bad'}}"
     )
@@ -74,6 +77,7 @@ def test_redact_and_extract_error():
 
 
 def test_handle_exception():
+    """Test the exception handling logic for different HTTP status codes."""
     resp200 = _make_response("https://api.com", 200)
     assert RequestHelper.handle_exception(Exception("boom"), resp200) is resp200
 
@@ -101,9 +105,8 @@ def test_handle_exception():
         RequestHelper.handle_exception(Exception("boom"), None)
 
 
-
-
 def test_list_helpers():
+    """Test various list utility functions."""
     assert chunk_list([1, 2, 3, 4, 5], 2) == [[1, 2], [3, 4], [5]]
     assert convert_list("[1, 2]") == [1, 2]
     assert convert_list([1, 2]) == [1, 2]
@@ -114,6 +117,7 @@ def test_list_helpers():
 
 
 def test_json_default():
+    """Test the custom JSON serializer default function."""
     u = uuid.uuid4()
     now = datetime(2021, 1, 2, 3, 4, 5)
     d = date(2021, 1, 2)
@@ -136,6 +140,7 @@ def test_json_default():
 
 
 def test_json_serializable(tmp_path):
+    """Test the JSONSerializable base class for an object."""
     dummy = Dummy(1, "a", [1, 2])
     path = tmp_path / "dummy.json"
     dummy.to_json_file(str(path))
@@ -154,6 +159,8 @@ def test_json_serializable(tmp_path):
 
 
 def test_request_methods(monkeypatch):
+    """Test the static and instance request methods."""
+
     def dummy_response(*args, **kwargs):
         r = Response()
         r.status_code = 200
@@ -185,6 +192,8 @@ def test_request_methods(monkeypatch):
 
 
 def test_to_payload_static():
+    """Test the payload creation from a dataclass."""
+
     @dataclass
     class Data:
         a: int
@@ -197,6 +206,7 @@ def test_to_payload_static():
 
 
 def test_with_retry(monkeypatch):
+    """Test the retry mechanism for requests."""
     calls = {"n": 0}
 
     def method(url, headers=None, **kwargs):
@@ -214,6 +224,8 @@ def test_with_retry(monkeypatch):
 
 
 def test_json_serializable_collections():
+    """Test the JSONSerializable base class for collections."""
+
     class DictJSON(dict, JSONSerializable):
         pass
 
