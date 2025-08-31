@@ -1,6 +1,6 @@
 """Workspace utilities for interacting with the Permutive API."""
 
-from typing import Dict, List, Optional, Type, Union
+from typing import Dict, List, Optional, Type, Union, Any
 from dataclasses import dataclass
 from pathlib import Path
 from PermutiveAPI.Utils import JSONSerializable, load_json_list
@@ -10,7 +10,7 @@ from PermutiveAPI.Cohort import Cohort, CohortList
 
 
 @dataclass
-class Workspace(JSONSerializable):
+class Workspace(JSONSerializable[Dict[str, Any]]):
     """Represents a Workspace in the Permutive ecosystem.
 
     Parameters
@@ -149,7 +149,7 @@ class Workspace(JSONSerializable):
         return Segment.list(import_id=import_id, api_key=self.api_key)
 
 
-class WorkspaceList(List[Workspace], JSONSerializable):
+class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
     """Manage a collection of Workspace objects.
 
     Methods

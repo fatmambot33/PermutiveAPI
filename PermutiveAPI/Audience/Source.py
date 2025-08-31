@@ -2,12 +2,13 @@
 
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
+from typing import Dict, Any
 
 from PermutiveAPI.Utils import JSONSerializable
 
 
 @dataclass
-class Source(JSONSerializable):
+class Source(JSONSerializable[Dict[str, Any]]):
     """Dataclass for the Source entity in the Permutive ecosystem.
 
     Parameters

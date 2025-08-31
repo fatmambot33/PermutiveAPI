@@ -8,6 +8,7 @@ from enum import Enum
 import uuid
 import urllib.parse
 import time
+from typing import Dict, Any, List
 
 import pytest
 from requests.models import PreparedRequest, Response
@@ -30,7 +31,7 @@ class Color(Enum):
 
 
 @dataclass
-class Dummy(JSONSerializable):
+class Dummy(JSONSerializable[Dict[str, Any]]):
     id: int
     name: str
     values: list[int] | None = None
@@ -226,13 +227,13 @@ def test_with_retry(monkeypatch):
 def test_json_serializable_collections():
     """Test the JSONSerializable base class for collections."""
 
-    class DictJSON(dict, JSONSerializable):
+    class DictJSON(dict, JSONSerializable[Dict[str, Any]]):
         pass
 
-    class ListJSON(list, JSONSerializable):
+    class ListJSON(list, JSONSerializable[List[Any]]):
         pass
 
-    class Plain(JSONSerializable):
+    class Plain(JSONSerializable[Dict[str, Any]]):
         def __init__(self):
             self.a = 1
             self._hide = 2

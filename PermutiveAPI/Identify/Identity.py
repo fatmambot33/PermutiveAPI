@@ -1,7 +1,7 @@
 """User identification helpers for the Permutive API."""
 
 import logging
-from typing import List
+from typing import List, Dict, Any
 from dataclasses import dataclass
 
 from requests import Response
@@ -15,7 +15,7 @@ _API_PAYLOAD = ["user_id", "aliases"]
 
 
 @dataclass
-class Identity(JSONSerializable):
+class Identity(JSONSerializable[Dict[str, Any]]):
     """Dataclass for the Identity entity in the Permutive ecosystem.
 
     Parameters

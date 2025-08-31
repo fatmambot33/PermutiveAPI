@@ -1,13 +1,14 @@
 """User identification helpers for the Permutive API."""
 
 from dataclasses import dataclass
+from typing import Dict, Any
 
 
 from PermutiveAPI.Utils import JSONSerializable
 
 
 @dataclass
-class Alias(JSONSerializable):
+class Alias(JSONSerializable[Dict[str, Any]]):
     """Dataclass for the Alias entity in the Permutive ecosystem.
 
     Parameters
