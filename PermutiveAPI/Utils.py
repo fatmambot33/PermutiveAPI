@@ -489,21 +489,6 @@ def split_filepath(fullfilepath: str) -> Tuple[str, str, str]:
     return path, name, ext
 
 
-def file_exists(fullfilepath: str) -> bool:
-    """Check if a file exists.
-
-    Parameters
-    ----------
-    fullfilepath : str
-        The full path to the file.
-
-    Returns
-    -------
-    bool
-        ``True`` if the file exists, ``False`` otherwise.
-    """
-    return os.path.exists(fullfilepath)
-
 
 T_co = TypeVar("T_co")
 

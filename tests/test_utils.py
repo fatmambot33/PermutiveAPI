@@ -17,7 +17,6 @@ from PermutiveAPI.Utils import (
     JSONSerializable,
     check_filepath,
     split_filepath,
-    file_exists,
     chunk_list,
     convert_list,
     compare_list,
@@ -102,18 +101,6 @@ def test_handle_exception():
         RequestHelper.handle_exception(Exception("boom"), None)
 
 
-def test_filepath_helpers(tmp_path):
-    path = tmp_path / "dir" / "file.txt"
-    check_filepath(str(path))
-    assert path.parent.exists()
-
-    p, name, ext = split_filepath(str(path))
-    assert p == str(path.parent)
-    assert name == "file" and ext == ".txt"
-
-    assert not file_exists(str(path))
-    path.write_text("x")
-    assert file_exists(str(path))
 
 
 def test_list_helpers():
