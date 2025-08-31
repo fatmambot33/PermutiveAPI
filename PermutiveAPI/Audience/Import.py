@@ -32,16 +32,16 @@ class Import(JSONSerializable):
         A list of identifiers for the import.
     source : Source
         The source of the import.
-    description : Optional[str]
-        An optional description of the import.
-    inheritance : Optional[str]
-        An optional inheritance of the import.
-    segments : Optional[SegmentList]
-        An optional list of segments in the import.
-    created_at : Optional[datetime]
-        The timestamp of the creation.
-    updated_at : Optional[datetime]
-        The timestamp of the last update.
+    description : Optional[str], optional
+        An optional description of the import (default: None).
+    inheritance : Optional[str], optional
+        An optional inheritance of the import (default: None).
+    segments : Optional[SegmentList], optional
+        An optional list of segments in the import (default: None).
+    created_at : Optional[datetime], optional
+        The timestamp of the creation (default: `datetime.now(tz=timezone.utc)`).
+    updated_at : Optional[datetime], optional
+        The timestamp of the last update (default: `datetime.now(tz=timezone.utc)`).
 
     Methods
     -------
@@ -160,7 +160,7 @@ class ImportList(List[Import], JSONSerializable):
         Parameters
         ----------
         items_list : Optional[List[Import]], optional
-            Import objects to initialize with. Defaults to None.
+            Import objects to initialize with (default: None).
         """
         super().__init__(items_list if items_list is not None else [])
 

@@ -21,34 +21,34 @@ class Cohort(JSONSerializable):
     ----------
     name : str
         The name of the cohort.
-    id : Optional[str]
-        The unique identifier of the cohort.
-    code : Optional[str]
-        The code associated with the cohort.
-    query : Optional[Dict]
-        The query used to define the cohort.
-    tags : Optional[List[str]]
-        Tags associated with the cohort.
-    description : Optional[str]
-        A description of the cohort.
-    subject_entity_level : Optional[str]
-        The entity level for the cohort's subjects. Defaults to None.
-    state : Optional[str]
-        The state of the cohort.
-    segment_type : Optional[str]
-        The type of segment.
-    live_audience_size : Optional[int]
-        The size of the live audience.
-    created_at : Optional[datetime]
-        The creation date of the cohort.
-    last_updated_at : Optional[datetime]
-        The last update date of the cohort.
-    workspace_id : Optional[str]
-        The ID of the associated workspace.
-    request_id : Optional[str]
-        The request ID associated with cohort operations.
-    error : Optional[str]
-        An error message, if an error occurs during operations.
+    id : Optional[str], optional
+        The unique identifier of the cohort (default: None).
+    code : Optional[str], optional
+        The code associated with the cohort (default: None).
+    query : Optional[Dict], optional
+        The query used to define the cohort (default: None).
+    tags : Optional[List[str]], optional
+        Tags associated with the cohort (default: None).
+    description : Optional[str], optional
+        A description of the cohort (default: None).
+    subject_entity_level : Optional[str], optional
+        The entity level for the cohort's subjects (default: None).
+    state : Optional[str], optional
+        The state of the cohort (default: None).
+    segment_type : Optional[str], optional
+        The type of segment (default: None).
+    live_audience_size : Optional[int], optional
+        The size of the live audience (default: 0).
+    created_at : Optional[datetime], optional
+        The creation date of the cohort (default: `datetime.now(tz=timezone.utc)`).
+    last_updated_at : Optional[datetime], optional
+        The last update date of the cohort (default: `datetime.now(tz=timezone.utc)`).
+    workspace_id : Optional[str], optional
+        The ID of the associated workspace (default: None).
+    request_id : Optional[str], optional
+        The request ID associated with cohort operations (default: None).
+    error : Optional[str], optional
+        An error message, if an error occurs during operations (default: None).
 
     Methods
     -------
@@ -258,7 +258,7 @@ class Cohort(JSONSerializable):
         api_key : str
             The API key for authentication.
         include_child_workspaces : bool, optional
-            Whether to include cohorts from child workspaces. Defaults to False.
+            Whether to include cohorts from child workspaces (default: False).
 
         Returns
         -------
@@ -317,7 +317,7 @@ class CohortList(List[Cohort], JSONSerializable):
         Parameters
         ----------
         items_list : Optional[List[Cohort]], optional
-            Cohort objects to initialize with. Defaults to None.
+            Cohort objects to initialize with (default: None).
         """
         super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Cohort] = {}

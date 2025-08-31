@@ -24,18 +24,18 @@ class Segment(JSONSerializable):
         The name of the segment.
     import_id : str
         The import ID of the segment.
-    id : Optional[str]
-        The ID of the segment.
-    description : Optional[str]
-        The description of the segment.
-    cpm : Optional[float]
-        The cost per mille of the segment.
-    categories : Optional[List[str]]
-        Categories associated with the segment.
-    created_at : Optional[datetime]
-        When the segment was created.
-    updated_at : Optional[datetime]
-        When the segment was last updated.
+    id : Optional[str], optional
+        The ID of the segment (default: None).
+    description : Optional[str], optional
+        The description of the segment (default: None).
+    cpm : Optional[float], optional
+        The cost per mille of the segment (default: 0.0).
+    categories : Optional[List[str]], optional
+        Categories associated with the segment (default: None).
+    created_at : Optional[datetime], optional
+        When the segment was created (default: None).
+    updated_at : Optional[datetime], optional
+        When the segment was last updated (default: None).
 
     Methods
     -------
@@ -302,7 +302,7 @@ class SegmentList(List[Segment], JSONSerializable):
         Parameters
         ----------
         items_list : Optional[List[Segment]], optional
-            Segment objects to initialize with. Defaults to None.
+            Segment objects to initialize with (default: None).
         """
         super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Segment] = {}

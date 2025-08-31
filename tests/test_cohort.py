@@ -5,6 +5,7 @@ from PermutiveAPI.Cohort import Cohort, CohortList
 
 
 def test_cohort_serialization():
+    """Test that Cohort objects can be serialized and deserialized."""
     cohort = Cohort(
         name="C1",
         id="1",
@@ -31,6 +32,7 @@ def test_cohort_serialization():
 
 
 def test_cohort_list_caches(tmp_path):
+    """Test that CohortList caches are populated correctly."""
     data = [
         {
             "name": "C1",
@@ -65,6 +67,7 @@ def test_cohort_list_caches(tmp_path):
 
 @patch.object(Cohort, "_request_helper")
 def test_cohort_create(mock_request_helper):
+    """Test successful creation of a cohort."""
     cohort = Cohort(name="New Cohort", query={"type": "test"})
     mock_response = Mock()
     mock_response.json.return_value = {
@@ -83,6 +86,7 @@ def test_cohort_create(mock_request_helper):
 
 @patch.object(Cohort, "_request_helper")
 def test_cohort_create_with_id_warning(mock_request_helper, caplog):
+    """Test that a warning is logged if a cohort is created with an existing ID."""
     cohort = Cohort(name="New Cohort", query={"type": "test"}, id="existing-id")
     mock_response = Mock()
     mock_response.json.return_value = {
@@ -98,6 +102,7 @@ def test_cohort_create_with_id_warning(mock_request_helper, caplog):
 
 @patch.object(Cohort, "_request_helper")
 def test_cohort_update(mock_request_helper):
+    """Test successful update of a cohort."""
     cohort = Cohort(name="C1", id="1")
     mock_response = Mock()
     mock_response.json.return_value = {"id": "1", "name": "Updated Name"}
@@ -111,6 +116,7 @@ def test_cohort_update(mock_request_helper):
 
 @patch.object(Cohort, "_request_helper")
 def test_cohort_delete(mock_request_helper):
+    """Test successful deletion of a cohort."""
     cohort = Cohort(name="C1", id="1")
     mock_request_helper.delete_static.return_value = Mock(status_code=204)
 
@@ -121,6 +127,7 @@ def test_cohort_delete(mock_request_helper):
 
 @patch.object(Cohort, "_request_helper")
 def test_cohort_get_by_id(mock_request_helper):
+    """Test retrieving a cohort by its ID."""
     mock_response = Mock()
     mock_response.json.return_value = {"id": "1", "name": "Test Cohort"}
     mock_request_helper.get_static.return_value = mock_response
@@ -133,6 +140,7 @@ def test_cohort_get_by_id(mock_request_helper):
 
 @patch.object(Cohort, "list")
 def test_get_by_name(mock_list):
+    """Test retrieving a cohort by its name."""
     cohorts_data = [
         {"name": "C1", "id": "1"},
         {"name": "C2", "id": "2"},
@@ -145,6 +153,7 @@ def test_get_by_name(mock_list):
 
 @patch.object(Cohort, "list")
 def test_get_by_code(mock_list):
+    """Test retrieving a cohort by its code."""
     cohorts_data = [
         {"name": "C1", "id": "1", "code": "101"},
         {"name": "C2", "id": "2", "code": "102"},
@@ -157,6 +166,7 @@ def test_get_by_code(mock_list):
 
 @patch.object(Cohort, "_request_helper")
 def test_cohort_list_with_children(mock_request_helper):
+    """Test that the list method includes child workspaces when requested."""
     mock_response = Mock()
     mock_response.json.return_value = [{"id": "1", "name": "Child Cohort"}]
     mock_request_helper.get_static.return_value = mock_response
@@ -170,6 +180,7 @@ def test_cohort_list_with_children(mock_request_helper):
 
 
 def test_cohort_list_cache_rebuild():
+    """Test that CohortList caches are rebuilt when accessed."""
     cohorts = CohortList([])
     assert not cohorts._id_dictionary_cache
 
