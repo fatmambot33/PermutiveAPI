@@ -12,6 +12,7 @@ from typing import Dict, Any, List
 
 import pytest
 from requests.models import PreparedRequest, Response
+from requests.structures import CaseInsensitiveDict
 
 from PermutiveAPI.Utils import (
     RequestHelper,
@@ -52,7 +53,7 @@ def _make_response(
     resp.status_code = status
     resp._content = content
     resp.request = req
-    resp.headers = headers or {}
+    resp.headers = CaseInsensitiveDict(headers or {})
     return resp
 
 
@@ -154,7 +155,7 @@ def test_json_serializable(tmp_path):
     assert Dummy.from_json({"id": 1, "name": "a", "values": [1, 2]}) == dummy
 
     with pytest.raises(TypeError):
-        Dummy.from_json(123)
+        Dummy.from_json(123)  # type: ignore[arg-type]
     with pytest.raises(TypeError):
         Dummy.from_json("not json")
 
@@ -168,10 +169,18 @@ def test_request_methods(monkeypatch):
         return r
 
     monkeypatch.setattr(RequestHelper, "_with_retry", lambda *a, **k: dummy_response())
-    assert RequestHelper.get_static("k", "http://a").status_code == 200
-    assert RequestHelper.post_static("k", "http://a", {}).status_code == 200
-    assert RequestHelper.patch_static("k", "http://a", {}).status_code == 200
-    assert RequestHelper.delete_static("k", "http://a").status_code == 200
+    response = RequestHelper.get_static("k", "http://a")
+    assert response is not None
+    assert response.status_code == 200
+    response = RequestHelper.post_static("k", "http://a", {})
+    assert response is not None
+    assert response.status_code == 200
+    response = RequestHelper.patch_static("k", "http://a", {})
+    assert response is not None
+    assert response.status_code == 200
+    response = RequestHelper.delete_static("k", "http://a")
+    assert response is not None
+    assert response.status_code == 200
 
     helper = RequestHelper("k", "http://a")
     monkeypatch.setattr(
@@ -186,10 +195,18 @@ def test_request_methods(monkeypatch):
     monkeypatch.setattr(
         RequestHelper, "delete_static", lambda api_key, url: dummy_response()
     )
-    assert helper.get("u").status_code == 200
-    assert helper.post("u", {}).status_code == 200
-    assert helper.patch("u", {}).status_code == 200
-    assert helper.delete("u").status_code == 200
+    response = helper.get("u")
+    assert response is not None
+    assert response.status_code == 200
+    response = helper.post("u", {})
+    assert response is not None
+    assert response.status_code == 200
+    response = helper.patch("u", {})
+    assert response is not None
+    assert response.status_code == 200
+    response = helper.delete("u")
+    assert response is not None
+    assert response.status_code == 200
 
 
 def test_to_payload_static():
@@ -221,6 +238,7 @@ def test_with_retry(monkeypatch):
 
     monkeypatch.setattr(time, "sleep", lambda s: None)
     resp = RequestHelper._with_retry(method, "http://a", "k")
+    assert resp is not None
     assert resp.status_code == 200
 
 
@@ -245,4 +263,4 @@ def test_json_serializable_collections():
     assert ListJSON([1, None, 2]).to_json() == [1, 2]
     assert Plain().to_json() == {"a": 1}
     with pytest.raises(TypeError):
-        JSONSerializable.to_json(SlotNoDict())
+        JSONSerializable.to_json(SlotNoDict())  # type: ignore[arg-type]
