@@ -223,25 +223,19 @@ def test_with_retry(monkeypatch):
     assert resp.status_code == 200
 
 
-def test_json_serializable_collections():
-    """Test the JSONSerializable base class for collections."""
-
-    class DictJSON(dict, JSONSerializable):
-        pass
-
-    class ListJSON(list, JSONSerializable):
-        pass
+def test_json_serializable_error_cases():
+    """Test error cases for JSONSerializable."""
 
     class Plain(JSONSerializable):
         def __init__(self):
             self.a = 1
             self._hide = 2
 
-    class SlotNoDict:
+    class SlotNoDict(JSONSerializable):
         __slots__ = ()
 
-    assert DictJSON({"a": 1}).to_json() == {"a": 1}
-    assert ListJSON([1, None, 2]).to_json() == [1, 2]
-    assert Plain().to_json() == {"a": 1}
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match="to_json can only be called on dataclass"):
+        Plain().to_json()
+
+    with pytest.raises(TypeError, match="to_json can only be called on dataclass"):
         JSONSerializable.to_json(SlotNoDict())

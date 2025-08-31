@@ -705,62 +705,40 @@ class JSONSerializable:
         """Pretty-print JSON when calling print(object)."""
         return json.dumps(self.to_json(), indent=4, cls=customJSONEncoder)
 
-    def to_json(self) -> Union[Dict[str, Any], List[Any]]:
-        """Convert the object to a JSON-serializable format."""
+    def to_json(self) -> Dict[str, Any]:
+        """Convert the object to a JSON-serializable dictionary."""
 
-        def serialize_value(v):
-            if isinstance(v, JSONSerializable):
-                return v.to_json()
-            elif isinstance(v, list):
+        def serialize_value(value: Any) -> Any:
+            """Recursively serialize values."""
+            if isinstance(value, JSONSerializable):
+                return value.to_json()
+            elif isinstance(value, list):
                 return [
-                    serialize_value(item) for item in v if item not in (None, [], {})
+                    serialize_value(item)
+                    for item in value
+                    if item is not None and item != [] and item != {}
                 ]
-            elif isinstance(v, dict):
+            elif isinstance(value, dict):
                 return {
-                    key: serialize_value(value)
-                    for key, value in v.items()
-                    if value not in (None, [], {})
+                    k: serialize_value(v)
+                    for k, v in value.items()
+                    if v is not None and v != [] and v != {}
                 }
-            else:
-                return json_default(v)
+            return json_default(value)
 
-        # Case 1: if self is a dict-like object
-        if isinstance(self, dict):
-            return {
-                k: serialize_value(v)
-                for k, v in self.items()
-                if not str(k).startswith("_")
-            }
+        if not is_dataclass(self):
+            raise TypeError(
+                "to_json can only be called on dataclass instances that "
+                "inherit from JSONSerializable"
+            )
 
-        # Case 2: if self is a list-like object
-        elif isinstance(self, list):
-            return [
-                serialize_value(item) for item in self if item not in (None, [], {})
-            ]
-
-        # Case 3: if self is a dataclass
-        elif is_dataclass(self):
-            result = {}
-            for f in fields(self):
-                try:
-                    value = getattr(self, f.name)
-                    serialized = serialize_value(value)
-                    if serialized not in (None, [], {}):
-                        result[f.name] = serialized
-                except Exception as e:
-                    logging.warning(f"Error serializing field {f.name}: {e}")
-            return result
-
-        # Case 4: fallback to __dict__ if available
-        elif hasattr(self, "__dict__"):
-            return {
-                k: serialize_value(v)
-                for k, v in self.__dict__.items()
-                if not k.startswith("_")
-            }
-
-        # Final fallback for unsupported objects — raise error instead of returning str/float
-        raise TypeError(f"{type(self).__name__} is not JSON-serializable")
+        result = {}
+        for f in fields(self):
+            if not f.name.startswith("_"):
+                value = getattr(self, f.name)
+                if value is not None and value != [] and value != {}:
+                    result[f.name] = serialize_value(value)
+        return result
 
     def to_json_file(self, filepath: str):
         """
@@ -794,26 +772,14 @@ class JSONSerializable:
         """
         return cls.from_json(Path(filepath))
 
-    @overload
     @classmethod
-    def from_json(cls: Type[T], data: dict) -> T: ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type[T], data: str) -> T: ...
-
-    @overload
-    @classmethod
-    def from_json(cls: Type[T], data: Path) -> T: ...
-
-    @classmethod
-    def from_json(cls: Type[T], data: Any) -> T:
+    def from_json(cls: Type[T], data: Union[Dict[str, Any], str, Path]) -> T:
         """
         Create an instance from a dictionary, JSON string, or file path.
 
         Parameters
         ----------
-        data : Union[dict, str, Path]
+        data : Union[Dict[str, Any], str, Path]
             The data to deserialize. Can be a dictionary, a JSON-formatted
             string, or a path to a JSON file.
 
