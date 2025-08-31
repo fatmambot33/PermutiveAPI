@@ -112,7 +112,7 @@ class Cohort(JSONSerializable):
         if self.id:
             logging.warning("id is specified")
         url = f"{_API_ENDPOINT}"
-        response = Cohort._request_helper.post_static(
+        response = self._request_helper.post_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
@@ -146,7 +146,7 @@ class Cohort(JSONSerializable):
             raise ValueError("Cohort ID must be specified for update.")
         url = f"{_API_ENDPOINT}{self.id}"
 
-        response = Cohort._request_helper.patch_static(
+        response = self._request_helper.patch_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
@@ -174,7 +174,7 @@ class Cohort(JSONSerializable):
         if not self.id:
             raise ValueError("Cohort ID must be specified for deletion.")
         url = f"{_API_ENDPOINT}{self.id}"
-        Cohort._request_helper.delete_static(api_key=api_key, url=url)
+        self._request_helper.delete_static(api_key=api_key, url=url)
 
     @staticmethod
     def get_by_id(id: str, api_key: str) -> "Cohort":

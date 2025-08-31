@@ -97,7 +97,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::create_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments"
-        response = Segment._request_helper.post_static(
+        response = self._request_helper.post_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(
@@ -126,7 +126,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::update_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
-        response = Segment._request_helper.patch_static(
+        response = self._request_helper.patch_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(
@@ -156,7 +156,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::delete_segment::{self.import_id}::{self.id}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
-        response = Segment._request_helper.delete_static(api_key=api_key, url=url)
+        response = self._request_helper.delete_static(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         return response.status_code == 204
