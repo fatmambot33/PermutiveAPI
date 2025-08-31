@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Type
+from typing import Dict, List, Optional, Union, Type, Any
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from PermutiveAPI.Utils import RequestHelper, JSONSerializable, load_json_list
@@ -14,7 +14,7 @@ _API_PAYLOAD = ["id", "name", "query", "description", "tags"]
 
 
 @dataclass
-class Cohort(JSONSerializable):
+class Cohort(JSONSerializable[Dict[str, Any]]):
     """Represents a cohort entity in the Permutive ecosystem.
 
     Parameters
@@ -277,7 +277,7 @@ class Cohort(JSONSerializable):
         return CohortList.from_json(response.json())
 
 
-class CohortList(List[Cohort], JSONSerializable):
+class CohortList(List[Cohort], JSONSerializable[List[Any]]):
     """A list-like object for managing a collection of Cohort instances.
 
     It provides caching mechanisms for quick lookups by id, code, name, etc.

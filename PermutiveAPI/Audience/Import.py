@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, DefaultDict, TYPE_CHECKING, Type, Union
+from typing import Dict, List, Optional, DefaultDict, TYPE_CHECKING, Type, Union, Any
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ from PermutiveAPI.Audience.Source import Source
 
 
 @dataclass
-class Import(JSONSerializable):
+class Import(JSONSerializable[Dict[str, Any]]):
     """Represents an Import in the Permutive ecosystem.
 
     Parameters
@@ -115,7 +115,7 @@ class Import(JSONSerializable):
         return ImportList.from_json(imports["items"])
 
 
-class ImportList(List[Import], JSONSerializable):
+class ImportList(List[Import], JSONSerializable[List[Any]]):
     """Manage a list of Import objects.
 
     Provide caching for quick lookup and JSON (de)serialization helpers.

@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Type, Union
+from typing import Dict, List, Optional, Type, Union, Any
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -13,7 +13,7 @@ _API_PAYLOAD = ["name", "code", "description", "cpm", "categories"]
 
 
 @dataclass
-class Segment(JSONSerializable):
+class Segment(JSONSerializable[Dict[str, Any]]):
     """Represent a segment in the Permutive API.
 
     Parameters
@@ -270,7 +270,7 @@ class Segment(JSONSerializable):
         return SegmentList.from_json(all_segments)
 
 
-class SegmentList(List[Segment], JSONSerializable):
+class SegmentList(List[Segment], JSONSerializable[List[Any]]):
     """Custom list that holds Segment objects and provides caching and serialization.
 
     Methods

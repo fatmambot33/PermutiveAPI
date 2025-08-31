@@ -8,6 +8,7 @@ from enum import Enum
 import uuid
 import urllib.parse
 import time
+from typing import Dict, Any, List
 
 import pytest
 from requests.models import PreparedRequest, Response
@@ -30,7 +31,7 @@ class Color(Enum):
 
 
 @dataclass
-class Dummy(JSONSerializable):
+class Dummy(JSONSerializable[Dict[str, Any]]):
     id: int
     name: str
     values: list[int] | None = None
@@ -223,19 +224,25 @@ def test_with_retry(monkeypatch):
     assert resp.status_code == 200
 
 
-def test_json_serializable_error_cases():
-    """Test error cases for JSONSerializable."""
+def test_json_serializable_collections():
+    """Test the JSONSerializable base class for collections."""
 
-    class Plain(JSONSerializable):
+    class DictJSON(dict, JSONSerializable[Dict[str, Any]]):
+        pass
+
+    class ListJSON(list, JSONSerializable[List[Any]]):
+        pass
+
+    class Plain(JSONSerializable[Dict[str, Any]]):
         def __init__(self):
             self.a = 1
             self._hide = 2
 
-    class SlotNoDict(JSONSerializable):
+    class SlotNoDict:
         __slots__ = ()
 
-    with pytest.raises(TypeError, match="to_json can only be called on dataclass"):
-        Plain().to_json()
-
-    with pytest.raises(TypeError, match="to_json can only be called on dataclass"):
+    assert DictJSON({"a": 1}).to_json() == {"a": 1}
+    assert ListJSON([1, None, 2]).to_json() == [1, 2]
+    assert Plain().to_json() == {"a": 1}
+    with pytest.raises(TypeError):
         JSONSerializable.to_json(SlotNoDict())

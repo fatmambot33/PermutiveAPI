@@ -17,7 +17,9 @@ from typing import (
     TypeVar,
     Callable,
     overload,
+    Generic,
     Tuple,
+    cast,
 )
 import logging
 import os
@@ -641,6 +643,7 @@ def load_json_list(
 
 
 T = TypeVar("T", bound="JSONSerializable")
+JSONOutput = TypeVar("JSONOutput", Dict[str, Any], List[Any])
 
 
 def json_default(value: Any):
@@ -683,16 +686,19 @@ class customJSONEncoder(json.JSONEncoder):
             return super().default(o)
 
 
-class JSONSerializable:
+class JSONSerializable(Generic[JSONOutput]):
     """
     Mixin providing JSON serialization and deserialization capabilities.
+
+    This is a generic mixin that should be used with a type argument specifying
+    the output of `to_json`, e.g., `JSONSerializable[Dict[str, Any]]`.
 
     Methods
     -------
     __str__() -> str
         Pretty-print JSON when calling print(object).
-    to_json() -> dict
-        Convert the object to a JSON-serializable dictionary.
+    to_json() -> JSONOutput
+        Convert the object to a JSON-serializable format.
     from_json(cls, data: dict) -> T
         Create an instance of the class from a JSON dictionary.
     to_json_file(filepath: str)
@@ -705,40 +711,69 @@ class JSONSerializable:
         """Pretty-print JSON when calling print(object)."""
         return json.dumps(self.to_json(), indent=4, cls=customJSONEncoder)
 
-    def to_json(self) -> Dict[str, Any]:
-        """Convert the object to a JSON-serializable dictionary."""
+    def to_json(self) -> JSONOutput:
+        """Convert the object to a JSON-serializable format."""
 
-        def serialize_value(value: Any) -> Any:
-            """Recursively serialize values."""
-            if isinstance(value, JSONSerializable):
-                return value.to_json()
-            elif isinstance(value, list):
+        def serialize_value(v) -> Union[Dict[str, Any], List[Any], str, int, float, None]:
+            if isinstance(v, JSONSerializable):
+                return v.to_json()
+            elif isinstance(v, list):
                 return [
-                    serialize_value(item)
-                    for item in value
-                    if item is not None and item != [] and item != {}
+                    serialize_value(item) for item in v if item not in (None, [], {})
                 ]
-            elif isinstance(value, dict):
+            elif isinstance(v, dict):
                 return {
-                    k: serialize_value(v)
-                    for k, v in value.items()
-                    if v is not None and v != [] and v != {}
+                    key: serialize_value(value)
+                    for key, value in v.items()
+                    if value not in (None, [], {})
                 }
-            return json_default(value)
+            else:
+                return json_default(v)
 
-        if not is_dataclass(self):
-            raise TypeError(
-                "to_json can only be called on dataclass instances that "
-                "inherit from JSONSerializable"
+        # Case 1: if self is a dict-like object
+        if isinstance(self, dict):
+            return cast(
+                JSONOutput,
+                {
+                    k: serialize_value(v)
+                    for k, v in self.items()
+                    if not str(k).startswith("_")
+                },
             )
 
-        result = {}
-        for f in fields(self):
-            if not f.name.startswith("_"):
-                value = getattr(self, f.name)
-                if value is not None and value != [] and value != {}:
-                    result[f.name] = serialize_value(value)
-        return result
+        # Case 2: if self is a list-like object
+        elif isinstance(self, list):
+            return cast(
+                JSONOutput,
+                [serialize_value(item) for item in self if item not in (None, [], {})],
+            )
+
+        # Case 3: if self is a dataclass
+        elif is_dataclass(self):
+            result = {}
+            for f in fields(self):
+                try:
+                    value = getattr(self, f.name)
+                    serialized = serialize_value(value)
+                    if serialized not in (None, [], {}):
+                        result[f.name] = serialized
+                except Exception as e:
+                    logging.warning(f"Error serializing field {f.name}: {e}")
+            return cast(JSONOutput, result)
+
+        # Case 4: fallback to __dict__ if available
+        elif hasattr(self, "__dict__"):
+            return cast(
+                JSONOutput,
+                {
+                    k: serialize_value(v)
+                    for k, v in self.__dict__.items()
+                    if not k.startswith("_")
+                },
+            )
+
+        # Final fallback for unsupported objects — raise error instead of returning str/float
+        raise TypeError(f"{type(self).__name__} is not JSON-serializable")
 
     def to_json_file(self, filepath: str):
         """
