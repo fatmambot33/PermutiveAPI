@@ -10,16 +10,16 @@ These instructions apply to any automated agent contributing to this repository.
 
 ## 2. Docstring Style
 
+- Document all public classes, parameters, methods, and functions.
 - Use **NumPy-style** docstrings following [PEP 257](httpshttps://peps.python.org/pep-0257/) conventions.
 - **Do not** use `:param` / `:type` syntax (reST/Sphinx style) or Google-style `Args`.
-- Always include type hints in function signatures and **do not** duplicate them in docstrings.
+- Always include type hints in function signatures.
 - Begin docstrings with a **short, one-line summary**, followed by a blank line and an optional extended description.
 - Use the following NumPy-style sections when applicable:
   - `Parameters`
   - `Returns`
   - `Raises`
   - `Examples`
-- Document all public classes, methods, and functions.
 - **For classes, the main docstring should include a `Methods` section summarizing each public method and its one-line description.**
 - For optional parameters, note the default value in the description.
 - Use present tense and active voice (“Return…”, “Fetch…”).
