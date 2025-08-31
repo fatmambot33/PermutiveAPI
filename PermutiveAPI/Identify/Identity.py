@@ -18,12 +18,17 @@ _API_PAYLOAD = ["user_id", "aliases"]
 class Identity(JSONSerializable):
     """Dataclass for the Identity entity in the Permutive ecosystem.
 
-    Attributes
+    Parameters
     ----------
     user_id : str
         The user's ID.
     aliases : List[Alias]
         A list of aliases for the user.
+
+    Methods
+    -------
+    identify(api_key)
+        Identify a user in Permutive.
     """
 
     user_id: str

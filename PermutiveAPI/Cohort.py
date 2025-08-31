@@ -17,7 +17,7 @@ _API_PAYLOAD = ["id", "name", "query", "description", "tags"]
 class Cohort(JSONSerializable):
     """Represents a cohort entity in the Permutive ecosystem.
 
-    Attributes
+    Parameters
     ----------
     name : str
         The name of the cohort.
@@ -49,6 +49,23 @@ class Cohort(JSONSerializable):
         The request ID associated with cohort operations.
     error : Optional[str]
         An error message, if an error occurs during operations.
+
+    Methods
+    -------
+    create(api_key)
+        Create a new cohort in Permutive.
+    update(api_key)
+        Update an existing cohort in Permutive.
+    delete(api_key)
+        Delete a cohort from Permutive.
+    get_by_id(id, api_key)
+        Fetch a specific cohort from the API using its ID.
+    get_by_name(name, api_key)
+        Retrieve a cohort by its name.
+    get_by_code(code, api_key)
+        Retrieve a cohort by its code.
+    list(api_key, include_child_workspaces=False)
+        Fetch all cohorts from the API.
     """
 
     name: str
@@ -262,6 +279,25 @@ class CohortList(List[Cohort], JSONSerializable):
     """A list-like object for managing a collection of Cohort instances.
 
     It provides caching mechanisms for quick lookups by id, code, name, etc.
+
+    Methods
+    -------
+    from_json(data)
+        Deserialize a list of cohorts from various JSON representations.
+    rebuild_cache()
+        Rebuild all caches based on the current state of the list.
+    id_dictionary()
+        Return a dictionary of cohorts indexed by their IDs.
+    code_dictionary()
+        Return a dictionary of cohorts indexed by their code.
+    name_dictionary()
+        Return a dictionary of cohorts indexed by their names.
+    tag_dictionary()
+        Return a dictionary of cohorts indexed by their tags.
+    segment_type_dictionary()
+        Return a dictionary of cohorts indexed by their tags.
+    workspace_dictionary()
+        Return a dictionary of cohorts indexed by their workspace IDs.
     """
 
     @classmethod

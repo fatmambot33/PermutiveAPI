@@ -108,14 +108,11 @@ def test_filepath_helpers(tmp_path):
     assert path.parent.exists()
 
     p, name, ext = split_filepath(str(path))
-    assert p.endswith("dir/")
+    assert p == str(path.parent)
     assert name == "file" and ext == ".txt"
 
     assert not file_exists(str(path))
     path.write_text("x")
-    assert file_exists(str(path))
-    variant = path.with_name("file-123.txt")
-    variant.write_text("y")
     assert file_exists(str(path))
 
 

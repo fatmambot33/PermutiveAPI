@@ -6,7 +6,6 @@ from requests.exceptions import RequestException
 from requests.models import Response
 import json
 import pathlib
-from glob import glob
 import ast
 from typing import (
     Dict,
@@ -33,7 +32,33 @@ import time
 
 
 class RequestHelper:
-    """A utility class for making HTTP requests to a RESTful API."""
+    """A utility class for making HTTP requests to a RESTful API.
+
+    Methods
+    -------
+    generate_url_with_key(url, api_key)
+        Generate a URL with the API key appended as a query parameter.
+    get_static(api_key, url)
+        Perform a GET request with retry logic.
+    post_static(api_key, url, data)
+        Perform a POST request with retry logic.
+    patch_static(api_key, url, data)
+        Perform a PATCH request with retry logic.
+    delete_static(api_key, url)
+        Perform a DELETE request with retry logic.
+    get(url)
+        Perform a GET request using the instance's API key.
+    post(url, data)
+        Perform a POST request using the instance's API key.
+    patch(url, data)
+        Perform a PATCH request using the instance's API key.
+    delete(url)
+        Perform a DELETE request using the instance's API key.
+    to_payload_static(dataclass_obj, api_payload=None)
+        Convert a dataclass object to a dictionary payload.
+    handle_exception(e, response)
+        Handle exceptions and HTTP errors.
+    """
 
     DEFAULT_HEADERS = {"Accept": "application/json", "Content-Type": "application/json"}
     SENSITIVE_QUERY_KEYS = ("k", "api_key", "token", "access_token", "key")
@@ -459,18 +484,13 @@ def split_filepath(fullfilepath: str) -> Tuple[str, str, str]:
     tuple
         A tuple containing the path, name, and extension.
     """
-    p = pathlib.Path(fullfilepath)
-    file_path = str(p.parent) + "/"
-    file_name = p.name
-    file_extension = ""
-    for suffix in p.suffixes:
-        file_name = file_name.replace(suffix, "")
-        file_extension = file_extension + suffix
-    return file_path, file_name, file_extension
+    path = os.path.dirname(fullfilepath)
+    name, ext = os.path.splitext(os.path.basename(fullfilepath))
+    return path, name, ext
 
 
 def file_exists(fullfilepath: str) -> bool:
-    """Check if a file exists, accounting for variations in the filename.
+    """Check if a file exists.
 
     Parameters
     ----------
@@ -482,11 +502,7 @@ def file_exists(fullfilepath: str) -> bool:
     bool
         ``True`` if the file exists, ``False`` otherwise.
     """
-    file_path, file_name, file_extension = split_filepath(fullfilepath)
-
-    pattern_with_suffix = os.path.join(file_path, f"{file_name}-*{file_extension}")
-    pattern_exact = os.path.join(file_path, f"{file_name}{file_extension}")
-    return len(glob(pattern_with_suffix) + glob(pattern_exact)) > 0
+    return os.path.exists(fullfilepath)
 
 
 T_co = TypeVar("T_co")
@@ -562,13 +578,17 @@ def merge_list(lst1: List, lst2: Optional[Union[int, str, List]] = None) -> List
     List
         The merged list.
     """
-    if isinstance(lst2, str) or isinstance(lst2, int):
-        lst2 = [lst2]
-    if not lst2:
+    if lst2 is None:
         lst2 = []
-    lst = list(filter(None, list(dict.fromkeys(lst1 + lst2))))
-    lst.sort()
-    return lst
+    elif isinstance(lst2, (str, int)):
+        lst2 = [lst2]
+
+    # Use a set for efficient merging and duplicate removal
+    merged_set = set(lst1) | set(lst2)
+    # Remove None if it exists
+    merged_set.discard(None)
+
+    return sorted(list(merged_set))
 
 
 def load_json_list(

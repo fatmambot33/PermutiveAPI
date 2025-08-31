@@ -10,7 +10,7 @@ from PermutiveAPI.Utils import JSONSerializable
 class Alias(JSONSerializable):
     """Dataclass for the Alias entity in the Permutive ecosystem.
 
-    Attributes
+    Parameters
     ----------
     id : str
         The ID of the alias.

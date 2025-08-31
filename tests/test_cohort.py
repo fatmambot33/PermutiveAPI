@@ -1,5 +1,9 @@
 import json
+import pytest
+from unittest.mock import Mock, patch
+import PermutiveAPI.Cohort
 from PermutiveAPI.Cohort import Cohort, CohortList
+from PermutiveAPI.Utils import RequestHelper
 
 
 def test_cohort_serialization():
@@ -59,3 +63,147 @@ def test_cohort_list_caches(tmp_path):
         assert cohorts.tag_dictionary["t2"][0].id == "2"
         assert cohorts.segment_type_dictionary["s1"][0].id == "1"
         assert cohorts.workspace_dictionary["w1"][0].name == "C1"
+
+
+@patch("PermutiveAPI.Cohort.RequestHelper")
+def test_cohort_create(mock_request_helper):
+    cohort = Cohort(name="New Cohort", query={"type": "test"})
+    mock_response = Mock()
+    mock_response.json.return_value = {
+        "id": "new-id",
+        "code": "new-code",
+        "name": "New Cohort",
+    }
+    mock_request_helper.post_static.return_value = mock_response
+
+    cohort.create(api_key="test-key")
+
+    assert cohort.id == "new-id"
+    assert cohort.code == "new-code"
+    mock_request_helper.post_static.assert_called_once()
+
+
+@patch("PermutiveAPI.Cohort.RequestHelper")
+def test_cohort_create_with_id_warning(mock_request_helper, caplog):
+    cohort = Cohort(name="New Cohort", query={"type": "test"}, id="existing-id")
+    mock_response = Mock()
+    mock_response.json.return_value = {
+        "id": "new-id",
+        "code": "new-code",
+        "name": "New Cohort",
+    }
+    mock_request_helper.post_static.return_value = mock_response
+
+    cohort.create(api_key="test-key")
+    assert "id is specified" in caplog.text
+
+
+@patch("PermutiveAPI.Cohort.RequestHelper")
+def test_cohort_update(mock_request_helper):
+    cohort = Cohort(name="C1", id="1")
+    mock_response = Mock()
+    mock_response.json.return_value = {"id": "1", "name": "Updated Name"}
+    mock_request_helper.patch_static.return_value = mock_response
+
+    updated_cohort = cohort.update(api_key="test-key")
+
+    assert updated_cohort.name == "Updated Name"
+    mock_request_helper.patch_static.assert_called_once()
+
+
+@patch("PermutiveAPI.Cohort.RequestHelper")
+def test_cohort_delete(mock_request_helper):
+    cohort = Cohort(name="C1", id="1")
+    mock_request_helper.delete_static.return_value = Mock(status_code=204)
+
+    cohort.delete(api_key="test-key")
+
+    mock_request_helper.delete_static.assert_called_once()
+
+
+@patch("PermutiveAPI.Cohort.RequestHelper")
+def test_cohort_get_by_id(mock_request_helper):
+    mock_response = Mock()
+    mock_response.json.return_value = {"id": "1", "name": "Test Cohort"}
+    mock_request_helper.get_static.return_value = mock_response
+
+    cohort = Cohort.get_by_id(id="1", api_key="test-key")
+
+    assert cohort.name == "Test Cohort"
+    mock_request_helper.get_static.assert_called_once()
+
+
+@patch("PermutiveAPI.Cohort.Cohort.list")
+def test_get_by_name(mock_list):
+    cohorts_data = [
+        {"name": "C1", "id": "1"},
+        {"name": "C2", "id": "2"},
+    ]
+    mock_list.return_value = CohortList.from_json(cohorts_data)
+
+    result = Cohort.get_by_name("C1", api_key="test-key")
+    assert result.id == "1"
+
+
+@patch("PermutiveAPI.Cohort.Cohort.list")
+def test_get_by_code(mock_list):
+    cohorts_data = [
+        {"name": "C1", "id": "1", "code": "101"},
+        {"name": "C2", "id": "2", "code": "102"},
+    ]
+    mock_list.return_value = CohortList.from_json(cohorts_data)
+
+    result = Cohort.get_by_code("101", api_key="test-key")
+    assert result.id == "1"
+
+
+@patch("PermutiveAPI.Cohort.RequestHelper")
+def test_cohort_list_with_children(mock_request_helper):
+    mock_response = Mock()
+    mock_response.json.return_value = [{"id": "1", "name": "Child Cohort"}]
+    mock_request_helper.get_static.return_value = mock_response
+
+    Cohort.list(api_key="test-key", include_child_workspaces=True)
+
+    mock_request_helper.get_static.assert_called_with(
+        "test-key",
+        "https://api.permutive.app/cohorts-api/v2/cohorts/?include-child-workspaces=true",
+    )
+
+
+def test_cohort_list_cache_rebuild():
+    cohorts = CohortList([])
+    assert not cohorts._id_dictionary_cache
+
+    cohorts.append(Cohort(name="C1", id="1"))
+    assert cohorts.id_dictionary["1"].name == "C1"
+    assert cohorts._id_dictionary_cache
+
+    cohorts._code_dictionary_cache = {}
+    assert not cohorts._code_dictionary_cache
+    cohorts[0].code = "c1"
+    assert cohorts.code_dictionary["c1"].id == "1"
+    assert cohorts._code_dictionary_cache
+
+    cohorts._name_dictionary_cache = {}
+    assert not cohorts._name_dictionary_cache
+    assert cohorts.name_dictionary["C1"].id == "1"
+    assert cohorts._name_dictionary_cache
+
+    cohorts._tag_dictionary_cache = {}
+    assert not cohorts._tag_dictionary_cache
+    cohorts[0].tags = ["t1"]
+    assert cohorts.tag_dictionary["t1"][0].id == "1"
+    assert cohorts._tag_dictionary_cache
+
+    cohorts._segment_type_dictionary_cache = {}
+    assert not cohorts._segment_type_dictionary_cache
+    cohorts[0].segment_type = "s1"
+    assert cohorts.segment_type_dictionary["s1"][0].id == "1"
+    assert cohorts._segment_type_dictionary_cache
+
+    cohorts._workspace_dictionary_cache = {}
+    assert not cohorts._workspace_dictionary_cache
+    cohorts[0].workspace_id = "w1"
+    assert cohorts.workspace_dictionary["w1"][0].id == "1"
+    assert cohorts._workspace_dictionary_cache

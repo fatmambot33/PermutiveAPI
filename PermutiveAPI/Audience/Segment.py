@@ -16,7 +16,7 @@ _API_PAYLOAD = ["name", "code", "description", "cpm", "categories"]
 class Segment(JSONSerializable):
     """Represent a segment in the Permutive API.
 
-    Attributes
+    Parameters
     ----------
     code : str
         The code of the segment.
@@ -36,6 +36,21 @@ class Segment(JSONSerializable):
         When the segment was created.
     updated_at : Optional[datetime]
         When the segment was last updated.
+
+    Methods
+    -------
+    create(api_key)
+        Create a new segment.
+    update(api_key)
+        Update the segment.
+    delete(api_key)
+        Delete a segment.
+    get_by_code(import_id, segment_code, api_key)
+        Retrieve a segment by its code.
+    get_by_id(import_id, segment_id, api_key)
+        Retrieve a segment by its ID.
+    list(import_id, api_key)
+        Retrieve a list of segments for a given import ID.
     """
 
     code: str
@@ -254,7 +269,21 @@ class Segment(JSONSerializable):
 
 
 class SegmentList(List[Segment], JSONSerializable):
-    """Custom list that holds Segment objects and provides caching and serialization."""
+    """Custom list that holds Segment objects and provides caching and serialization.
+
+    Methods
+    -------
+    from_json(data)
+        Deserialize a list of segments from various JSON representations.
+    rebuild_cache()
+        Rebuild all caches based on the current state of the list.
+    id_dictionary()
+        Return a dictionary of segments indexed by their IDs.
+    name_dictionary()
+        Return a dictionary of segments indexed by their names.
+    code_dictionary()
+        Return a dictionary of segments indexed by their codes.
+    """
 
     @classmethod
     def from_json(
@@ -274,6 +303,9 @@ class SegmentList(List[Segment], JSONSerializable):
             Segment objects to initialize with. Defaults to None.
         """
         super().__init__(items_list if items_list is not None else [])
+        self._id_dictionary_cache: Dict[str, Segment] = {}
+        self._name_dictionary_cache: Dict[str, Segment] = {}
+        self._code_dictionary_cache: Dict[str, Segment] = {}
         self.rebuild_cache()
 
     def rebuild_cache(self):
