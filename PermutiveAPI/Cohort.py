@@ -17,7 +17,7 @@ _API_PAYLOAD = ["id", "name", "query", "description", "tags"]
 class Cohort(JSONSerializable):
     """Represents a cohort entity in the Permutive ecosystem.
 
-    Attributes
+    Parameters
     ----------
     name : str
         The name of the cohort.
@@ -49,7 +49,26 @@ class Cohort(JSONSerializable):
         The request ID associated with cohort operations.
     error : Optional[str]
         An error message, if an error occurs during operations.
+
+    Methods
+    -------
+    create(api_key)
+        Create a new cohort in Permutive.
+    update(api_key)
+        Update an existing cohort in Permutive.
+    delete(api_key)
+        Delete a cohort from Permutive.
+    get_by_id(id, api_key)
+        Fetch a specific cohort from the API using its ID.
+    get_by_name(name, api_key)
+        Retrieve a cohort by its name.
+    get_by_code(code, api_key)
+        Retrieve a cohort by its code.
+    list(api_key, include_child_workspaces=False)
+        Fetch all cohorts from the API.
     """
+
+    _request_helper = RequestHelper
 
     name: str
     id: Optional[str] = None
@@ -93,7 +112,7 @@ class Cohort(JSONSerializable):
         if self.id:
             logging.warning("id is specified")
         url = f"{_API_ENDPOINT}"
-        response = RequestHelper.post_static(
+        response = self._request_helper.post_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
@@ -127,7 +146,7 @@ class Cohort(JSONSerializable):
             raise ValueError("Cohort ID must be specified for update.")
         url = f"{_API_ENDPOINT}{self.id}"
 
-        response = RequestHelper.patch_static(
+        response = self._request_helper.patch_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
@@ -155,7 +174,7 @@ class Cohort(JSONSerializable):
         if not self.id:
             raise ValueError("Cohort ID must be specified for deletion.")
         url = f"{_API_ENDPOINT}{self.id}"
-        RequestHelper.delete_static(api_key=api_key, url=url)
+        self._request_helper.delete_static(api_key=api_key, url=url)
 
     @staticmethod
     def get_by_id(id: str, api_key: str) -> "Cohort":
@@ -180,7 +199,7 @@ class Cohort(JSONSerializable):
         """
         logging.debug(f"CohortAPI::get::{id}")
         url = f"{_API_ENDPOINT}{id}"
-        response = RequestHelper.get_static(api_key=api_key, url=url)
+        response = Cohort._request_helper.get_static(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         return Cohort.from_json(response.json())
@@ -252,7 +271,7 @@ class Cohort(JSONSerializable):
         if include_child_workspaces:
             url += "?include-child-workspaces=true"
 
-        response = RequestHelper.get_static(api_key, url)
+        response = Cohort._request_helper.get_static(api_key, url)
         if response is None:
             raise ValueError("Response is None")
         return CohortList.from_json(response.json())
@@ -262,6 +281,25 @@ class CohortList(List[Cohort], JSONSerializable):
     """A list-like object for managing a collection of Cohort instances.
 
     It provides caching mechanisms for quick lookups by id, code, name, etc.
+
+    Methods
+    -------
+    from_json(data)
+        Deserialize a list of cohorts from various JSON representations.
+    rebuild_cache()
+        Rebuild all caches based on the current state of the list.
+    id_dictionary()
+        Return a dictionary of cohorts indexed by their IDs.
+    code_dictionary()
+        Return a dictionary of cohorts indexed by their code.
+    name_dictionary()
+        Return a dictionary of cohorts indexed by their names.
+    tag_dictionary()
+        Return a dictionary of cohorts indexed by their tags.
+    segment_type_dictionary()
+        Return a dictionary of cohorts indexed by their tags.
+    workspace_dictionary()
+        Return a dictionary of cohorts indexed by their workspace IDs.
     """
 
     @classmethod

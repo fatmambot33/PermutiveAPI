@@ -18,7 +18,7 @@ from PermutiveAPI.Audience.Source import Source
 class Import(JSONSerializable):
     """Represents an Import in the Permutive ecosystem.
 
-    Attributes
+    Parameters
     ----------
     id : str
         The ID of the import.
@@ -42,7 +42,16 @@ class Import(JSONSerializable):
         The timestamp of the creation.
     updated_at : Optional[datetime]
         The timestamp of the last update.
+
+    Methods
+    -------
+    get_by_id(id, api_key)
+        Fetch a specific import by its ID.
+    list(api_key)
+        Retrieve a list of all imports.
     """
+
+    _request_helper = RequestHelper
 
     id: str
     name: str
@@ -78,13 +87,13 @@ class Import(JSONSerializable):
         """
         logging.debug(f"AudienceAPI::get_import::{id}")
         url = f"{_API_ENDPOINT}/{id}"
-        response = RequestHelper.get_static(url=url, api_key=api_key)
+        response = Import._request_helper.get_static(url=url, api_key=api_key)
         if not response:
             raise ValueError("Unable to get_import")
         return cls.from_json(response.json())
 
-    @classmethod
-    def list(cls, api_key: str) -> "ImportList":
+    @staticmethod
+    def list(api_key: str) -> "ImportList":
         """Retrieve a list of all imports.
 
         Parameters
@@ -99,7 +108,7 @@ class Import(JSONSerializable):
         """
         logging.debug(f"AudienceAPI::list_imports")
         url = _API_ENDPOINT
-        response = RequestHelper.get_static(api_key=api_key, url=url)
+        response = Import._request_helper.get_static(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         imports = response.json()
@@ -110,6 +119,21 @@ class ImportList(List[Import], JSONSerializable):
     """Manage a list of Import objects.
 
     Provide caching for quick lookup and JSON (de)serialization helpers.
+
+    Methods
+    -------
+    from_json(data)
+        Deserialize a list of imports from various JSON representations.
+    rebuild_cache()
+        Rebuild all caches based on the current state of the list.
+    id_dictionary()
+        Return a dictionary of imports indexed by their IDs.
+    name_dictionary()
+        Return a dictionary of imports indexed by their names.
+    code_dictionary()
+        Return a dictionary of imports indexed by their codes.
+    identifier_dictionary()
+        Return a dictionary of imports indexed by their identifiers.
     """
 
     @classmethod
@@ -140,9 +164,9 @@ class ImportList(List[Import], JSONSerializable):
         """
         super().__init__(items_list if items_list is not None else [])
 
-        self._rebuild_cache()
+        self.rebuild_cache()
 
-    def _rebuild_cache(self):
+    def rebuild_cache(self):
         """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache: Dict[str, Import] = {}
         self._name_dictionary_cache: Dict[str, Import] = {}
@@ -167,7 +191,7 @@ class ImportList(List[Import], JSONSerializable):
             Mapping of import IDs to ``Import`` objects.
         """
         if not self._id_dictionary_cache:
-            self._rebuild_cache()
+            self.rebuild_cache()
         return self._id_dictionary_cache
 
     @property
@@ -180,7 +204,7 @@ class ImportList(List[Import], JSONSerializable):
             Mapping of import names to ``Import`` objects.
         """
         if not self._name_dictionary_cache:
-            self._rebuild_cache()
+            self.rebuild_cache()
         return self._name_dictionary_cache
 
     @property
@@ -193,7 +217,7 @@ class ImportList(List[Import], JSONSerializable):
             Mapping of import codes to ``Import`` objects.
         """
         if not self._code_dictionary_cache:
-            self._rebuild_cache()
+            self.rebuild_cache()
         return self._code_dictionary_cache
 
     @property
@@ -206,5 +230,5 @@ class ImportList(List[Import], JSONSerializable):
             Mapping of identifiers to lists of imports.
         """
         if not self._identifier_dictionary_cache:
-            self._rebuild_cache()
+            self.rebuild_cache()
         return self._identifier_dictionary_cache

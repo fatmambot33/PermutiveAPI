@@ -13,7 +13,7 @@ from PermutiveAPI.Cohort import Cohort, CohortList
 class Workspace(JSONSerializable):
     """Represents a Workspace in the Permutive ecosystem.
 
-    Attributes
+    Parameters
     ----------
     name : str
         The name of the workspace.
@@ -23,6 +23,23 @@ class Workspace(JSONSerializable):
         The ID of the workspace.
     api_key : str
         The API key for authentication.
+
+    Methods
+    -------
+    is_top_level()
+        Determine if the workspace is the top-level workspace.
+    refresh_cohorts()
+        Re-fetch cohorts from the API and update the cache.
+    cohorts()
+        Retrieve a cached list of cohorts for the workspace.
+    list_cohorts()
+        Retrieve a list of cohorts for the workspace.
+    refresh_imports()
+        Re-fetch imports from the API and update the cache.
+    imports()
+        Retrieve a cached list of imports for the workspace.
+    list_segments()
+        Retrieve a list of segments for a given import.
     """
 
     name: str
@@ -133,7 +150,21 @@ class Workspace(JSONSerializable):
 
 
 class WorkspaceList(List[Workspace], JSONSerializable):
-    """Manage a collection of Workspace objects."""
+    """Manage a collection of Workspace objects.
+
+    Methods
+    -------
+    from_json()
+        Deserialize a list of workspaces from various JSON representations.
+    rebuild_cache()
+        Rebuild all caches based on the current state of the list.
+    id_dictionary()
+        Return a dictionary of workspaces indexed by their IDs.
+    name_dictionary()
+        Return a dictionary of workspaces indexed by their names.
+    master_workspace()
+        Return the top-level workspace.
+    """
 
     @classmethod
     def from_json(
@@ -211,4 +242,4 @@ class WorkspaceList(List[Workspace], JSONSerializable):
         for workspace in self:
             if workspace.is_top_level:
                 return workspace
-        raise ValueError("No Top-Level Workspace found")
+        raise ValueError("No top-level workspace found")

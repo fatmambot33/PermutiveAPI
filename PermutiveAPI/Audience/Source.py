@@ -10,7 +10,7 @@ from PermutiveAPI.Utils import JSONSerializable
 class Source(JSONSerializable):
     """Dataclass for the Source entity in the Permutive ecosystem.
 
-    Attributes
+    Parameters
     ----------
     id : str
         Unique identifier for the source.

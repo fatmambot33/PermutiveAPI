@@ -16,7 +16,7 @@ _API_PAYLOAD = ["name", "code", "description", "cpm", "categories"]
 class Segment(JSONSerializable):
     """Represent a segment in the Permutive API.
 
-    Attributes
+    Parameters
     ----------
     code : str
         The code of the segment.
@@ -36,9 +36,26 @@ class Segment(JSONSerializable):
         When the segment was created.
     updated_at : Optional[datetime]
         When the segment was last updated.
+
+    Methods
+    -------
+    create(api_key)
+        Create a new segment.
+    update(api_key)
+        Update the segment.
+    delete(api_key)
+        Delete a segment.
+    get_by_code(import_id, segment_code, api_key)
+        Retrieve a segment by its code.
+    get_by_id(import_id, segment_id, api_key)
+        Retrieve a segment by its ID.
+    list(import_id, api_key)
+        Retrieve a list of segments for a given import ID.
     """
 
     code: str
+    _request_helper = RequestHelper
+
     name: str
     import_id: str
     id: Optional[str] = None
@@ -80,7 +97,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::create_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments"
-        response = RequestHelper.post_static(
+        response = self._request_helper.post_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(
@@ -109,7 +126,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::update_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
-        response = RequestHelper.patch_static(
+        response = self._request_helper.patch_static(
             api_key=api_key,
             url=url,
             data=RequestHelper.to_payload_static(
@@ -139,7 +156,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::delete_segment::{self.import_id}::{self.id}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
-        response = RequestHelper.delete_static(api_key=api_key, url=url)
+        response = self._request_helper.delete_static(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         return response.status_code == 204
@@ -169,7 +186,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::get_segment_by_code::{import_id}::{segment_code}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/code/{segment_code}"
-        response = RequestHelper.get_static(url=url, api_key=api_key)
+        response = Segment._request_helper.get_static(url=url, api_key=api_key)
         if not response:
             raise ValueError("Unable to get_segment")
         return Segment.from_json(response.json())
@@ -199,7 +216,7 @@ class Segment(JSONSerializable):
         """
         logging.debug(f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/{segment_id}"
-        response = RequestHelper.get_static(url=url, api_key=api_key)
+        response = Segment._request_helper.get_static(url=url, api_key=api_key)
         if not response:
             raise ValueError("Unable to get_by_id")
         return Segment.from_json(response.json())
@@ -236,7 +253,7 @@ class Segment(JSONSerializable):
             url = (
                 f"{base_url}?pagination_token={next_token}" if next_token else base_url
             )
-            response = RequestHelper.get_static(api_key=api_key, url=url)
+            response = Segment._request_helper.get_static(api_key=api_key, url=url)
             if response is None:
                 raise ValueError("Response is None")
             data = response.json()
@@ -254,7 +271,21 @@ class Segment(JSONSerializable):
 
 
 class SegmentList(List[Segment], JSONSerializable):
-    """Custom list that holds Segment objects and provides caching and serialization."""
+    """Custom list that holds Segment objects and provides caching and serialization.
+
+    Methods
+    -------
+    from_json(data)
+        Deserialize a list of segments from various JSON representations.
+    rebuild_cache()
+        Rebuild all caches based on the current state of the list.
+    id_dictionary()
+        Return a dictionary of segments indexed by their IDs.
+    name_dictionary()
+        Return a dictionary of segments indexed by their names.
+    code_dictionary()
+        Return a dictionary of segments indexed by their codes.
+    """
 
     @classmethod
     def from_json(
@@ -274,6 +305,9 @@ class SegmentList(List[Segment], JSONSerializable):
             Segment objects to initialize with. Defaults to None.
         """
         super().__init__(items_list if items_list is not None else [])
+        self._id_dictionary_cache: Dict[str, Segment] = {}
+        self._name_dictionary_cache: Dict[str, Segment] = {}
+        self._code_dictionary_cache: Dict[str, Segment] = {}
         self.rebuild_cache()
 
     def rebuild_cache(self):

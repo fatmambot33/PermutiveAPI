@@ -18,13 +18,20 @@ _API_PAYLOAD = ["user_id", "aliases"]
 class Identity(JSONSerializable):
     """Dataclass for the Identity entity in the Permutive ecosystem.
 
-    Attributes
+    Parameters
     ----------
     user_id : str
         The user's ID.
     aliases : List[Alias]
         A list of aliases for the user.
+
+    Methods
+    -------
+    identify(api_key)
+        Identify a user in Permutive.
     """
+
+    _request_helper = RequestHelper
 
     user_id: str
     aliases: List[Alias]
@@ -55,10 +62,10 @@ class Identity(JSONSerializable):
 
         url = f"{_API_ENDPOINT}"
 
-        response = RequestHelper.post_static(
+        response = self._request_helper.post_static(
             api_key=api_key,
             url=url,
-            data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
+            data=self._request_helper.to_payload_static(self, _API_PAYLOAD),
         )
 
         if response is None:
