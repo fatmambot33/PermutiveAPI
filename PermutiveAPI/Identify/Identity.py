@@ -57,6 +57,10 @@ class Identity(JSONSerializable[Dict[str, Any]]):
         ------
         ValueError
             If the API call returns no response.
+        requests.RequestException
+            If a network-related error occurs during the request.
+        PermutiveAPIError
+            If the Permutive API responds with an error.
         """
         logging.debug(f"UserAPI::identify::{self.user_id}")
 
