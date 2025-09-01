@@ -446,6 +446,7 @@ class RequestHelper:
 
             if status == 400:
                 msg = RequestHelper._extract_error_message(response)
+                msg = RequestHelper._redact_sensitive_data(msg, response)
                 redacted_url = ""
                 if hasattr(response, "request") and response.request.url:
                     redacted_url = RequestHelper._redact_sensitive_data(
