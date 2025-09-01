@@ -1,7 +1,5 @@
 # PermutiveAPI
 
-[![Python CI](https://github.com/fatmambo33/PermutiveAPI/actions/workflows/ci.yml/badge.svg)](https://github.com/fatmambo33/PermutiveAPI/actions/workflows/ci.yml)
-
 PermutiveAPI is a Python module to interact with the Permutive API. It provides a set of classes and methods to manage users, imports, cohorts, and workspaces within the Permutive ecosystem.
 
 ## Table of Contents
