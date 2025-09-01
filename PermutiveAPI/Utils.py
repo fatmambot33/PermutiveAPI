@@ -47,9 +47,7 @@ class RequestHelper:
 
     Methods
     -------
-    generate_url_with_key(url, api_key)
-        Generate a URL with the API key appended as a query parameter.
-    get_static(api_key, url)
+    get_static(api_key, url, params=None)
         Perform a GET request with retry logic.
     post_static(api_key, url, data)
         Perform a POST request with retry logic.
@@ -102,35 +100,11 @@ class RequestHelper:
         self.api_endpoint = api_endpoint
         self.payload_keys = payload_keys
 
-    # -------- URL Helper --------
-    @staticmethod
-    def generate_url_with_key(url: str, api_key: str) -> str:
-        """
-        Generate a URL with the API key appended as a ``k`` query parameter.
-
-        Merges the key with any existing query parameters.
-
-        Parameters
-        ----------
-        url : str
-            The URL to append the key to.
-        api_key : str
-            The API key.
-
-        Returns
-        -------
-        str
-            The URL with the API key.
-        """
-        parsed_url = urllib.parse.urlparse(url)
-        query = urllib.parse.parse_qs(parsed_url.query)
-        query.update({"k": [api_key]})
-        new_query = urllib.parse.urlencode(query, doseq=True)
-        return urllib.parse.urlunparse(parsed_url._replace(query=new_query))
-
     # -------- Public Request Methods --------
     @staticmethod
-    def get_static(api_key: str, url: str) -> Response:
+    def get_static(
+        api_key: str, url: str, params: Optional[Dict[str, Any]] = None
+    ) -> Response:
         """
         Perform a GET request with retry logic.
 
@@ -140,6 +114,8 @@ class RequestHelper:
             The API key for authentication.
         url : str
             The URL to send the request to.
+        params : Optional[Dict[str, Any]], optional
+            A dictionary of query parameters. Defaults to None.
 
         Returns
         -------
@@ -161,7 +137,7 @@ class RequestHelper:
         PermutiveAPIError
             For other unexpected errors.
         """
-        return RequestHelper._with_retry(requests.get, url, api_key)
+        return RequestHelper._with_retry(requests.get, url, api_key, params=params)
 
     @staticmethod
     def post_static(api_key: str, url: str, data: dict) -> Response:
@@ -451,7 +427,10 @@ class RequestHelper:
         PermutiveAPIError
             For other unexpected errors.
         """
-        url = RequestHelper.generate_url_with_key(url, api_key)
+        params = (kwargs.pop("params", {}) or {}).copy()
+        params["k"] = api_key
+        kwargs["params"] = params
+
         attempt = 0
         delay = RequestHelper.INITIAL_DELAY
         response: Optional[Response] = None

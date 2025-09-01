@@ -66,16 +66,6 @@ def _make_response(
     return resp
 
 
-def test_generate_url_with_key():
-    """Test that the API key is correctly added to a URL."""
-    url = "https://api.com/resource?existing=1"
-    result = RequestHelper.generate_url_with_key(url, "abc")
-    parsed = urllib.parse.urlparse(result)
-    query = urllib.parse.parse_qs(parsed.query)
-    assert query["k"] == ["abc"]
-    assert query["existing"] == ["1"]
-
-
 def test_redact_sensitive_data():
     """Test redaction of sensitive data from URLs and messages."""
     # Test redacting from URL query parameters
@@ -302,6 +292,27 @@ def test_with_retry(monkeypatch):
     resp = RequestHelper._with_retry(method, "http://a", "k")
     assert resp is not None
     assert resp.status_code == 200
+
+
+def test_with_retry_params(monkeypatch):
+    """Test that params are correctly passed through the retry mechanism."""
+    calls = {"n": 0}
+
+    def method(url, headers=None, **kwargs):
+        calls["n"] += 1
+        assert kwargs["params"]["test"] == "value"
+        assert kwargs["params"]["k"] == "test-key"
+        resp = Response()
+        resp.status_code = 200
+        return resp
+
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    resp = RequestHelper._with_retry(
+        method, "http://a", "test-key", params={"test": "value"}
+    )
+    assert resp is not None
+    assert resp.status_code == 200
+    assert calls["n"] == 1
 
 
 def test_with_retry_429(monkeypatch):

@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 from datetime import datetime, timezone
 from PermutiveAPI.Audience.Source import Source
 from PermutiveAPI.Audience.Segment import Segment, SegmentList
+from PermutiveAPI.Audience import _API_ENDPOINT
 
 
 def test_source_serialization():
@@ -211,13 +212,13 @@ def test_segment_list_pagination(mock_request_helper):
     # Mock first page response
     mock_response_page1 = Mock()
     mock_response_page1.json.return_value = {
-        "elements": [{"id": "1", "name": "s1", "code": "c1", "import_id": "imp"}],
+        "elements": [{"id": "1", "name": "s1", "code": "c1", "import_id": "imp1"}],
         "pagination": {"next_token": "token2"},
     }
     # Mock second page response
     mock_response_page2 = Mock()
     mock_response_page2.json.return_value = {
-        "elements": [{"id": "2", "name": "s2", "code": "c2", "import_id": "imp"}],
+        "elements": [{"id": "2", "name": "s2", "code": "c2", "import_id": "imp1"}],
         "pagination": {},
     }
     mock_request_helper.get_static.side_effect = [
@@ -231,10 +232,20 @@ def test_segment_list_pagination(mock_request_helper):
     assert segments[0].id == "1"
     assert segments[1].id == "2"
     assert mock_request_helper.get_static.call_count == 2
+    mock_request_helper.get_static.assert_any_call(
+        "test-key",
+        f"{_API_ENDPOINT}/imp1/segments",
+        params={},
+    )
+    mock_request_helper.get_static.assert_any_call(
+        "test-key",
+        f"{_API_ENDPOINT}/imp1/segments",
+        params={"pagination_token": "token2"},
+    )
 
 
-def test_segment_list_cache_rebuild():
-    """Test that SegmentList caches are rebuilt when accessed."""
+def test_segment_list_cache_refresh():
+    """Test that SegmentList caches are refreshed when accessed."""
     segments = SegmentList([])
     # Caches start empty
     assert not segments._id_dictionary_cache

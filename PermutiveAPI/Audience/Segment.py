@@ -249,11 +249,13 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         next_token = None
 
         while True:
-            # Construct the URL with the pagination token
-            url = (
-                f"{base_url}?pagination_token={next_token}" if next_token else base_url
+            params = {}
+            if next_token:
+                params["pagination_token"] = next_token
+
+            response = Segment._request_helper.get_static(
+                api_key, base_url, params=params
             )
-            response = Segment._request_helper.get_static(api_key=api_key, url=url)
             if response is None:
                 raise ValueError("Response is None")
             data = response.json()

@@ -300,11 +300,13 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         """
         logging.debug(f"CohortAPI::list")
 
-        url = _API_ENDPOINT
+        params = {}
         if include_child_workspaces:
-            url += "?include-child-workspaces=true"
+            params["include-child-workspaces"] = "true"
 
-        response = Cohort._request_helper.get_static(api_key, url)
+        response = Cohort._request_helper.get_static(
+            api_key, _API_ENDPOINT, params=params
+        )
         if response is None:
             raise ValueError("Response is None")
         return CohortList.from_json(response.json())

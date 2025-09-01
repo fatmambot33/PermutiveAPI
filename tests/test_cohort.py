@@ -1,7 +1,7 @@
 import json
 import pytest
 from unittest.mock import Mock, patch
-from PermutiveAPI.Cohort import Cohort, CohortList
+from PermutiveAPI.Cohort import Cohort, CohortList, _API_ENDPOINT
 
 
 def test_cohort_serialization():
@@ -204,7 +204,8 @@ def test_cohort_list_with_children(mock_request_helper):
 
     mock_request_helper.get_static.assert_called_with(
         "test-key",
-        "https://api.permutive.app/cohorts-api/v2/cohorts/?include-child-workspaces=true",
+        _API_ENDPOINT,
+        params={"include-child-workspaces": "true"},
     )
 
 
