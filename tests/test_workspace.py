@@ -65,16 +65,16 @@ def test_workspace_segments_cache(monkeypatch):
     monkeypatch.setattr(
         Segment, "list", lambda import_id, api_key: SegmentList.from_json(segment_data1)
     )
-    assert ws.list_segments(import_id="i1")[0].id == "s1"
+    assert ws.segments(import_id="i1")[0].id == "s1"
 
     # Subsequent call without force_refresh, should return cached data
     monkeypatch.setattr(
         Segment, "list", lambda import_id, api_key: SegmentList.from_json(segment_data2)
     )
-    assert ws.list_segments(import_id="i1")[0].id == "s1"
+    assert ws.segments(import_id="i1")[0].id == "s1"
 
     # Call with force_refresh, should return new data
-    assert ws.list_segments(import_id="i1", force_refresh=True)[0].id == "s2"
+    assert ws.segments(import_id="i1", force_refresh=True)[0].id == "s2"
 
 
 def test_workspace_refresh(monkeypatch):
@@ -137,8 +137,8 @@ def test_workspace_refresh(monkeypatch):
         "list",
         lambda api_key="": ImportList.from_json(import_data1),
     )
-    assert ws.list_cohorts()[0].id == "1"
-    assert ws.list_imports()[0].id == "i1"
+    assert ws.cohorts()[0].id == "1"
+    assert ws.imports()[0].id == "i1"
 
     # Subsequent call without force_refresh, should return cached data
     monkeypatch.setattr(
@@ -153,9 +153,9 @@ def test_workspace_refresh(monkeypatch):
         "list",
         lambda api_key="": ImportList.from_json(import_data2),
     )
-    assert ws.list_cohorts()[0].id == "1"
-    assert ws.list_imports()[0].id == "i1"
+    assert ws.cohorts()[0].id == "1"
+    assert ws.imports()[0].id == "i1"
 
     # Call with force_refresh, should return new data
-    assert ws.list_cohorts(force_refresh=True)[0].id == "2"
-    assert ws.list_imports(force_refresh=True)[0].id == "i2"
+    assert ws.cohorts(force_refresh=True)[0].id == "2"
+    assert ws.imports(force_refresh=True)[0].id == "i2"

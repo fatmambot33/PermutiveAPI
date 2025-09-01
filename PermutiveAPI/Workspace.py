@@ -28,11 +28,11 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
     -------
     is_top_level()
         Determine if the workspace is the top-level workspace.
-    list_cohorts()
+    cohorts()
         Retrieve a cached list of cohorts for the workspace.
-    list_imports()
+    imports()
         Retrieve a cached list of imports for the workspace.
-    list_segments()
+    segments()
         Retrieve a cached list of segments for a given import.
     """
 
@@ -64,7 +64,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             refresh_func()
         return getattr(self, cache_attr)
 
-    def _refresh_cohort_cache(self) -> CohortList:
+    def _refresh_cohorts_cache(self) -> CohortList:
         """Re-fetch cohorts from the API and update the cache.
 
         Returns
@@ -77,7 +77,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         )
         return self._cohort_cache
 
-    def list_cohorts(self, force_refresh: bool = False) -> CohortList:
+    def cohorts(self, force_refresh: bool = False) -> CohortList:
         """Retrieve a cached list of cohorts for the workspace.
 
         Parameters
@@ -91,10 +91,10 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Cached list of cohorts.
         """
         return self._get_or_refresh_cached_attribute(
-            "_cohort_cache", self._refresh_cohort_cache, force_refresh
+            "_cohort_cache", self._refresh_cohorts_cache, force_refresh
         )
 
-    def _refresh_import_cache(self) -> "ImportList":
+    def _refresh_imports_cache(self) -> "ImportList":
         """Re-fetch imports from the API and update the cache.
 
         Returns
@@ -105,7 +105,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         self._import_cache = Import.list(api_key=self.api_key)
         return self._import_cache
 
-    def list_imports(self, force_refresh: bool = False) -> "ImportList":
+    def imports(self, force_refresh: bool = False) -> "ImportList":
         """Retrieve a cached list of imports for the workspace.
 
         Parameters
@@ -119,16 +119,16 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Cached list of imports.
         """
         return self._get_or_refresh_cached_attribute(
-            "_import_cache", self._refresh_import_cache, force_refresh
+            "_import_cache", self._refresh_imports_cache, force_refresh
         )
 
-    def _refresh_segment_cache(self, import_id: str) -> None:
+    def _refresh_segments_cache(self, import_id: str) -> None:
         """Re-fetch segments from the API and update the cache."""
         self._segment_cache[import_id] = Segment.list(
             import_id=import_id, api_key=self.api_key
         )
 
-    def list_segments(self, import_id: str, force_refresh: bool = False) -> "SegmentList":
+    def segments(self, import_id: str, force_refresh: bool = False) -> "SegmentList":
         """Retrieve a cached list of segments for a given import.
 
         Parameters
@@ -144,7 +144,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Cached list of segments.
         """
         if force_refresh or import_id not in self._segment_cache:
-            self._refresh_segment_cache(import_id)
+            self._refresh_segments_cache(import_id)
         return self._segment_cache[import_id]
 
 
