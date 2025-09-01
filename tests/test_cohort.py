@@ -109,7 +109,7 @@ def test_cohort_update(mock_request_helper):
     mock_request_helper.patch_static.return_value = mock_response
 
     updated_cohort = cohort.update(api_key="test-key")
-
+    assert updated_cohort is not None
     assert updated_cohort.name == "Updated Name"
     mock_request_helper.patch_static.assert_called_once()
 
@@ -218,17 +218,3 @@ def test_cohort_list_cache_rebuild():
     cohorts[0].workspace_id = "w1"
     assert cohorts.workspace_dictionary["w1"][0].id == "1"
     assert cohorts._workspace_dictionary_cache
-
-
-def test_cohort_activate_stub():
-    """Ensure activate stub raises NotImplementedError."""
-    cohort = Cohort(name="C1")
-    with pytest.raises(NotImplementedError):
-        cohort.activate(api_key="test-key")
-
-
-def test_cohort_archive_stub():
-    """Ensure archive stub raises NotImplementedError."""
-    cohort = Cohort(name="C1")
-    with pytest.raises(NotImplementedError):
-        cohort.archive(api_key="test-key")

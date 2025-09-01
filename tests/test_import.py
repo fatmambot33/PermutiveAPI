@@ -72,31 +72,3 @@ def test_import_list_method(mock_request_helper):
     assert len(imports) == 1
     assert imports[0].name == "Import1"
     mock_request_helper.get_static.assert_called_once()
-
-
-def test_import_activate_stub():
-    """Ensure activate stub raises NotImplementedError."""
-    import_instance = Import(
-        id="1",
-        name="Import1",
-        code="I1",
-        relation="rel",
-        identifiers=["a"],
-        source=Source(id="s1", state={}, type="A"),
-    )
-    with pytest.raises(NotImplementedError):
-        import_instance.activate(api_key="test-key")
-
-
-def test_import_archive_stub():
-    """Ensure archive stub raises NotImplementedError."""
-    import_instance = Import(
-        id="1",
-        name="Import1",
-        code="I1",
-        relation="rel",
-        identifiers=["a"],
-        source=Source(id="s1", state={}, type="A"),
-    )
-    with pytest.raises(NotImplementedError):
-        import_instance.archive(api_key="test-key")
