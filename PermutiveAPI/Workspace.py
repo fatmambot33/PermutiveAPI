@@ -58,7 +58,15 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         """
         return self.organisation_id == self.workspace_id
 
-    def refresh_cohorts(self) -> CohortList:
+    def _get_or_refresh_cached_attribute(
+        self, cache_attr: str, refresh_func: Callable[[], Any], force_refresh: bool
+    ) -> Any:
+        """Get a cached attribute or refresh it."""
+        if force_refresh or not hasattr(self, cache_attr):
+            refresh_func()
+        return getattr(self, cache_attr)
+
+    def refresh_cohort_cache(self) -> CohortList:
         """Re-fetch cohorts from the API and update the cache.
 
         Returns
@@ -70,14 +78,6 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             include_child_workspaces=False, api_key=self.api_key
         )
         return self._cohort_cache
-
-    def _get_or_refresh_cached_attribute(
-        self, cache_attr: str, refresh_func: Callable[[], Any], force_refresh: bool
-    ) -> Any:
-        """Get a cached attribute or refresh it."""
-        if force_refresh or not hasattr(self, cache_attr):
-            refresh_func()
-        return getattr(self, cache_attr)
 
     def cohorts(self, force_refresh: bool = False) -> CohortList:
         """Retrieve a cached list of cohorts for the workspace.
@@ -93,27 +93,10 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Cached list of cohorts.
         """
         return self._get_or_refresh_cached_attribute(
-            "_cohort_cache", self.refresh_cohorts, force_refresh
+            "_cohort_cache", self.refresh_cohort_cache, force_refresh
         )
 
-    def list_cohorts(self, include_child_workspaces: bool = False) -> CohortList:
-        """Retrieve a list of cohorts for the workspace.
-
-        Parameters
-        ----------
-        include_child_workspaces : bool, optional
-            Whether to include cohorts from child workspaces. Defaults to False.
-
-        Returns
-        -------
-        CohortList
-            A list of cohorts.
-        """
-        return Cohort.list(
-            include_child_workspaces=include_child_workspaces, api_key=self.api_key
-        )
-
-    def refresh_imports(self) -> "ImportList":
+    def refresh_import_cache(self) -> "ImportList":
         """Re-fetch imports from the API and update the cache.
 
         Returns
@@ -138,7 +121,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Cached list of imports.
         """
         return self._get_or_refresh_cached_attribute(
-            "_import_cache", self.refresh_imports, force_refresh
+            "_import_cache", self.refresh_import_cache, force_refresh
         )
 
     def list_segments(self, import_id: str) -> List[Segment]:
@@ -194,9 +177,9 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
         super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Workspace] = {}
         self._name_dictionary_cache: Dict[str, Workspace] = {}
-        self.rebuild_cache()
+        self.refresh_cache()
 
-    def rebuild_cache(self):
+    def refresh_cache(self):
         """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache = {
             workspace.workspace_id: workspace
@@ -217,7 +200,7 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
             Mapping of workspace IDs to ``Workspace`` objects.
         """
         if not self._id_dictionary_cache:
-            self.rebuild_cache()
+            self.refresh_cache()
         return self._id_dictionary_cache
 
     @property
@@ -230,7 +213,7 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
             Mapping of workspace names to ``Workspace`` objects.
         """
         if not self._name_dictionary_cache:
-            self.rebuild_cache()
+            self.refresh_cache()
         return self._name_dictionary_cache
 
     @property

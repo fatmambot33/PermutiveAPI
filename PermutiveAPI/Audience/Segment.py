@@ -62,8 +62,12 @@ class Segment(JSONSerializable[Dict[str, Any]]):
     description: Optional[str] = None
     cpm: Optional[float] = 0.0
     categories: Optional[List[str]] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = field(
+        default_factory=lambda: datetime.now(tz=timezone.utc)
+    )
+    updated_at: Optional[datetime] = field(
+        default_factory=lambda: datetime.now(tz=timezone.utc)
+    )
 
     def __post_init__(self) -> None:
         """Normalize timestamps so they are consistent.
@@ -308,9 +312,9 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
         self._id_dictionary_cache: Dict[str, Segment] = {}
         self._name_dictionary_cache: Dict[str, Segment] = {}
         self._code_dictionary_cache: Dict[str, Segment] = {}
-        self.rebuild_cache()
+        self.refresh_cache()
 
-    def rebuild_cache(self):
+    def refresh_cache(self):
         """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache = {
             segment.id: segment for segment in self if segment.id
@@ -332,7 +336,7 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
             A dictionary mapping segment IDs to Segment objects.
         """
         if not self._id_dictionary_cache:
-            self.rebuild_cache()
+            self.refresh_cache()
         return self._id_dictionary_cache
 
     @property
@@ -345,7 +349,7 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
             A dictionary where the keys are segment names and the values are Segment objects.
         """
         if not self._name_dictionary_cache:
-            self.rebuild_cache()
+            self.refresh_cache()
         return self._name_dictionary_cache
 
     @property
@@ -358,5 +362,53 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
             A dictionary where the keys are segment codes and the values are Segment objects.
         """
         if not self._code_dictionary_cache:
-            self.rebuild_cache()
+            self.refresh_cache()
         return self._code_dictionary_cache
+
+    @staticmethod
+    def get_segments(import_id: str, api_key: str) -> "SegmentList":
+        """Retrieve a list of segments for a given import ID.
+
+        Parameters
+        ----------
+        import_id : str
+            The ID of the import to retrieve segments for.
+        api_key : str
+            The private key used for authentication.
+
+        Returns
+        -------
+        SegmentList
+            A list of Segment objects retrieved from the API.
+
+        Raises
+        ------
+        requests.exceptions.RequestException
+            If an error occurs while making the API request.
+        """
+        logging.debug(f"SegmentAPI::list")
+
+        base_url = f"{_API_ENDPOINT}/{import_id}/segments"
+        all_segments = []
+        next_token = None
+
+        while True:
+            # Construct the URL with the pagination token
+            url = (
+                f"{base_url}?pagination_token={next_token}" if next_token else base_url
+            )
+            response = Segment._request_helper.get_static(api_key=api_key, url=url)
+            if response is None:
+                raise ValueError("Response is None")
+            data = response.json()
+
+            # Extract elements and add them to the list
+            all_segments.extend(data.get("elements", []))
+
+            # Check for next_token in the pagination metadata
+            next_token = data.get("pagination", {}).get("next_token")
+
+            if not next_token:
+                break  # Stop when there are no more pages
+
+        return SegmentList.from_json(all_segments)

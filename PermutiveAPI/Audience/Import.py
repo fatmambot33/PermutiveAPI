@@ -49,10 +49,7 @@ class Import(JSONSerializable[Dict[str, Any]]):
         Fetch a specific import by its ID.
     list(api_key)
         Retrieve a list of all imports.
-    activate(api_key)
-        Activate the import in Permutive.
-    archive(api_key)
-        Archive the import in Permutive.
+
     """
 
     _request_helper = RequestHelper
@@ -73,35 +70,22 @@ class Import(JSONSerializable[Dict[str, Any]]):
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )
 
-    def activate(self, api_key: str) -> None:
-        """Activate the import in Permutive.
+    def __post_init__(self) -> None:
+        """Normalize timestamps so they are consistent.
 
-        Parameters
-        ----------
-        api_key : str
-            The API key for authentication.
-
-        Raises
-        ------
-        NotImplementedError
-            Activation has not been implemented yet.
+        If one of ``created_at`` or ``updated_at`` is missing, copy the other
+        value. If both are missing, initialize both to the same current
+        UTC timestamp. This avoids microsecond-level drift between the two
+        fields and ensures deterministic equality/serialization.
         """
-        raise NotImplementedError("Activation has not been implemented yet.")
-
-    def archive(self, api_key: str) -> None:
-        """Archive the import in Permutive.
-
-        Parameters
-        ----------
-        api_key : str
-            The API key for authentication.
-
-        Raises
-        ------
-        NotImplementedError
-            Archiving has not been implemented yet.
-        """
-        raise NotImplementedError("Archiving has not been implemented yet.")
+        if self.created_at is None and self.updated_at is None:
+            now = datetime.now(tz=timezone.utc)
+            self.created_at = now
+            self.updated_at = now
+        elif self.created_at is None:
+            self.created_at = self.updated_at
+        elif self.updated_at is None:
+            self.updated_at = self.created_at
 
     @staticmethod
     def get_by_id(id: str, api_key: str) -> "Import":
@@ -176,17 +160,17 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
         data: Union[dict, List[dict], str, Path],
     ) -> "ImportList":
         """Deserialize a list of imports from various JSON representations."""
-        data_list = load_json_list(data, cls.__name__, "Import")
+        import_list = load_json_list(data, cls.__name__, "Import")
 
         # Special handling for 'source' which is a nested JSONSerializable
-        def create_import(item):
+        def create_import(item) -> Import:
             source_data = item.get("source")
             if source_data:
                 source_instance = Source.from_json(source_data)
                 item["source"] = source_instance
             return Import.from_json(item)
 
-        return cls([create_import(item) for item in data_list])
+        return cls([create_import(item) for item in import_list])
 
     def __init__(self, items_list: Optional[List[Import]] = None):
         """Initialize the ImportList with optional items.
@@ -266,3 +250,25 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
         if not self._identifier_dictionary_cache:
             self.rebuild_cache()
         return self._identifier_dictionary_cache
+
+    @staticmethod
+    def get_imports(api_key: str) -> "ImportList":
+        """Retrieve a list of all imports.
+
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+
+        Returns
+        -------
+        ImportList
+            A list of Import objects.
+        """
+        logging.debug(f"AudienceAPI::list_imports")
+        url = _API_ENDPOINT
+        response = Import._request_helper.get_static(api_key=api_key, url=url)
+        if response is None:
+            raise ValueError("Response is None")
+        imports = response.json()
+        return ImportList.from_json(imports["items"])

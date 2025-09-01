@@ -94,6 +94,23 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
     request_id: Optional[str] = None
     error: Optional[str] = None
 
+    def __post_init__(self) -> None:
+        """Normalize timestamps so they are consistent.
+
+        If one of ``created_at`` or ``updated_at`` is missing, copy the other
+        value. If both are missing, initialize both to the same current
+        UTC timestamp. This avoids microsecond-level drift between the two
+        fields and ensures deterministic equality/serialization.
+        """
+        if self.created_at is None and self.last_updated_at is None:
+            now = datetime.now(tz=timezone.utc)
+            self.created_at = now
+            self.last_updated_at = now
+        elif self.created_at is None:
+            self.created_at = self.last_updated_at
+        elif self.last_updated_at is None:
+            self.last_updated_at = self.created_at
+
     def create(self, api_key: str) -> None:
         """Create a new cohort in Permutive.
 
@@ -116,19 +133,26 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         if self.id:
             logging.warning("id is specified")
         url = f"{_API_ENDPOINT}"
+        data = RequestHelper.to_payload_static(self, _API_PAYLOAD)
         response = self._request_helper.post_static(
             api_key=api_key,
             url=url,
-            data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
+            data=data,
         )
         if response is None:
             raise ValueError("Response is None")
-        created = Cohort.from_json(response.json())
-        if isinstance(created, Cohort):
-            self.id = created.id
-            self.code = created.code
+        cohort = Cohort.from_json(response.json())
+        if isinstance(cohort, Cohort):
+            self.id = cohort.id
+            self.code = cohort.code
+            self.created_at = cohort.created_at
+            self.last_updated_at = cohort.last_updated_at
+            self.workspace_id = cohort.workspace_id
+            self.request_id = cohort.request_id
+        else:
+            raise ValueError("Unable to create cohort")
 
-    def update(self, api_key: str) -> "Cohort":
+    def update(self, api_key: str) -> None:
         """Update an existing cohort in Permutive.
 
         This method sends a PATCH request to the Permutive API to update a cohort.
@@ -142,22 +166,23 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
 
         Returns
         -------
-        Cohort
-            A new object representing the updated state.
+        None
         """
         logging.debug(f"CohortAPI::update::{self.name}")
         if not self.id:
             raise ValueError("Cohort ID must be specified for update.")
         url = f"{_API_ENDPOINT}{self.id}"
-
+        data = RequestHelper.to_payload_static(self, _API_PAYLOAD)
         response = self._request_helper.patch_static(
             api_key=api_key,
             url=url,
-            data=RequestHelper.to_payload_static(self, _API_PAYLOAD),
+            data=data,
         )
         if response is None:
             raise ValueError("Response is None")
-        return Cohort.from_json(response.json())
+        cohort = Cohort.from_json(response.json())
+        self.last_updated_at = cohort.last_updated_at
+        self.request_id = cohort.request_id
 
     def delete(self, api_key: str) -> None:
         """Delete a cohort from Permutive.
@@ -179,44 +204,6 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             raise ValueError("Cohort ID must be specified for deletion.")
         url = f"{_API_ENDPOINT}{self.id}"
         self._request_helper.delete_static(api_key=api_key, url=url)
-
-    def activate(self, api_key: str) -> None:
-        """Activate the cohort in Permutive.
-
-        Parameters
-        ----------
-        api_key : str
-            The API key for authentication.
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        NotImplementedError
-            Activation has not been implemented yet.
-        """
-        raise NotImplementedError("Activation has not been implemented yet.")
-
-    def archive(self, api_key: str) -> None:
-        """Archive the cohort in Permutive.
-
-        Parameters
-        ----------
-        api_key : str
-            The API key for authentication.
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        NotImplementedError
-            Archiving has not been implemented yet.
-        """
-        raise NotImplementedError("Archiving has not been implemented yet.")
 
     @staticmethod
     def get_by_id(id: str, api_key: str) -> "Cohort":
@@ -267,7 +254,9 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         logging.debug(f"CohortAPI::get_by_name::{name}")
 
         cohorts = Cohort.list(include_child_workspaces=True, api_key=api_key)
-        return cohorts.name_dictionary.get(name)
+        cohort = cohorts.name_dictionary.get(name)
+        if cohort is not None and cohort.id is not None:
+            return Cohort.get_by_id(cohort.id, api_key)
 
     @staticmethod
     def get_by_code(code: Union[int, str], api_key: str) -> Optional["Cohort"]:
@@ -289,7 +278,9 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         """
         logging.debug(f"CohortAPI::get_by_code::{code}")
         cohorts = Cohort.list(include_child_workspaces=True, api_key=api_key)
-        return cohorts.code_dictionary.get(str(code))
+        cohort = cohorts.code_dictionary.get(str(code))
+        if cohort is not None and cohort.id is not None:
+            return Cohort.get_by_id(cohort.id, api_key)
 
     @staticmethod
     def list(api_key: str, include_child_workspaces: bool = False) -> "CohortList":
@@ -475,3 +466,30 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
         if not self._workspace_dictionary_cache:
             self.rebuild_cache()
         return self._workspace_dictionary_cache
+
+    @staticmethod
+    def get_cohorts(
+        api_key: str, include_child_workspaces: bool = False
+    ) -> "CohortList":
+        """Fetch all cohorts from the API.
+
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+        include_child_workspaces : bool, optional
+            Whether to include cohorts from child workspaces (default: False).
+
+        Returns
+        -------
+        CohortList
+            A list of all cohorts.
+        """
+        url = _API_ENDPOINT
+        if include_child_workspaces:
+            url += "?include-child-workspaces=true"
+
+        response = Cohort._request_helper.get_static(api_key, url)
+        if response is None:
+            raise ValueError("Response is None")
+        return CohortList.from_json(response.json())

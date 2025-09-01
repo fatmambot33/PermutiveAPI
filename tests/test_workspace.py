@@ -112,8 +112,8 @@ def test_workspace_refresh(monkeypatch):
         lambda api_key="": ImportList.from_json(import_data2),
     )
 
-    ws.refresh_cohorts()
-    ws.refresh_imports()
+    ws.refresh_cohort_cache()
+    ws.refresh_import_cache()
 
     assert ws.cohorts()[0].id == "2"
     assert ws.imports()[0].id == "i2"
