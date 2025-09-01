@@ -4,6 +4,21 @@
 
 PermutiveAPI is a Python module to interact with the Permutive API. It provides a set of classes and methods to manage users, imports, cohorts, and workspaces within the Permutive ecosystem.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+  - [Importing the Module](#importing-the-module)
+  - [Managing Workspaces](#managing-workspaces)
+  - [Managing Cohorts](#managing-cohorts)
+  - [Managing Segments](#managing-segments)
+  - [Managing Imports](#managing-imports)
+  - [Managing Users](#managing-users)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Installation
 
 You can install the PermutiveAPI module using pip:
@@ -14,22 +29,18 @@ pip install PermutiveAPI --upgrade
 
 ## Configuration
 
-Copy the `_env` file as `.env` and set the `PERMUTIVE_APPLICATION_CREDENTIALS` environment variable to the absolute path of your workspace JSON file:
+Before using the library, you need to configure your credentials.
 
-```sh
-cp _env .env
-```
-
-Edit the `.env` file to include the path to your workspace JSON file:
-
-```sh
-PERMUTIVE_APPLICATION_CREDENTIALS="/absolute/path/to/workspace.json"
-```
-
-The workspace credentials JSON can be downloaded from the Permutive dashboard
-under **Settings \u2192 API keys**. Save the file somewhere secure and set the
-`PERMUTIVE_APPLICATION_CREDENTIALS` variable to its absolute path. The `apiKey`
-inside this JSON is used to authenticate API calls.
+1.  **Copy the environment file**:
+    ```sh
+    cp _env .env
+    ```
+2.  **Set your credentials path**:
+    Edit the `.env` file and set the `PERMUTIVE_APPLICATION_CREDENTIALS` environment variable to the absolute path of your workspace JSON file.
+    ```sh
+    PERMUTIVE_APPLICATION_CREDENTIALS="/absolute/path/to/your/workspace.json"
+    ```
+The workspace credentials JSON can be downloaded from the Permutive dashboard under **Settings → API keys**. Save the file somewhere secure. The `apiKey` inside this JSON is used to authenticate API calls.
 
 ## Usage
 
@@ -41,104 +52,147 @@ To use the PermutiveAPI module, import the necessary classes. The main classes a
 from PermutiveAPI import (
     Alias,
     Cohort,
-    CohortList,
     Identity,
     Import,
-    ImportList,
     Segment,
-    SegmentList,
     Source,
     Workspace,
-    WorkspaceList,
 )
-```
-
-### Managing Users
-
-You can manage user identities and aliases using the `Identity` and `Alias` classes:
-
-```python
-# Create an alias
-alias = Alias(id="alias_id", tag="alias_tag", priority=1)
-
-# Create an identity
-identity = Identity(user_id="user_id", aliases=[alias])
-
-# Convert identity to JSON
-identity_json = identity.to_json()
-
-# Identify a user
-identity.identify(api_key="your_private_key")
-```
-
-### Managing Imports
-
-You can manage imports using the `Import` and `ImportList` classes. An `Import` object may also contain a `Source` object.
-
-```python
-# Fetch an import by ID
-import_instance = Import.get_by_id(id="import_id", api_key="your_api_key")
-
-# The source of the import can be accessed via the .source attribute
-source_info = import_instance.source
-
-# List all imports
-imports = Import.list(api_key="your_api_key")
-```
-
-### Managing Cohorts
-
-You can manage cohorts using the `Cohort` and `CohortList` classes:
-
-```python
-# Create a new cohort
-cohort = Cohort(name="cohort_name", query={"property": "value"})
-cohort.create(api_key="your_api_key")
-
-# Fetch a cohort by ID
-cohort_instance = Cohort.get_by_id(id="cohort_id", api_key="your_api_key")
-
-# List all cohorts
-cohorts = Cohort.list(api_key="your_api_key")
 ```
 
 ### Managing Workspaces
 
-You can manage workspaces using the `Workspace` and `WorkspaceList` classes:
+The `Workspace` class is the main entry point for interacting with your Permutive workspace.
 
 ```python
 # Create a workspace instance
-workspace = Workspace(name="workspace_name", organization_id="org_id", workspace_id="workspace_id", api_key="your_api_key")
+# You can pass credentials explicitly or let the client find them in your .env file
+workspace = Workspace(workspace_id="your-workspace-id", api_key="your-api-key")
 
-# List cohorts in a workspace
-cohorts = workspace.list_cohorts(include_child_workspaces=True)
+# List all cohorts in a workspace
+all_cohorts = workspace.list_cohorts(include_child_workspaces=True)
+for cohort in all_cohorts:
+    print(f"Cohort ID: {cohort.id}, Name: {cohort.name}")
 
-# List imports in a workspace
-imports = workspace.imports
+# List all imports in a workspace
+all_imports = workspace.imports
+for imp in all_imports:
+    print(f"Import ID: {imp.id}, Status: {imp.status}")
 
-# List segments in a workspace
-segments = workspace.list_segments(import_id="import_id")
+# List segments for a specific import
+segments_in_import = workspace.list_segments(import_id="your-import-id")
+for segment in segments_in_import:
+    print(f"Segment ID: {segment.id}, Name: {segment.name}")
 ```
-## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and pull request guidelines.
+### Managing Cohorts
 
+You can create, retrieve, and list cohorts using the `Cohort` class.
+
+```python
+# List all cohorts
+all_cohorts = Cohort.list(api_key="your_api_key")
+print(f"Found {len(all_cohorts)} cohorts.")
+
+# Get a specific cohort by ID
+cohort_id = "your-cohort-id"
+cohort = Cohort.get_by_id(id=cohort_id, api_key="your_api_key")
+print(f"Retrieved cohort: {cohort.name}")
+
+# Create a new cohort
+new_cohort = Cohort(
+    name="High-Value Customers",
+    query={"type": "segment", "id": "segment-id-for-high-value-customers"}
+)
+created_cohort = new_cohort.create(api_key="your_api_key")
+print(f"Created cohort with ID: {created_cohort.id}")
+```
+
+### Managing Segments
+
+The `Segment` class allows you to interact with audience segments.
+
+```python
+# List all segments for a given import
+import_id = "your-import-id"
+segments = Segment.list(api_key="your_api_key", import_id=import_id)
+print(f"Found {len(segments)} segments in import {import_id}.")
+
+# Get a specific segment by ID
+segment_id = "your-segment-id"
+segment = Segment.get_by_id(id=segment_id, api_key="your_api_key")
+print(f"Retrieved segment: {segment.name}")
+```
+
+### Managing Imports
+
+You can list and retrieve imports using the `Import` class.
+
+```python
+# List all imports
+all_imports = Import.list(api_key="your_api_key")
+for imp in all_imports:
+    print(f"Import ID: {imp.id}, Status: {imp.status}, Source: {imp.source.name}")
+
+# Get a specific import by ID
+import_id = "your-import-id"
+import_instance = Import.get_by_id(id=import_id, api_key="your_api_key")
+print(f"Retrieved import: {import_instance.id}, Source: {import_instance.source.name}")
+```
+
+### Managing Users
+
+The `Identity` and `Alias` classes are used to manage user profiles.
+
+```python
+# Create an alias for a user
+alias = Alias(id="user@example.com", tag="email", priority=1)
+
+# Create an identity for the user
+identity = Identity(user_id="internal-user-id-123", aliases=[alias])
+
+# Send the identity information to Permutive
+# The private_key is different from the api_key and is used for this specific endpoint
+try:
+    identity.identify(private_key="your-private-key")
+    print("Successfully identified user.")
+except Exception as e:
+    print(f"Error identifying user: {e}")
+```
 
 ## Development
 
-Install the dependencies and set up your environment:
+To set up a development environment, install the required dependencies:
 
 ```sh
-pip install -r requirements.txt
-cp _env .env  # update the path to your workspace.json
+pip install -r requirements-dev.txt
 ```
 
-After configuring the `.env` file you can import the package to verify
-everything is configured correctly:
+### Running Tests
 
-```sh
-python -c "import PermutiveAPI"
+Before committing any changes, please run the following checks to ensure code quality and correctness.
+
+**Style Checks:**
+```bash
+pydocstyle PermutiveAPI
+black --check .
 ```
+
+**Static Type Analysis:**
+```bash
+pyright PermutiveAPI
+```
+
+**Unit Tests and Coverage:**
+```bash
+pytest -q --cov=PermutiveAPI --cov-report=term-missing --cov-fail-under=70
+```
+
+All checks must pass before a pull request can be merged.
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and pull request guidelines.
 
 ## License
 
