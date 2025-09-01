@@ -19,24 +19,24 @@ class Source(JSONSerializable[Dict[str, Any]]):
         State information of the source.
     type : str
         Type of the source.
-    schema_id : Optional[str]
-        Schema identifier associated with the source.
-    cohorts : Optional[List[str]]
-        List of cohorts associated with the source.
-    bucket : Optional[str]
-        Bucket information for the source.
-    permissions : Optional[Dict[str, Any]]
-        Permissions associated with the source.
-    phase : Optional[str]
-        Phase information of the source.
-    errors : Optional[List[str]]
-        List of errors associated with the source.
-    advertiser_name : Optional[str]
-        Name of the advertiser associated with the source.
-    organization_id : Optional[str]
-        Organization identifier associated with the source.
-    version : Optional[str]
-        Version information of the source.
+    schema_id : Optional[str], optional
+        Schema identifier associated with the source (default: None).
+    cohorts : Optional[List[str]], optional
+        List of cohorts associated with the source (default: None).
+    bucket : Optional[str], optional
+        Bucket information for the source (default: None).
+    permissions : Optional[Dict[str, Any]], optional
+        Permissions associated with the source (default: None).
+    phase : Optional[str], optional
+        Phase information of the source (default: None).
+    errors : Optional[List[str]], optional
+        List of errors associated with the source (default: None).
+    advertiser_name : Optional[str], optional
+        Name of the advertiser associated with the source (default: None).
+    organization_id : Optional[str], optional
+        Organization identifier associated with the source (default: None).
+    version : Optional[str], optional
+        Version information of the source (default: None).
     """
 
     id: str
