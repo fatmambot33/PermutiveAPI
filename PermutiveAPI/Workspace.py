@@ -56,7 +56,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         """
         return self.organisation_id == self.workspace_id
 
-    def _get_or_refresh_cached_attribute(
+    def _get_or_refresh_cache(
         self, cache_attr: str, refresh_func: Callable[[], Any], force_refresh: bool
     ) -> Any:
         """Get a cached attribute or refresh it."""
@@ -90,7 +90,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         CohortList
             Cached list of cohorts.
         """
-        return self._get_or_refresh_cached_attribute(
+        return self._get_or_refresh_cache(
             "_cohort_cache", self._refresh_cohorts_cache, force_refresh
         )
 
@@ -118,7 +118,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         ImportList
             Cached list of imports.
         """
-        return self._get_or_refresh_cached_attribute(
+        return self._get_or_refresh_cache(
             "_import_cache", self._refresh_imports_cache, force_refresh
         )
 
