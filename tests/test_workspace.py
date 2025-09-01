@@ -53,28 +53,28 @@ def test_workspace_list_no_master():
         _ = workspaces.master_workspace
 
 
-def test_workspace_list_segments(monkeypatch):
-    """Test the list_segments method."""
+def test_workspace_segments_cache(monkeypatch):
+    """Test the caching logic for the segments method."""
     ws = Workspace(
         name="Main", organisation_id="org1", workspace_id="org1", api_key="k"
     )
-    segment_data = [
-        {
-            "id": "s1",
-            "code": "c1",
-            "name": "Segment1",
-            "import_id": "i1",
-        }
-    ]
-    monkeypatch.setattr(
-        Segment,
-        "list",
-        lambda import_id, api_key: SegmentList.from_json(segment_data),
-    )
+    segment_data1 = [{"id": "s1", "code": "c1", "name": "Segment1", "import_id": "i1"}]
+    segment_data2 = [{"id": "s2", "code": "c2", "name": "Segment2", "import_id": "i1"}]
 
-    segments = ws.list_segments(import_id="i1")
-    assert len(segments) == 1
-    assert segments[0].id == "s1"
+    # Initial call, should cache segment_data1
+    monkeypatch.setattr(
+        Segment, "list", lambda import_id, api_key: SegmentList.from_json(segment_data1)
+    )
+    assert ws.segments(import_id="i1")[0].id == "s1"
+
+    # Subsequent call without force_refresh, should return cached data
+    monkeypatch.setattr(
+        Segment, "list", lambda import_id, api_key: SegmentList.from_json(segment_data2)
+    )
+    assert ws.segments(import_id="i1")[0].id == "s1"
+
+    # Call with force_refresh, should return new data
+    assert ws.segments(import_id="i1", force_refresh=True)[0].id == "s2"
 
 
 def test_workspace_refresh(monkeypatch):
