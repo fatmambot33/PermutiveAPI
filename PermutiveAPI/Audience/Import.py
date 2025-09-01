@@ -69,8 +69,8 @@ class Import(JSONSerializable[Dict[str, Any]]):
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )
 
-    @classmethod
-    def get_by_id(cls, id: str, api_key: str) -> "Import":
+    @staticmethod
+    def get_by_id(id: str, api_key: str) -> "Import":
         """Fetch a specific import by its ID.
 
         Parameters
@@ -90,7 +90,7 @@ class Import(JSONSerializable[Dict[str, Any]]):
         response = Import._request_helper.get_static(url=url, api_key=api_key)
         if not response:
             raise ValueError("Unable to get_import")
-        return cls.from_json(response.json())
+        return Import.from_json(response.json())
 
     @staticmethod
     def list(api_key: str) -> "ImportList":
