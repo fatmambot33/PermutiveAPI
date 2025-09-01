@@ -36,7 +36,7 @@ class Identity(JSONSerializable[Dict[str, Any]]):
     user_id: str
     aliases: List[Alias]
 
-    def identify(self, api_key: str) -> Response:
+    def identify(self, api_key: str) -> None:
         """Identify a user in Permutive.
 
         This method sends a POST request to the Permutive API to identify a user
@@ -48,17 +48,10 @@ class Identity(JSONSerializable[Dict[str, Any]]):
         api_key : str
             The API key for authentication.
 
-        Returns
-        -------
-        Response
-            The response from the Permutive API.
-
         Raises
         ------
         ValueError
             If the API call returns no response.
-        requests.RequestException
-            If a network-related error occurs during the request.
         PermutiveAPIError
             If the Permutive API responds with an error.
         """
@@ -66,13 +59,8 @@ class Identity(JSONSerializable[Dict[str, Any]]):
 
         url = f"{_API_ENDPOINT}"
 
-        response = self._request_helper.post_static(
+        self._request_helper.post_static(
             api_key=api_key,
             url=url,
             data=self._request_helper.to_payload_static(self, _API_PAYLOAD),
         )
-
-        if response is None:
-            raise ValueError("Failed to identify user")
-
-        return response

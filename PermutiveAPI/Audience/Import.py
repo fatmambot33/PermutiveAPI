@@ -63,20 +63,16 @@ class Import(JSONSerializable[Dict[str, Any]]):
     description: Optional[str] = None
     inheritance: Optional[str] = None
     segments: Optional["SegmentList"] = None
-    created_at: Optional[datetime] = field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
-    updated_at: Optional[datetime] = field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     def __post_init__(self) -> None:
-        """Normalize timestamps so they are consistent.
+        """Normalize timestamps for deterministic serialization.
 
-        If one of ``created_at`` or ``updated_at`` is missing, copy the other
-        value. If both are missing, initialize both to the same current
-        UTC timestamp. This avoids microsecond-level drift between the two
-        fields and ensures deterministic equality/serialization.
+        If one of ``created_at`` or ``updated_at`` is missing, it is copied
+        from the other. If both are missing, they are initialized to the
+        same current UTC timestamp. This avoids microsecond-level drift
+        between the two fields.
         """
         if self.created_at is None and self.updated_at is None:
             now = datetime.now(tz=timezone.utc)
@@ -102,6 +98,11 @@ class Import(JSONSerializable[Dict[str, Any]]):
         -------
         Import
             The requested import.
+
+        Raises
+        ------
+        ValueError
+            If the import cannot be fetched.
         """
         logging.debug(f"AudienceAPI::get_import::{id}")
         url = f"{_API_ENDPOINT}/{id}"
@@ -123,6 +124,11 @@ class Import(JSONSerializable[Dict[str, Any]]):
         -------
         ImportList
             A list of Import objects.
+
+        Raises
+        ------
+        ValueError
+            If the import list cannot be fetched.
         """
         logging.debug(f"AudienceAPI::list_imports")
         url = _API_ENDPOINT
@@ -142,8 +148,6 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
     -------
     from_json(data)
         Deserialize a list of imports from various JSON representations.
-    rebuild_cache()
-        Rebuild all caches based on the current state of the list.
     id_dictionary()
         Return a dictionary of imports indexed by their IDs.
     name_dictionary()
@@ -173,7 +177,7 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
         return cls([create_import(item) for item in import_list])
 
     def __init__(self, items_list: Optional[List[Import]] = None):
-        """Initialize the ImportList with optional items.
+        """Initialize the ImportList with an optional list of Import objects.
 
         Parameters
         ----------
@@ -181,17 +185,20 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
             Import objects to initialize with (default: None).
         """
         super().__init__(items_list if items_list is not None else [])
-
-        self.rebuild_cache()
-
-    def rebuild_cache(self):
-        """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache: Dict[str, Import] = {}
         self._name_dictionary_cache: Dict[str, Import] = {}
         self._code_dictionary_cache: Dict[str, Import] = {}
         self._identifier_dictionary_cache: DefaultDict[str, ImportList] = defaultdict(
             ImportList
         )
+        self._refresh_cache()
+
+    def _refresh_cache(self) -> None:
+        """Refresh all caches based on the current state of the list."""
+        self._id_dictionary_cache = {}
+        self._name_dictionary_cache = {}
+        self._code_dictionary_cache = {}
+        self._identifier_dictionary_cache = defaultdict(ImportList)
         for _import in self:
             self._id_dictionary_cache[_import.id] = _import
             self._name_dictionary_cache[_import.name] = _import
@@ -209,7 +216,7 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
             Mapping of import IDs to ``Import`` objects.
         """
         if not self._id_dictionary_cache:
-            self.rebuild_cache()
+            self._refresh_cache()
         return self._id_dictionary_cache
 
     @property
@@ -222,7 +229,7 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
             Mapping of import names to ``Import`` objects.
         """
         if not self._name_dictionary_cache:
-            self.rebuild_cache()
+            self._refresh_cache()
         return self._name_dictionary_cache
 
     @property
@@ -235,7 +242,7 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
             Mapping of import codes to ``Import`` objects.
         """
         if not self._code_dictionary_cache:
-            self.rebuild_cache()
+            self._refresh_cache()
         return self._code_dictionary_cache
 
     @property
@@ -248,27 +255,5 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
             Mapping of identifiers to lists of imports.
         """
         if not self._identifier_dictionary_cache:
-            self.rebuild_cache()
+            self._refresh_cache()
         return self._identifier_dictionary_cache
-
-    @staticmethod
-    def get_imports(api_key: str) -> "ImportList":
-        """Retrieve a list of all imports.
-
-        Parameters
-        ----------
-        api_key : str
-            The API key for authentication.
-
-        Returns
-        -------
-        ImportList
-            A list of Import objects.
-        """
-        logging.debug(f"AudienceAPI::list_imports")
-        url = _API_ENDPOINT
-        response = Import._request_helper.get_static(api_key=api_key, url=url)
-        if response is None:
-            raise ValueError("Response is None")
-        imports = response.json()
-        return ImportList.from_json(imports["items"])

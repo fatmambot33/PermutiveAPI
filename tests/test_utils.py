@@ -165,6 +165,21 @@ def test_list_helpers():
     assert merge_list([1], None) == [1]
 
 
+def test_file_helpers(tmp_path):
+    """Test filepath utility functions."""
+    # Test check_filepath
+    dir_path = tmp_path / "test_dir"
+    file_path = dir_path / "test.txt"
+    check_filepath(str(file_path))
+    assert dir_path.exists()
+
+    # Test split_filepath
+    path, name, ext = split_filepath(str(file_path))
+    assert path == str(dir_path)
+    assert name == "test"
+    assert ext == ".txt"
+
+
 def test_json_default():
     """Test the custom JSON serializer default function."""
     u = uuid.uuid4()

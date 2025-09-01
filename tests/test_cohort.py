@@ -105,13 +105,26 @@ def test_cohort_update(mock_request_helper):
     """Test successful update of a cohort."""
     cohort = Cohort(name="C1", id="1")
     mock_response = Mock()
-    mock_response.json.return_value = {"id": "1", "name": "Updated Name"}
+    mock_response.json.return_value = {
+        "id": "1",
+        "name": "Updated Name",
+        "last_updated_at": "2022-01-01T00:00:00Z",
+    }
     mock_request_helper.patch_static.return_value = mock_response
 
-    updated_cohort = cohort.update(api_key="test-key")
-    assert updated_cohort is not None
-    assert updated_cohort.name == "Updated Name"
+    cohort.update(api_key="test-key")
+    assert cohort.last_updated_at is not None
     mock_request_helper.patch_static.assert_called_once()
+
+
+@patch.object(Cohort, "_request_helper")
+def test_cohort_update_failure(mock_request_helper):
+    """Test that updating a cohort raises an error on failure."""
+    cohort = Cohort(name="C1", id="1")
+    mock_request_helper.patch_static.return_value = None
+
+    with pytest.raises(ValueError, match="Response is None"):
+        cohort.update(api_key="test-key")
 
 
 @patch.object(Cohort, "_request_helper")
@@ -123,6 +136,14 @@ def test_cohort_delete(mock_request_helper):
     cohort.delete(api_key="test-key")
 
     mock_request_helper.delete_static.assert_called_once()
+
+
+@patch.object(Cohort, "_request_helper")
+def test_cohort_delete_failure(mock_request_helper):
+    """Test that deleting a cohort without an ID raises an error."""
+    cohort = Cohort(name="C1", id=None)
+    with pytest.raises(ValueError, match="Cohort ID must be specified for deletion."):
+        cohort.delete(api_key="test-key")
 
 
 @patch.object(Cohort, "_request_helper")
@@ -138,32 +159,38 @@ def test_cohort_get_by_id(mock_request_helper):
     mock_request_helper.get_static.assert_called_once()
 
 
+@patch.object(Cohort, "get_by_id")
 @patch.object(Cohort, "list")
-def test_get_by_name(mock_list):
+def test_get_by_name(mock_list, mock_get_by_id):
     """Test retrieving a cohort by its name."""
     cohorts_data = [
         {"name": "C1", "id": "1"},
         {"name": "C2", "id": "2"},
     ]
     mock_list.return_value = CohortList.from_json(cohorts_data)
+    mock_get_by_id.return_value = Cohort.from_json(cohorts_data[0])
 
     result = Cohort.get_by_name("C1", api_key="test-key")
     assert result is not None
     assert result.id == "1"
+    mock_get_by_id.assert_called_once_with("1", "test-key")
 
 
+@patch.object(Cohort, "get_by_id")
 @patch.object(Cohort, "list")
-def test_get_by_code(mock_list):
+def test_get_by_code(mock_list, mock_get_by_id):
     """Test retrieving a cohort by its code."""
     cohorts_data = [
         {"name": "C1", "id": "1", "code": "101"},
         {"name": "C2", "id": "2", "code": "102"},
     ]
     mock_list.return_value = CohortList.from_json(cohorts_data)
+    mock_get_by_id.return_value = Cohort.from_json(cohorts_data[0])
 
     result = Cohort.get_by_code("101", api_key="test-key")
     assert result is not None
     assert result.id == "1"
+    mock_get_by_id.assert_called_once_with("1", "test-key")
 
 
 @patch.object(Cohort, "_request_helper")
@@ -181,8 +208,8 @@ def test_cohort_list_with_children(mock_request_helper):
     )
 
 
-def test_cohort_list_cache_rebuild():
-    """Test that CohortList caches are rebuilt when accessed."""
+def test_cohort_list_cache_refresh():
+    """Test that CohortList caches are refreshed when accessed."""
     cohorts = CohortList([])
     assert not cohorts._id_dictionary_cache
 

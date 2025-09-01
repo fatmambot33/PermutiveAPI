@@ -145,6 +145,21 @@ class RequestHelper:
         -------
         requests.Response
             The response from the server.
+
+        Raises
+        ------
+        PermutiveBadRequestError
+            For HTTP 400 errors.
+        PermutiveAuthenticationError
+            For HTTP 401 or 403 errors.
+        PermutiveResourceNotFoundError
+            For HTTP 404 errors.
+        PermutiveRateLimitError
+            For HTTP 429 errors (after retries).
+        PermutiveServerError
+            For HTTP 5xx errors (after retries).
+        PermutiveAPIError
+            For other unexpected errors.
         """
         return RequestHelper._with_retry(requests.get, url, api_key)
 
@@ -166,6 +181,21 @@ class RequestHelper:
         -------
         requests.Response
             The response from the server.
+
+        Raises
+        ------
+        PermutiveBadRequestError
+            For HTTP 400 errors.
+        PermutiveAuthenticationError
+            For HTTP 401 or 403 errors.
+        PermutiveResourceNotFoundError
+            For HTTP 404 errors.
+        PermutiveRateLimitError
+            For HTTP 429 errors (after retries).
+        PermutiveServerError
+            For HTTP 5xx errors (after retries).
+        PermutiveAPIError
+            For other unexpected errors.
         """
         return RequestHelper._with_retry(requests.post, url, api_key, json=data)
 
@@ -187,6 +217,21 @@ class RequestHelper:
         -------
         requests.Response
             The response from the server.
+
+        Raises
+        ------
+        PermutiveBadRequestError
+            For HTTP 400 errors.
+        PermutiveAuthenticationError
+            For HTTP 401 or 403 errors.
+        PermutiveResourceNotFoundError
+            For HTTP 404 errors.
+        PermutiveRateLimitError
+            For HTTP 429 errors (after retries).
+        PermutiveServerError
+            For HTTP 5xx errors (after retries).
+        PermutiveAPIError
+            For other unexpected errors.
         """
         return RequestHelper._with_retry(requests.patch, url, api_key, json=data)
 
@@ -206,6 +251,21 @@ class RequestHelper:
         -------
         requests.Response
             The response from the server.
+
+        Raises
+        ------
+        PermutiveBadRequestError
+            For HTTP 400 errors.
+        PermutiveAuthenticationError
+            For HTTP 401 or 403 errors.
+        PermutiveResourceNotFoundError
+            For HTTP 404 errors.
+        PermutiveRateLimitError
+            For HTTP 429 errors (after retries).
+        PermutiveServerError
+            For HTTP 5xx errors (after retries).
+        PermutiveAPIError
+            For other unexpected errors.
         """
         return RequestHelper._with_retry(requests.delete, url, api_key)
 
@@ -222,6 +282,21 @@ class RequestHelper:
         -------
         requests.Response
             The response from the server.
+
+        Raises
+        ------
+        PermutiveBadRequestError
+            For HTTP 400 errors.
+        PermutiveAuthenticationError
+            For HTTP 401 or 403 errors.
+        PermutiveResourceNotFoundError
+            For HTTP 404 errors.
+        PermutiveRateLimitError
+            For HTTP 429 errors (after retries).
+        PermutiveServerError
+            For HTTP 5xx errors (after retries).
+        PermutiveAPIError
+            For other unexpected errors.
         """
         return RequestHelper.get_static(self.api_key, url)
 
@@ -240,6 +315,21 @@ class RequestHelper:
         -------
         requests.Response
             The response from the server.
+
+        Raises
+        ------
+        PermutiveBadRequestError
+            For HTTP 400 errors.
+        PermutiveAuthenticationError
+            For HTTP 401 or 403 errors.
+        PermutiveResourceNotFoundError
+            For HTTP 404 errors.
+        PermutiveRateLimitError
+            For HTTP 429 errors (after retries).
+        PermutiveServerError
+            For HTTP 5xx errors (after retries).
+        PermutiveAPIError
+            For other unexpected errors.
         """
         return RequestHelper.post_static(self.api_key, url, data)
 
@@ -258,6 +348,21 @@ class RequestHelper:
         -------
         requests.Response
             The response from the server.
+
+        Raises
+        ------
+        PermutiveBadRequestError
+            For HTTP 400 errors.
+        PermutiveAuthenticationError
+            For HTTP 401 or 403 errors.
+        PermutiveResourceNotFoundError
+            For HTTP 404 errors.
+        PermutiveRateLimitError
+            For HTTP 429 errors (after retries).
+        PermutiveServerError
+            For HTTP 5xx errors (after retries).
+        PermutiveAPIError
+            For other unexpected errors.
         """
         return RequestHelper.patch_static(self.api_key, url, data)
 
@@ -274,6 +379,21 @@ class RequestHelper:
         -------
         requests.Response
             The response from the server.
+
+        Raises
+        ------
+        PermutiveBadRequestError
+            For HTTP 400 errors.
+        PermutiveAuthenticationError
+            For HTTP 401 or 403 errors.
+        PermutiveResourceNotFoundError
+            For HTTP 404 errors.
+        PermutiveRateLimitError
+            For HTTP 429 errors (after retries).
+        PermutiveServerError
+            For HTTP 5xx errors (after retries).
+        PermutiveAPIError
+            For other unexpected errors.
         """
         return RequestHelper.delete_static(self.api_key, url)
 
@@ -314,7 +434,23 @@ class RequestHelper:
     # -------- Retry Wrapper --------
     @staticmethod
     def _with_retry(method: Callable, url: str, api_key: str, **kwargs) -> Response:
-        """Retry logic for transient errors and rate limiting."""
+        """Retry logic for transient errors and rate limiting.
+
+        Raises
+        ------
+        PermutiveBadRequestError
+            For HTTP 400 errors.
+        PermutiveAuthenticationError
+            For HTTP 401 or 403 errors.
+        PermutiveResourceNotFoundError
+            For HTTP 404 errors.
+        PermutiveRateLimitError
+            For HTTP 429 errors (after retries).
+        PermutiveServerError
+            For HTTP 5xx errors (after retries).
+        PermutiveAPIError
+            For other unexpected errors.
+        """
         url = RequestHelper.generate_url_with_key(url, api_key)
         attempt = 0
         delay = RequestHelper.INITIAL_DELAY

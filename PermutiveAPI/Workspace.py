@@ -28,14 +28,8 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
     -------
     is_top_level()
         Determine if the workspace is the top-level workspace.
-    refresh_cohorts()
-        Re-fetch cohorts from the API and update the cache.
     cohorts()
         Retrieve a cached list of cohorts for the workspace.
-    list_cohorts()
-        Retrieve a list of cohorts for the workspace.
-    refresh_imports()
-        Re-fetch imports from the API and update the cache.
     imports()
         Retrieve a cached list of imports for the workspace.
     list_segments()
@@ -66,7 +60,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             refresh_func()
         return getattr(self, cache_attr)
 
-    def refresh_cohort_cache(self) -> CohortList:
+    def _refresh_cohort_cache(self) -> CohortList:
         """Re-fetch cohorts from the API and update the cache.
 
         Returns
@@ -93,10 +87,10 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Cached list of cohorts.
         """
         return self._get_or_refresh_cached_attribute(
-            "_cohort_cache", self.refresh_cohort_cache, force_refresh
+            "_cohort_cache", self._refresh_cohort_cache, force_refresh
         )
 
-    def refresh_import_cache(self) -> "ImportList":
+    def _refresh_import_cache(self) -> "ImportList":
         """Re-fetch imports from the API and update the cache.
 
         Returns
@@ -121,7 +115,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Cached list of imports.
         """
         return self._get_or_refresh_cached_attribute(
-            "_import_cache", self.refresh_import_cache, force_refresh
+            "_import_cache", self._refresh_import_cache, force_refresh
         )
 
     def list_segments(self, import_id: str) -> List[Segment]:
@@ -147,8 +141,6 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
     -------
     from_json()
         Deserialize a list of workspaces from various JSON representations.
-    rebuild_cache()
-        Rebuild all caches based on the current state of the list.
     id_dictionary()
         Return a dictionary of workspaces indexed by their IDs.
     name_dictionary()
@@ -177,9 +169,9 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
         super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Workspace] = {}
         self._name_dictionary_cache: Dict[str, Workspace] = {}
-        self.refresh_cache()
+        self._refresh_cache()
 
-    def refresh_cache(self):
+    def _refresh_cache(self):
         """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache = {
             workspace.workspace_id: workspace
@@ -200,7 +192,7 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
             Mapping of workspace IDs to ``Workspace`` objects.
         """
         if not self._id_dictionary_cache:
-            self.refresh_cache()
+            self._refresh_cache()
         return self._id_dictionary_cache
 
     @property
@@ -213,7 +205,7 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
             Mapping of workspace names to ``Workspace`` objects.
         """
         if not self._name_dictionary_cache:
-            self.refresh_cache()
+            self._refresh_cache()
         return self._name_dictionary_cache
 
     @property

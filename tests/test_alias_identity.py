@@ -1,6 +1,7 @@
 import pytest
 from requests.exceptions import RequestException
 from typing import cast, Dict, Any
+from unittest.mock import Mock, patch
 
 from PermutiveAPI.Identify.Alias import Alias
 from PermutiveAPI.Identify.Identity import Identity
@@ -27,19 +28,18 @@ def test_identity_serialization():
     assert identity2 == identity
 
 
-def test_identify_raises_value_error(monkeypatch):
-    """Test that identify raises ValueError on a None response."""
+@patch.object(Identity, "_request_helper")
+def test_identify_success(mock_request_helper):
+    """Test the success case for the identify method."""
     identity = Identity(user_id="user123", aliases=[])
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_request_helper.post_static.return_value = mock_response
 
-    def fake_post(api_key: str, url: str, data: dict):  # pragma: no cover - test stub
-        return None
+    result = identity.identify(api_key="test-key")
 
-    monkeypatch.setattr(
-        "PermutiveAPI.Identify.Identity.RequestHelper.post_static", fake_post
-    )
-
-    with pytest.raises(ValueError):
-        identity.identify("api-key")
+    assert result is None
+    mock_request_helper.post_static.assert_called_once()
 
 
 def test_identify_propagates_exception(monkeypatch):
