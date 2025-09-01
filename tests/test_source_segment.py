@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 from datetime import datetime, timezone
 from PermutiveAPI.Audience.Source import Source
 from PermutiveAPI.Audience.Segment import Segment, SegmentList
+from PermutiveAPI.Audience import _API_ENDPOINT
 
 
 def test_source_serialization():
@@ -112,6 +113,16 @@ def test_segment_update(mock_request_helper):
 
 
 @patch.object(Segment, "_request_helper")
+def test_segment_update_failure(mock_request_helper):
+    """Test that updating a segment raises an error on failure."""
+    segment = Segment(code="c1", name="Segment1", import_id="imp1", id="seg-id")
+    mock_request_helper.patch_static.return_value = None
+
+    with pytest.raises(ValueError, match="Unable to update_segment"):
+        segment.update(api_key="test-key")
+
+
+@patch.object(Segment, "_request_helper")
 def test_segment_delete(mock_request_helper):
     """Test successful deletion of a segment."""
     segment = Segment(code="c1", name="Segment1", import_id="imp1", id="seg-id")
@@ -121,8 +132,18 @@ def test_segment_delete(mock_request_helper):
 
     result = segment.delete(api_key="test-key")
 
-    assert result is True
+    assert result is None
     mock_request_helper.delete_static.assert_called_once()
+
+
+@patch.object(Segment, "_request_helper")
+def test_segment_delete_failure(mock_request_helper):
+    """Test that deleting a segment raises an error on failure."""
+    segment = Segment(code="c1", name="Segment1", import_id="imp1", id="seg-id")
+    mock_request_helper.delete_static.return_value = None
+
+    with pytest.raises(ValueError, match="Response is None"):
+        segment.delete(api_key="test-key")
 
 
 @patch.object(Segment, "_request_helper")
@@ -146,18 +167,58 @@ def test_segment_get_by_id(mock_request_helper):
 
 
 @patch.object(Segment, "_request_helper")
+def test_segment_get_by_id_failure(mock_request_helper):
+    """Test that getting a segment by ID raises an error on failure."""
+    mock_request_helper.get_static.return_value = None
+
+    with pytest.raises(ValueError, match="Unable to get_by_id"):
+        Segment.get_by_id(import_id="imp1", segment_id="seg-id", api_key="test-key")
+
+
+@patch.object(Segment, "_request_helper")
+def test_segment_get_by_code(mock_request_helper):
+    """Test retrieving a segment by its code."""
+    mock_response = Mock()
+    mock_response.json.return_value = {
+        "id": "seg-id",
+        "code": "c1",
+        "name": "Segment1",
+        "import_id": "imp1",
+    }
+    mock_request_helper.get_static.return_value = mock_response
+
+    segment = Segment.get_by_code(
+        import_id="imp1", segment_code="c1", api_key="test-key"
+    )
+
+    assert segment.name == "Segment1"
+    mock_request_helper.get_static.assert_called_once()
+
+
+@patch.object(Segment, "_request_helper")
+def test_segment_get_by_code_failure(mock_request_helper):
+    """Test that getting a segment by code raises an error on failure."""
+    mock_request_helper.get_static.return_value = None
+
+    with pytest.raises(ValueError, match="Unable to get_segment"):
+        Segment.get_by_code(
+            import_id="imp1", segment_code="seg-code", api_key="test-key"
+        )
+
+
+@patch.object(Segment, "_request_helper")
 def test_segment_list_pagination(mock_request_helper):
     """Test that the list method correctly handles pagination."""
     # Mock first page response
     mock_response_page1 = Mock()
     mock_response_page1.json.return_value = {
-        "elements": [{"id": "1", "name": "s1", "code": "c1", "import_id": "imp"}],
+        "elements": [{"id": "1", "name": "s1", "code": "c1", "import_id": "imp1"}],
         "pagination": {"next_token": "token2"},
     }
     # Mock second page response
     mock_response_page2 = Mock()
     mock_response_page2.json.return_value = {
-        "elements": [{"id": "2", "name": "s2", "code": "c2", "import_id": "imp"}],
+        "elements": [{"id": "2", "name": "s2", "code": "c2", "import_id": "imp1"}],
         "pagination": {},
     }
     mock_request_helper.get_static.side_effect = [
@@ -171,10 +232,20 @@ def test_segment_list_pagination(mock_request_helper):
     assert segments[0].id == "1"
     assert segments[1].id == "2"
     assert mock_request_helper.get_static.call_count == 2
+    mock_request_helper.get_static.assert_any_call(
+        "test-key",
+        f"{_API_ENDPOINT}/imp1/segments",
+        params={},
+    )
+    mock_request_helper.get_static.assert_any_call(
+        "test-key",
+        f"{_API_ENDPOINT}/imp1/segments",
+        params={"pagination_token": "token2"},
+    )
 
 
-def test_segment_list_cache_rebuild():
-    """Test that SegmentList caches are rebuilt when accessed."""
+def test_segment_list_cache_refresh():
+    """Test that SegmentList caches are refreshed when accessed."""
     segments = SegmentList([])
     # Caches start empty
     assert not segments._id_dictionary_cache

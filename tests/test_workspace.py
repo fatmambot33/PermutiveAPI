@@ -1,7 +1,9 @@
 import json
+import pytest
 from PermutiveAPI.Workspace import Workspace, WorkspaceList
 from PermutiveAPI.Cohort import Cohort, CohortList
 from PermutiveAPI.Audience.Import import Import, ImportList
+from PermutiveAPI.Audience.Segment import Segment, SegmentList
 
 
 def test_workspace_serialization_and_properties():
@@ -34,6 +36,45 @@ def test_workspace_list_caches_and_master(tmp_path):
     assert workspaces.master_workspace.name == "Main"
     assert workspaces.id_dictionary["child"].name == "Child"
     assert workspaces.name_dictionary["Main"].workspace_id == "org1"
+
+
+def test_workspace_list_no_master():
+    """Test that ValueError is raised when no master workspace is found."""
+    data = [
+        {
+            "name": "Child",
+            "organisation_id": "org1",
+            "workspace_id": "child",
+            "api_key": "k2",
+        },
+    ]
+    workspaces = WorkspaceList.from_json(data)
+    with pytest.raises(ValueError, match="No top-level workspace found"):
+        _ = workspaces.master_workspace
+
+
+def test_workspace_segments_cache(monkeypatch):
+    """Test the caching logic for the segments method."""
+    ws = Workspace(
+        name="Main", organisation_id="org1", workspace_id="org1", api_key="k"
+    )
+    segment_data1 = [{"id": "s1", "code": "c1", "name": "Segment1", "import_id": "i1"}]
+    segment_data2 = [{"id": "s2", "code": "c2", "name": "Segment2", "import_id": "i1"}]
+
+    # Initial call, should cache segment_data1
+    monkeypatch.setattr(
+        Segment, "list", lambda import_id, api_key: SegmentList.from_json(segment_data1)
+    )
+    assert ws.segments(import_id="i1")[0].id == "s1"
+
+    # Subsequent call without force_refresh, should return cached data
+    monkeypatch.setattr(
+        Segment, "list", lambda import_id, api_key: SegmentList.from_json(segment_data2)
+    )
+    assert ws.segments(import_id="i1")[0].id == "s1"
+
+    # Call with force_refresh, should return new data
+    assert ws.segments(import_id="i1", force_refresh=True)[0].id == "s2"
 
 
 def test_workspace_refresh(monkeypatch):
@@ -83,6 +124,7 @@ def test_workspace_refresh(monkeypatch):
         }
     ]
 
+    # Initial call, should cache cohort_data1 and import_data1
     monkeypatch.setattr(
         Cohort,
         "list",
@@ -95,10 +137,10 @@ def test_workspace_refresh(monkeypatch):
         "list",
         lambda api_key="": ImportList.from_json(import_data1),
     )
-
     assert ws.cohorts()[0].id == "1"
     assert ws.imports()[0].id == "i1"
 
+    # Subsequent call without force_refresh, should return cached data
     monkeypatch.setattr(
         Cohort,
         "list",
@@ -111,45 +153,9 @@ def test_workspace_refresh(monkeypatch):
         "list",
         lambda api_key="": ImportList.from_json(import_data2),
     )
+    assert ws.cohorts()[0].id == "1"
+    assert ws.imports()[0].id == "i1"
 
-    ws.refresh_cohort_cache()
-    ws.refresh_import_cache()
-
-    assert ws.cohorts()[0].id == "2"
-    assert ws.imports()[0].id == "i2"
-
-    monkeypatch.setattr(
-        Cohort,
-        "list",
-        lambda include_child_workspaces=False, api_key="": CohortList.from_json(
-            [
-                {
-                    "name": "C3",
-                    "id": "3",
-                    "code": "c3",
-                    "tags": [],
-                    "segment_type": "s3",
-                    "workspace_id": "org1",
-                }
-            ]
-        ),
-    )
-    monkeypatch.setattr(
-        Import,
-        "list",
-        lambda api_key="": ImportList.from_json(
-            [
-                {
-                    "id": "i3",
-                    "name": "Import3",
-                    "code": "I3",
-                    "relation": "rel",
-                    "identifiers": ["a"],
-                    "source": {"id": "s3", "state": {}, "type": "C"},
-                }
-            ]
-        ),
-    )
-
-    assert ws.cohorts(force_refresh=True)[0].id == "3"
-    assert ws.imports(force_refresh=True)[0].id == "i3"
+    # Call with force_refresh, should return new data
+    assert ws.cohorts(force_refresh=True)[0].id == "2"
+    assert ws.imports(force_refresh=True)[0].id == "i2"

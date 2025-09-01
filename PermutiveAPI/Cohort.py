@@ -58,10 +58,6 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         Update an existing cohort in Permutive.
     delete(api_key)
         Delete a cohort from Permutive.
-    activate(api_key)
-        Activate the cohort in Permutive.
-    archive(api_key)
-        Archive the cohort in Permutive.
     get_by_id(id, api_key)
         Fetch a specific cohort from the API using its ID.
     get_by_name(name, api_key)
@@ -84,23 +80,19 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
     state: Optional[str] = None
     segment_type: Optional[str] = None
     live_audience_size: Optional[int] = 0
-    created_at: Optional[datetime] = field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
-    last_updated_at: Optional[datetime] = field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
+    created_at: Optional[datetime] = None
+    last_updated_at: Optional[datetime] = None
     workspace_id: Optional[str] = None
     request_id: Optional[str] = None
     error: Optional[str] = None
 
     def __post_init__(self) -> None:
-        """Normalize timestamps so they are consistent.
+        """Normalize timestamps for deterministic serialization.
 
-        If one of ``created_at`` or ``updated_at`` is missing, copy the other
-        value. If both are missing, initialize both to the same current
-        UTC timestamp. This avoids microsecond-level drift between the two
-        fields and ensures deterministic equality/serialization.
+        If one of ``created_at`` or ``last_updated_at`` is missing, it is
+        copied from the other. If both are missing, they are initialized to
+        the same current UTC timestamp. This avoids microsecond-level drift
+        between the two fields.
         """
         if self.created_at is None and self.last_updated_at is None:
             now = datetime.now(tz=timezone.utc)
@@ -123,9 +115,10 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         api_key : str
             The API key for authentication.
 
-        Returns
-        -------
-        None
+        Raises
+        ------
+        ValueError
+            If the cohort cannot be created.
         """
         logging.debug(f"CohortAPI::create::{self.name}")
         if not self.query:
@@ -164,9 +157,10 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         api_key : str
             The API key for authentication.
 
-        Returns
-        -------
-        None
+        Raises
+        ------
+        ValueError
+            If the cohort cannot be updated.
         """
         logging.debug(f"CohortAPI::update::{self.name}")
         if not self.id:
@@ -195,9 +189,10 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         api_key : str
             The API key for authentication.
 
-        Returns
-        -------
-        None
+        Raises
+        ------
+        ValueError
+            If the cohort cannot be deleted.
         """
         logging.debug(f"CohortAPI::delete::{self.name}")
         if not self.id:
@@ -297,14 +292,21 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         -------
         CohortList
             A list of all cohorts.
+
+        Raises
+        ------
+        ValueError
+            If the cohort list cannot be fetched.
         """
         logging.debug(f"CohortAPI::list")
 
-        url = _API_ENDPOINT
+        params = {}
         if include_child_workspaces:
-            url += "?include-child-workspaces=true"
+            params["include-child-workspaces"] = "true"
 
-        response = Cohort._request_helper.get_static(api_key, url)
+        response = Cohort._request_helper.get_static(
+            api_key, _API_ENDPOINT, params=params
+        )
         if response is None:
             raise ValueError("Response is None")
         return CohortList.from_json(response.json())
@@ -319,8 +321,6 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
     -------
     from_json(data)
         Deserialize a list of cohorts from various JSON representations.
-    rebuild_cache()
-        Rebuild all caches based on the current state of the list.
     id_dictionary()
         Return a dictionary of cohorts indexed by their IDs.
     code_dictionary()
@@ -330,7 +330,7 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
     tag_dictionary()
         Return a dictionary of cohorts indexed by their tags.
     segment_type_dictionary()
-        Return a dictionary of cohorts indexed by their tags.
+        Return a dictionary of cohorts indexed by their segment types.
     workspace_dictionary()
         Return a dictionary of cohorts indexed by their workspace IDs.
     """
@@ -359,15 +359,10 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
         self._tag_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(list)
         self._workspace_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(list)
         self._segment_type_dictionary_cache: Dict[str, List[Cohort]] = defaultdict(list)
-        self.rebuild_cache()
+        self._refresh_cache()
 
-    def rebuild_cache(self):
-        """Rebuild all caches based on the current state of the list.
-
-        Returns
-        -------
-        None
-        """
+    def _refresh_cache(self) -> None:
+        """Refresh all caches based on the current state of the list."""
         self._id_dictionary_cache = {cohort.id: cohort for cohort in self if cohort.id}
         self._code_dictionary_cache = {
             str(cohort.code): cohort for cohort in self if cohort.code
@@ -399,7 +394,7 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
             A mapping of cohort IDs to ``Cohort`` instances.
         """
         if not self._id_dictionary_cache:
-            self.rebuild_cache()
+            self._refresh_cache()
         return self._id_dictionary_cache
 
     @property
@@ -412,7 +407,7 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
             A mapping of cohort codes to ``Cohort`` instances.
         """
         if not self._code_dictionary_cache:
-            self.rebuild_cache()
+            self._refresh_cache()
         return self._code_dictionary_cache
 
     @property
@@ -425,7 +420,7 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
             A mapping of cohort names to ``Cohort`` instances.
         """
         if not self._name_dictionary_cache:
-            self.rebuild_cache()
+            self._refresh_cache()
         return self._name_dictionary_cache
 
     @property
@@ -438,12 +433,12 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
             A mapping of tag names to lists of cohorts.
         """
         if not self._tag_dictionary_cache:
-            self.rebuild_cache()
+            self._refresh_cache()
         return self._tag_dictionary_cache
 
     @property
     def segment_type_dictionary(self) -> Dict[str, List[Cohort]]:
-        """Return a dictionary of cohorts indexed by their tags.
+        """Return a dictionary of cohorts indexed by their segment types.
 
         Returns
         -------
@@ -451,7 +446,7 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
             A mapping of segment types to lists of cohorts.
         """
         if not self._segment_type_dictionary_cache:
-            self.rebuild_cache()
+            self._refresh_cache()
         return self._segment_type_dictionary_cache
 
     @property
@@ -464,32 +459,5 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
             A mapping of workspace IDs to lists of cohorts.
         """
         if not self._workspace_dictionary_cache:
-            self.rebuild_cache()
+            self._refresh_cache()
         return self._workspace_dictionary_cache
-
-    @staticmethod
-    def get_cohorts(
-        api_key: str, include_child_workspaces: bool = False
-    ) -> "CohortList":
-        """Fetch all cohorts from the API.
-
-        Parameters
-        ----------
-        api_key : str
-            The API key for authentication.
-        include_child_workspaces : bool, optional
-            Whether to include cohorts from child workspaces (default: False).
-
-        Returns
-        -------
-        CohortList
-            A list of all cohorts.
-        """
-        url = _API_ENDPOINT
-        if include_child_workspaces:
-            url += "?include-child-workspaces=true"
-
-        response = Cohort._request_helper.get_static(api_key, url)
-        if response is None:
-            raise ValueError("Response is None")
-        return CohortList.from_json(response.json())

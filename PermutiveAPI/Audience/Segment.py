@@ -62,20 +62,16 @@ class Segment(JSONSerializable[Dict[str, Any]]):
     description: Optional[str] = None
     cpm: Optional[float] = 0.0
     categories: Optional[List[str]] = None
-    created_at: Optional[datetime] = field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
-    updated_at: Optional[datetime] = field(
-        default_factory=lambda: datetime.now(tz=timezone.utc)
-    )
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     def __post_init__(self) -> None:
-        """Normalize timestamps so they are consistent.
+        """Normalize timestamps for deterministic serialization.
 
-        If one of ``created_at`` or ``updated_at`` is missing, copy the other
-        value. If both are missing, initialize both to the same current
-        UTC timestamp. This avoids microsecond-level drift between the two
-        fields and ensures deterministic equality/serialization.
+        If one of ``created_at`` or ``updated_at`` is missing, it is copied
+        from the other. If both are missing, they are initialized to the
+        same current UTC timestamp. This avoids microsecond-level drift
+        between the two fields.
         """
         if self.created_at is None and self.updated_at is None:
             now = datetime.now(tz=timezone.utc)
@@ -86,13 +82,13 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         elif self.updated_at is None:
             self.updated_at = self.created_at
 
-    def create(self, api_key: str):
-        """Create a new segment using the provided private key.
+    def create(self, api_key: str) -> None:
+        """Create a new segment using the provided API key.
 
         Parameters
         ----------
         api_key : str
-            The private key used for authentication.
+            The API key used for authentication.
 
         Raises
         ------
@@ -115,13 +111,13 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         if isinstance(new_segment, Segment):
             self.__dict__.update(new_segment.__dict__)
 
-    def update(self, api_key: str):
-        """Update the segment using the provided private key.
+    def update(self, api_key: str) -> None:
+        """Update the segment using the provided API key.
 
         Parameters
         ----------
         api_key : str
-            The private key used for authentication.
+            The API key used for authentication.
 
         Raises
         ------
@@ -144,26 +140,24 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         if isinstance(updated_segment, Segment):
             self.__dict__.update(updated_segment.__dict__)
 
-    def delete(self, api_key: str) -> bool:
-        """Delete a segment using the provided private key.
+    def delete(self, api_key: str) -> None:
+        """Delete a segment using the provided API key.
 
         Parameters
         ----------
         api_key : str
-            The private key used for authentication.
+            The API key used for authentication.
 
-        Returns
-        -------
-        bool
-            ``True`` if the segment was successfully deleted (status code
-            204), otherwise ``False``.
+        Raises
+        ------
+        ValueError
+            If the segment deletion fails.
         """
         logging.debug(f"SegmentAPI::delete_segment::{self.import_id}::{self.id}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
         response = self._request_helper.delete_static(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
-        return response.status_code == 204
 
     @staticmethod
     def get_by_code(import_id: str, segment_code: str, api_key: str) -> "Segment":
@@ -176,7 +170,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         segment_code : str
             The code of the segment to retrieve.
         api_key : str
-            The private key for authentication.
+            The API key for authentication.
 
         Returns
         -------
@@ -206,7 +200,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         segment_id : str
             The ID of the segment to retrieve.
         api_key : str
-            The private key for authentication.
+            The API key for authentication.
 
         Returns
         -------
@@ -234,7 +228,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         import_id : str
             The ID of the import to retrieve segments for.
         api_key : str
-            The private key used for authentication.
+            The API key for authentication.
 
         Returns
         -------
@@ -243,7 +237,9 @@ class Segment(JSONSerializable[Dict[str, Any]]):
 
         Raises
         ------
-        requests.exceptions.RequestException
+        ValueError
+            If the segment list cannot be fetched.
+        PermutiveAPIError
             If an error occurs while making the API request.
         """
         logging.debug(f"SegmentAPI::list")
@@ -253,11 +249,13 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         next_token = None
 
         while True:
-            # Construct the URL with the pagination token
-            url = (
-                f"{base_url}?pagination_token={next_token}" if next_token else base_url
+            params = {}
+            if next_token:
+                params["pagination_token"] = next_token
+
+            response = Segment._request_helper.get_static(
+                api_key, base_url, params=params
             )
-            response = Segment._request_helper.get_static(api_key=api_key, url=url)
             if response is None:
                 raise ValueError("Response is None")
             data = response.json()
@@ -281,8 +279,6 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
     -------
     from_json(data)
         Deserialize a list of segments from various JSON representations.
-    rebuild_cache()
-        Rebuild all caches based on the current state of the list.
     id_dictionary()
         Return a dictionary of segments indexed by their IDs.
     name_dictionary()
@@ -312,9 +308,9 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
         self._id_dictionary_cache: Dict[str, Segment] = {}
         self._name_dictionary_cache: Dict[str, Segment] = {}
         self._code_dictionary_cache: Dict[str, Segment] = {}
-        self.refresh_cache()
+        self._refresh_cache()
 
-    def refresh_cache(self):
+    def _refresh_cache(self) -> None:
         """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache = {
             segment.id: segment for segment in self if segment.id
@@ -336,7 +332,7 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
             A dictionary mapping segment IDs to Segment objects.
         """
         if not self._id_dictionary_cache:
-            self.refresh_cache()
+            self._refresh_cache()
         return self._id_dictionary_cache
 
     @property
@@ -349,7 +345,7 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
             A dictionary where the keys are segment names and the values are Segment objects.
         """
         if not self._name_dictionary_cache:
-            self.refresh_cache()
+            self._refresh_cache()
         return self._name_dictionary_cache
 
     @property
@@ -362,53 +358,5 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
             A dictionary where the keys are segment codes and the values are Segment objects.
         """
         if not self._code_dictionary_cache:
-            self.refresh_cache()
+            self._refresh_cache()
         return self._code_dictionary_cache
-
-    @staticmethod
-    def get_segments(import_id: str, api_key: str) -> "SegmentList":
-        """Retrieve a list of segments for a given import ID.
-
-        Parameters
-        ----------
-        import_id : str
-            The ID of the import to retrieve segments for.
-        api_key : str
-            The private key used for authentication.
-
-        Returns
-        -------
-        SegmentList
-            A list of Segment objects retrieved from the API.
-
-        Raises
-        ------
-        requests.exceptions.RequestException
-            If an error occurs while making the API request.
-        """
-        logging.debug(f"SegmentAPI::list")
-
-        base_url = f"{_API_ENDPOINT}/{import_id}/segments"
-        all_segments = []
-        next_token = None
-
-        while True:
-            # Construct the URL with the pagination token
-            url = (
-                f"{base_url}?pagination_token={next_token}" if next_token else base_url
-            )
-            response = Segment._request_helper.get_static(api_key=api_key, url=url)
-            if response is None:
-                raise ValueError("Response is None")
-            data = response.json()
-
-            # Extract elements and add them to the list
-            all_segments.extend(data.get("elements", []))
-
-            # Check for next_token in the pagination metadata
-            next_token = data.get("pagination", {}).get("next_token")
-
-            if not next_token:
-                break  # Stop when there are no more pages
-
-        return SegmentList.from_json(all_segments)

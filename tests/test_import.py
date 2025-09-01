@@ -1,5 +1,6 @@
 import json
 from unittest.mock import Mock, patch
+from datetime import datetime, timezone
 
 import pytest
 
@@ -72,3 +73,96 @@ def test_import_list_method(mock_request_helper):
     assert len(imports) == 1
     assert imports[0].name == "Import1"
     mock_request_helper.get_static.assert_called_once()
+
+
+@patch.object(Import, "_request_helper")
+def test_import_list_failure(mock_request_helper):
+    """Test the Import.list method failure case."""
+    mock_request_helper.get_static.return_value = None
+
+    with pytest.raises(ValueError, match="Response is None"):
+        Import.list(api_key="test-key")
+
+
+@patch.object(Import, "_request_helper")
+def test_import_get_by_id(mock_request_helper):
+    """Test the Import.get_by_id method."""
+    mock_response = Mock()
+    mock_response.json.return_value = {
+        "id": "1",
+        "name": "Import1",
+        "code": "c1",
+        "relation": "r1",
+        "identifiers": ["i1"],
+        "source": {"id": "s1", "state": {}, "type": "t1"},
+    }
+    mock_request_helper.get_static.return_value = mock_response
+
+    imp = Import.get_by_id(id="1", api_key="test-key")
+
+    assert imp.name == "Import1"
+    mock_request_helper.get_static.assert_called_once()
+
+
+@patch.object(Import, "_request_helper")
+def test_import_get_by_id_failure(mock_request_helper):
+    """Test the Import.get_by_id method failure case."""
+    mock_request_helper.get_static.return_value = None
+
+    with pytest.raises(ValueError, match="Unable to get_import"):
+        Import.get_by_id(id="1", api_key="test-key")
+
+
+def test_import_post_init():
+    """Test the __post_init__ logic for timestamp normalization."""
+    # Test case 1: both created_at and updated_at are None
+    imp1 = Import(
+        id="1",
+        name="n1",
+        code="c1",
+        relation="r1",
+        identifiers=[],
+        source=Source(id="s1", state={}, type="t1"),
+    )
+    assert imp1.created_at is not None
+    assert imp1.updated_at == imp1.created_at
+
+    # Test case 2: created_at is None, updated_at is not
+    now = datetime.now(tz=timezone.utc)
+    imp2 = Import(
+        id="1",
+        name="n1",
+        code="c1",
+        relation="r1",
+        identifiers=[],
+        source=Source(id="s1", state={}, type="t1"),
+        updated_at=now,
+    )
+    assert imp2.created_at == now
+
+    # Test case 3: updated_at is None, created_at is not
+    imp3 = Import(
+        id="1",
+        name="n1",
+        code="c1",
+        relation="r1",
+        identifiers=[],
+        source=Source(id="s1", state={}, type="t1"),
+        created_at=now,
+    )
+    assert imp3.updated_at == now
+
+
+def test_import_list_init():
+    """Test the ImportList __init__ method."""
+    imp = Import(
+        id="1",
+        name="n1",
+        code="c1",
+        relation="r1",
+        identifiers=[],
+        source=Source(id="s1", state={}, type="t1"),
+    )
+    imp_list = ImportList([imp])
+    assert len(imp_list) == 1
+    assert imp_list.id_dictionary["1"] == imp

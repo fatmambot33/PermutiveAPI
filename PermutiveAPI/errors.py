@@ -29,7 +29,13 @@ class PermutiveBadRequestError(PermutiveAPIError):
     """
 
     def __init__(self, message: str, *args):
-        """Initialise the PermutiveBadRequestError."""
+        """Initialise the PermutiveBadRequestError.
+
+        Parameters
+        ----------
+        message : str
+            The error message.
+        """
         self.message = message
         super().__init__(message, *args)
 

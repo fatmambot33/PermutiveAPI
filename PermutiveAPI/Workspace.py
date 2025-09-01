@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from PermutiveAPI.Utils import JSONSerializable, load_json_list
 from PermutiveAPI.Audience.Import import Import, ImportList
-from PermutiveAPI.Audience.Segment import Segment
+from PermutiveAPI.Audience.Segment import Segment, SegmentList
 from PermutiveAPI.Cohort import Cohort, CohortList
 
 
@@ -28,24 +28,22 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
     -------
     is_top_level()
         Determine if the workspace is the top-level workspace.
-    refresh_cohorts()
-        Re-fetch cohorts from the API and update the cache.
     cohorts()
         Retrieve a cached list of cohorts for the workspace.
-    list_cohorts()
-        Retrieve a list of cohorts for the workspace.
-    refresh_imports()
-        Re-fetch imports from the API and update the cache.
     imports()
         Retrieve a cached list of imports for the workspace.
-    list_segments()
-        Retrieve a list of segments for a given import.
+    segments()
+        Retrieve a cached list of segments for a given import.
     """
 
     name: str
     organisation_id: str
     workspace_id: str
     api_key: str
+
+    def __post_init__(self):
+        """Initialise caches."""
+        self._segment_cache: Dict[str, "SegmentList"] = {}
 
     @property
     def is_top_level(self) -> bool:
@@ -66,7 +64,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             refresh_func()
         return getattr(self, cache_attr)
 
-    def refresh_cohort_cache(self) -> CohortList:
+    def _refresh_cohort_cache(self) -> CohortList:
         """Re-fetch cohorts from the API and update the cache.
 
         Returns
@@ -93,10 +91,10 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Cached list of cohorts.
         """
         return self._get_or_refresh_cached_attribute(
-            "_cohort_cache", self.refresh_cohort_cache, force_refresh
+            "_cohort_cache", self._refresh_cohort_cache, force_refresh
         )
 
-    def refresh_import_cache(self) -> "ImportList":
+    def _refresh_import_cache(self) -> "ImportList":
         """Re-fetch imports from the API and update the cache.
 
         Returns
@@ -121,23 +119,33 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Cached list of imports.
         """
         return self._get_or_refresh_cached_attribute(
-            "_import_cache", self.refresh_import_cache, force_refresh
+            "_import_cache", self._refresh_import_cache, force_refresh
         )
 
-    def list_segments(self, import_id: str) -> List[Segment]:
-        """Retrieve a list of segments for a given import.
+    def _refresh_segment_cache(self, import_id: str) -> None:
+        """Re-fetch segments from the API and update the cache."""
+        self._segment_cache[import_id] = Segment.list(
+            import_id=import_id, api_key=self.api_key
+        )
+
+    def segments(self, import_id: str, force_refresh: bool = False) -> "SegmentList":
+        """Retrieve a cached list of segments for a given import.
 
         Parameters
         ----------
         import_id : str
             The ID of the import to retrieve segments for.
+        force_refresh : bool, optional
+            Re-fetch the segment list if ``True``. Defaults to ``False``.
 
         Returns
         -------
-        List[Segment]
-            A list of segments.
+        SegmentList
+            Cached list of segments.
         """
-        return Segment.list(import_id=import_id, api_key=self.api_key)
+        if force_refresh or import_id not in self._segment_cache:
+            self._refresh_segment_cache(import_id)
+        return self._segment_cache[import_id]
 
 
 class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
@@ -147,8 +155,6 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
     -------
     from_json()
         Deserialize a list of workspaces from various JSON representations.
-    rebuild_cache()
-        Rebuild all caches based on the current state of the list.
     id_dictionary()
         Return a dictionary of workspaces indexed by their IDs.
     name_dictionary()
@@ -177,9 +183,9 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
         super().__init__(items_list if items_list is not None else [])
         self._id_dictionary_cache: Dict[str, Workspace] = {}
         self._name_dictionary_cache: Dict[str, Workspace] = {}
-        self.refresh_cache()
+        self._refresh_cache()
 
-    def refresh_cache(self):
+    def _refresh_cache(self):
         """Rebuild all caches based on the current state of the list."""
         self._id_dictionary_cache = {
             workspace.workspace_id: workspace
@@ -200,7 +206,7 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
             Mapping of workspace IDs to ``Workspace`` objects.
         """
         if not self._id_dictionary_cache:
-            self.refresh_cache()
+            self._refresh_cache()
         return self._id_dictionary_cache
 
     @property
@@ -213,7 +219,7 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
             Mapping of workspace names to ``Workspace`` objects.
         """
         if not self._name_dictionary_cache:
-            self.refresh_cache()
+            self._refresh_cache()
         return self._name_dictionary_cache
 
     @property
