@@ -28,11 +28,11 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
     -------
     is_top_level()
         Determine if the workspace is the top-level workspace.
-    cohorts()
+    list_cohorts()
         Retrieve a cached list of cohorts for the workspace.
-    imports()
+    list_imports()
         Retrieve a cached list of imports for the workspace.
-    segments()
+    list_segments()
         Retrieve a cached list of segments for a given import.
     """
 
@@ -77,7 +77,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         )
         return self._cohort_cache
 
-    def cohorts(self, force_refresh: bool = False) -> CohortList:
+    def list_cohorts(self, force_refresh: bool = False) -> CohortList:
         """Retrieve a cached list of cohorts for the workspace.
 
         Parameters
@@ -105,7 +105,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         self._import_cache = Import.list(api_key=self.api_key)
         return self._import_cache
 
-    def imports(self, force_refresh: bool = False) -> "ImportList":
+    def list_imports(self, force_refresh: bool = False) -> "ImportList":
         """Retrieve a cached list of imports for the workspace.
 
         Parameters
@@ -128,7 +128,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             import_id=import_id, api_key=self.api_key
         )
 
-    def segments(self, import_id: str, force_refresh: bool = False) -> "SegmentList":
+    def list_segments(self, import_id: str, force_refresh: bool = False) -> "SegmentList":
         """Retrieve a cached list of segments for a given import.
 
         Parameters
