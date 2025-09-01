@@ -49,6 +49,10 @@ class Import(JSONSerializable[Dict[str, Any]]):
         Fetch a specific import by its ID.
     list(api_key)
         Retrieve a list of all imports.
+    activate(api_key)
+        Activate the import in Permutive.
+    archive(api_key)
+        Archive the import in Permutive.
     """
 
     _request_helper = RequestHelper
@@ -68,6 +72,36 @@ class Import(JSONSerializable[Dict[str, Any]]):
     updated_at: Optional[datetime] = field(
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )
+
+    def activate(self, api_key: str) -> None:
+        """Activate the import in Permutive.
+
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+
+        Raises
+        ------
+        NotImplementedError
+            Activation has not been implemented yet.
+        """
+        raise NotImplementedError("Activation has not been implemented yet.")
+
+    def archive(self, api_key: str) -> None:
+        """Archive the import in Permutive.
+
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+
+        Raises
+        ------
+        NotImplementedError
+            Archiving has not been implemented yet.
+        """
+        raise NotImplementedError("Archiving has not been implemented yet.")
 
     @staticmethod
     def get_by_id(id: str, api_key: str) -> "Import":

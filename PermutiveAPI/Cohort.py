@@ -58,6 +58,10 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         Update an existing cohort in Permutive.
     delete(api_key)
         Delete a cohort from Permutive.
+    activate(api_key)
+        Activate the cohort in Permutive.
+    archive(api_key)
+        Archive the cohort in Permutive.
     get_by_id(id, api_key)
         Fetch a specific cohort from the API using its ID.
     get_by_name(name, api_key)
@@ -175,6 +179,44 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             raise ValueError("Cohort ID must be specified for deletion.")
         url = f"{_API_ENDPOINT}{self.id}"
         self._request_helper.delete_static(api_key=api_key, url=url)
+
+    def activate(self, api_key: str) -> None:
+        """Activate the cohort in Permutive.
+
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        NotImplementedError
+            Activation has not been implemented yet.
+        """
+        raise NotImplementedError("Activation has not been implemented yet.")
+
+    def archive(self, api_key: str) -> None:
+        """Archive the cohort in Permutive.
+
+        Parameters
+        ----------
+        api_key : str
+            The API key for authentication.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        NotImplementedError
+            Archiving has not been implemented yet.
+        """
+        raise NotImplementedError("Archiving has not been implemented yet.")
 
     @staticmethod
     def get_by_id(id: str, api_key: str) -> "Cohort":
