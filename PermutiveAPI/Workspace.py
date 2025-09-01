@@ -1,6 +1,6 @@
 """Workspace utilities for interacting with the Permutive API."""
 
-from typing import Dict, List, Optional, Type, Union, Any
+from typing import Callable, Dict, List, Optional, Type, Union, Any
 from dataclasses import dataclass
 from pathlib import Path
 from PermutiveAPI.Utils import JSONSerializable, load_json_list
@@ -71,6 +71,14 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         )
         return self._cohort_cache
 
+    def _get_or_refresh_cached_attribute(
+        self, cache_attr: str, refresh_func: Callable[[], Any], force_refresh: bool
+    ) -> Any:
+        """Get a cached attribute or refresh it."""
+        if force_refresh or not hasattr(self, cache_attr):
+            refresh_func()
+        return getattr(self, cache_attr)
+
     def cohorts(self, force_refresh: bool = False) -> CohortList:
         """Retrieve a cached list of cohorts for the workspace.
 
@@ -84,9 +92,9 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         CohortList
             Cached list of cohorts.
         """
-        if force_refresh or not hasattr(self, "_cohort_cache"):
-            self.refresh_cohorts()
-        return self._cohort_cache
+        return self._get_or_refresh_cached_attribute(
+            "_cohort_cache", self.refresh_cohorts, force_refresh
+        )
 
     def list_cohorts(self, include_child_workspaces: bool = False) -> CohortList:
         """Retrieve a list of cohorts for the workspace.
@@ -129,9 +137,9 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         ImportList
             Cached list of imports.
         """
-        if force_refresh or not hasattr(self, "_import_cache"):
-            self.refresh_imports()
-        return self._import_cache
+        return self._get_or_refresh_cached_attribute(
+            "_import_cache", self.refresh_imports, force_refresh
+        )
 
     def list_segments(self, import_id: str) -> List[Segment]:
         """Retrieve a list of segments for a given import.

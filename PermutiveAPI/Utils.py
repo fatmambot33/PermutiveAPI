@@ -32,6 +32,15 @@ import datetime
 from pathlib import Path
 import time
 
+from PermutiveAPI.errors import (
+    PermutiveAPIError,
+    PermutiveAuthenticationError,
+    PermutiveBadRequestError,
+    PermutiveRateLimitError,
+    PermutiveResourceNotFoundError,
+    PermutiveServerError,
+)
+
 
 class RequestHelper:
     """A utility class for making HTTP requests to a RESTful API.
@@ -121,7 +130,7 @@ class RequestHelper:
 
     # -------- Public Request Methods --------
     @staticmethod
-    def get_static(api_key: str, url: str) -> Optional[Response]:
+    def get_static(api_key: str, url: str) -> Response:
         """
         Perform a GET request with retry logic.
 
@@ -134,13 +143,13 @@ class RequestHelper:
 
         Returns
         -------
-        Optional[Response]
-            The response from the server, or None if the request fails.
+        requests.Response
+            The response from the server.
         """
         return RequestHelper._with_retry(requests.get, url, api_key)
 
     @staticmethod
-    def post_static(api_key: str, url: str, data: dict) -> Optional[Response]:
+    def post_static(api_key: str, url: str, data: dict) -> Response:
         """
         Perform a POST request with retry logic.
 
@@ -155,13 +164,13 @@ class RequestHelper:
 
         Returns
         -------
-        Optional[Response]
-            The response from the server, or None if the request fails.
+        requests.Response
+            The response from the server.
         """
         return RequestHelper._with_retry(requests.post, url, api_key, json=data)
 
     @staticmethod
-    def patch_static(api_key: str, url: str, data: dict) -> Optional[Response]:
+    def patch_static(api_key: str, url: str, data: dict) -> Response:
         """
         Perform a PATCH request with retry logic.
 
@@ -176,13 +185,13 @@ class RequestHelper:
 
         Returns
         -------
-        Optional[Response]
-            The response from the server, or None if the request fails.
+        requests.Response
+            The response from the server.
         """
         return RequestHelper._with_retry(requests.patch, url, api_key, json=data)
 
     @staticmethod
-    def delete_static(api_key: str, url: str) -> Optional[Response]:
+    def delete_static(api_key: str, url: str) -> Response:
         """
         Perform a DELETE request with retry logic.
 
@@ -195,12 +204,12 @@ class RequestHelper:
 
         Returns
         -------
-        Optional[Response]
-            The response from the server, or None if the request fails.
+        requests.Response
+            The response from the server.
         """
         return RequestHelper._with_retry(requests.delete, url, api_key)
 
-    def get(self, url) -> Optional[Response]:
+    def get(self, url) -> Response:
         """
         Perform a GET request using the instance's API key.
 
@@ -211,12 +220,12 @@ class RequestHelper:
 
         Returns
         -------
-        Optional[Response]
-            The response from the server, or None if the request fails.
+        requests.Response
+            The response from the server.
         """
         return RequestHelper.get_static(self.api_key, url)
 
-    def post(self, url: str, data: dict) -> Optional[Response]:
+    def post(self, url: str, data: dict) -> Response:
         """
         Perform a POST request using the instance's API key.
 
@@ -229,12 +238,12 @@ class RequestHelper:
 
         Returns
         -------
-        Optional[Response]
-            The response from the server, or None if the request fails.
+        requests.Response
+            The response from the server.
         """
         return RequestHelper.post_static(self.api_key, url, data)
 
-    def patch(self, url: str, data: dict) -> Optional[Response]:
+    def patch(self, url: str, data: dict) -> Response:
         """
         Perform a PATCH request using the instance's API key.
 
@@ -247,12 +256,12 @@ class RequestHelper:
 
         Returns
         -------
-        Optional[Response]
-            The response from the server, or None if the request fails.
+        requests.Response
+            The response from the server.
         """
         return RequestHelper.patch_static(self.api_key, url, data)
 
-    def delete(self, url: str) -> Optional[Response]:
+    def delete(self, url: str) -> Response:
         """
         Perform a DELETE request using the instance's API key.
 
@@ -263,8 +272,8 @@ class RequestHelper:
 
         Returns
         -------
-        Optional[Response]
-            The response from the server, or None if the request fails.
+        requests.Response
+            The response from the server.
         """
         return RequestHelper.delete_static(self.api_key, url)
 
@@ -304,18 +313,17 @@ class RequestHelper:
 
     # -------- Retry Wrapper --------
     @staticmethod
-    def _with_retry(
-        method: Callable, url: str, api_key: str, **kwargs
-    ) -> Optional[Response]:
+    def _with_retry(method: Callable, url: str, api_key: str, **kwargs) -> Response:
         """Retry logic for transient errors and rate limiting."""
         url = RequestHelper.generate_url_with_key(url, api_key)
         attempt = 0
         delay = RequestHelper.INITIAL_DELAY
-        response = None
+        response: Optional[Response] = None
 
         while attempt < RequestHelper.MAX_RETRIES:
             try:
                 response = method(url, headers=RequestHelper.DEFAULT_HEADERS, **kwargs)
+                assert response is not None
                 if response.status_code in RequestHelper.SUCCESS_RANGE:
                     return response
 
@@ -334,13 +342,16 @@ class RequestHelper:
                     delay *= RequestHelper.BACKOFF_FACTOR
                 else:
                     # Non-retryable error
-                    return RequestHelper.handle_exception(
+                    RequestHelper.handle_exception(
                         RequestException(f"HTTP {response.status_code}"), response
                     )
 
             except RequestException as e:
                 if attempt >= RequestHelper.MAX_RETRIES - 1:
-                    raise
+                    # Raise our custom error from the original exception
+                    raise PermutiveAPIError(
+                        f"Request failed after {attempt+1} attempts: {e}"
+                    ) from e
                 logging.warning(
                     f"Request failed ({e}), retrying in {delay}s (attempt {attempt+1})"
                 )
@@ -349,9 +360,13 @@ class RequestHelper:
 
             attempt += 1
 
-        return RequestHelper.handle_exception(
+        # This part should be unreachable if logic is correct, but as a safeguard:
+        RequestHelper.handle_exception(
             RequestException("Max retries reached"), response
         )
+        raise PermutiveServerError(
+            "Max retries reached, but handle_exception did not raise."
+        )  # pragma: no cover
 
     # -------- Exception Handling --------
     @staticmethod
@@ -370,7 +385,7 @@ class RequestHelper:
             # Redact patterns like 'key=secret' or '"key": "secret"'
             # key=secret (in URLs)
             message = re.sub(
-                rf'({key})=([^\s&"\']+)',
+                rf"({key})=([^\s&]+)",
                 rf"\1=[REDACTED]",
                 message,
                 flags=re.IGNORECASE,
@@ -388,16 +403,17 @@ class RequestHelper:
     def _extract_error_message(response: Response) -> str:
         try:
             error_content = json.loads(response.content)
-            return error_content.get("error", {}).get("cause", "Unknown error")
+            if isinstance(error_content, dict):
+                error_details = error_content.get("error")
+                if isinstance(error_details, dict):
+                    return error_details.get("cause", "Unknown error")
+            return "Unknown error"
         except json.JSONDecodeError:
             return "Could not parse error message"
 
     @staticmethod
-    def handle_exception(
-        e: Exception, response: Optional[Response]
-    ) -> Optional[Response]:
-        """
-        Handle exceptions and HTTP errors.
+    def handle_exception(e: Exception, response: Optional[Response]) -> None:
+        """Handle exceptions and HTTP errors by raising custom exceptions.
 
         Parameters
         ----------
@@ -406,56 +422,59 @@ class RequestHelper:
         response : Optional[Response]
             The HTTP response.
 
-        Returns
-        -------
-        Optional[Response]
-            The response if it can be handled, otherwise None.
+        Raises
+        ------
+        PermutiveBadRequestError
+            For HTTP 400 errors.
+        PermutiveAuthenticationError
+            For HTTP 401 or 403 errors.
+        PermutiveResourceNotFoundError
+            For HTTP 404 errors.
+        PermutiveRateLimitError
+            For HTTP 429 errors (after retries).
+        PermutiveServerError
+            For HTTP 5xx errors (after retries).
+        PermutiveAPIError
+            For other unexpected errors.
         """
         if response:
             status = response.status_code
 
             if status in RequestHelper.SUCCESS_RANGE:
-                return response
+                # This should not be reached if called from _with_retry
+                return  # pragma: no cover
 
             if status == 400:
                 msg = RequestHelper._extract_error_message(response)
-                # Redact sensitive data from both the error message and the request URL
                 msg = RequestHelper._redact_sensitive_data(msg, response)
                 redacted_url = ""
                 if hasattr(response, "request") and response.request.url:
                     redacted_url = RequestHelper._redact_sensitive_data(
                         response.request.url, response
                     )
-                logging.warning(
-                    f"400 Bad Request: {msg}"
-                    + (f" [URL: {redacted_url}]" if redacted_url else "")
+                full_msg = f"400 Bad Request: {msg}" + (
+                    f" [URL: {redacted_url}]" if redacted_url else ""
                 )
-                return response
+                raise PermutiveBadRequestError(full_msg) from e
 
-            if status == 401:
-                logging.error("401 Unauthorized: Invalid API key or credentials.")
-                return None
-
-            if status == 403:
-                logging.error(
-                    "403 Forbidden: You don't have permission for this resource."
-                )
-                return None
+            if status == 401 or status == 403:
+                raise PermutiveAuthenticationError(
+                    f"{status}: Invalid API key or insufficient permissions."
+                ) from e
 
             if status == 404:
-                logging.warning("404 Not Found: Resource not found.")
-                return None
+                raise PermutiveResourceNotFoundError("Resource not found.") from e
 
             if status == 429:
-                logging.error("429 Too Many Requests: Retry limit exceeded.")
-                return None
+                raise PermutiveRateLimitError("Retry limit exceeded.") from e
 
             if 500 <= status < 600:
-                logging.error(f"{status} Server Error: API unavailable after retries.")
-                return None
+                raise PermutiveServerError(
+                    f"{status}: API unavailable after retries."
+                ) from e
 
-        logging.error(f"An unexpected error occurred: {e}")
-        raise e
+        # Fallback for exceptions without a response object
+        raise PermutiveAPIError(f"An unexpected error occurred: {e}") from e
 
 
 def check_filepath(filepath: str) -> None:
