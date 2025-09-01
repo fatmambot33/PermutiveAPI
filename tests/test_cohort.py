@@ -148,6 +148,7 @@ def test_get_by_name(mock_list):
     mock_list.return_value = CohortList.from_json(cohorts_data)
 
     result = Cohort.get_by_name("C1", api_key="test-key")
+    assert result is not None
     assert result.id == "1"
 
 
@@ -161,6 +162,7 @@ def test_get_by_code(mock_list):
     mock_list.return_value = CohortList.from_json(cohorts_data)
 
     result = Cohort.get_by_code("101", api_key="test-key")
+    assert result is not None
     assert result.id == "1"
 
 
