@@ -4,12 +4,11 @@ import logging
 from typing import List, Dict, Any
 from dataclasses import dataclass
 
-from requests import Response
 
-from PermutiveAPI.Identify import _API_ENDPOINT
-from PermutiveAPI.Identify.Alias import Alias
-from PermutiveAPI.Utils import RequestHelper, JSONSerializable
-
+from . import _API_ENDPOINT
+from .Alias import Alias
+from PermutiveAPI._Utils import http
+from PermutiveAPI._Utils.json import JSONSerializable
 
 _API_PAYLOAD = ["user_id", "aliases"]
 
@@ -31,7 +30,7 @@ class Identity(JSONSerializable[Dict[str, Any]]):
         Identify a user in Permutive.
     """
 
-    _request_helper = RequestHelper
+    _request_helper = http
 
     user_id: str
     aliases: List[Alias]
@@ -59,8 +58,8 @@ class Identity(JSONSerializable[Dict[str, Any]]):
 
         url = f"{_API_ENDPOINT}"
 
-        self._request_helper.post_static(
+        self._request_helper.post(
             api_key=api_key,
             url=url,
-            data=self._request_helper.to_payload_static(self, _API_PAYLOAD),
+            data=self._request_helper.to_payload(self, _API_PAYLOAD),
         )

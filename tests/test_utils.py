@@ -12,7 +12,7 @@ import time
 from typing import Dict, Any, List
 
 import pytest
-from PermutiveAPI.errors import (
+from PermutiveAPI._Utils.http import (
     PermutiveAPIError,
     PermutiveAuthenticationError,
     PermutiveBadRequestError,
@@ -23,16 +23,17 @@ from PermutiveAPI.errors import (
 from requests.models import PreparedRequest, Response
 from requests.structures import CaseInsensitiveDict
 
-from PermutiveAPI.Utils import (
-    RequestHelper,
+from PermutiveAPI._Utils import http
+from PermutiveAPI._Utils.json import (
     JSONSerializable,
-    check_filepath,
-    split_filepath,
+    json_default,
+)
+from PermutiveAPI._Utils.file import check_filepath, split_filepath
+from PermutiveAPI._Utils.list import (
     chunk_list,
     convert_list,
     compare_list,
     merge_list,
-    json_default,
 )
 
 
@@ -75,7 +76,7 @@ def test_redact_sensitive_data():
     # Test message containing sensitive key-value pairs
     message_with_secrets = 'some info api_key=secret_key and token="secret_token"'
 
-    redacted_message = RequestHelper._redact_sensitive_data(message_with_secrets, resp)
+    redacted_message = http._redact_sensitive_data(message_with_secrets, resp)
     assert "secret_key" not in redacted_message
     assert "secret_token" not in redacted_message
     assert "[REDACTED]" in redacted_message
@@ -84,7 +85,7 @@ def test_redact_sensitive_data():
     url_without_key = "https://api.com/resource?other=val"
     resp_no_secret = _make_response(url_without_key, 200)
     message_without_secrets = "this is fine"
-    redacted_message = RequestHelper._redact_sensitive_data(
+    redacted_message = http._redact_sensitive_data(
         message_without_secrets, resp_no_secret
     )
     assert message_without_secrets == redacted_message
@@ -97,18 +98,15 @@ def test_extract_error_message():
     resp_valid = _make_response(
         "https://api.com", 400, b'{"error":{"cause":"bad request"}}'
     )
-    assert RequestHelper._extract_error_message(resp_valid) == "bad request"
+    assert http._extract_error_message(resp_valid) == "bad request"
 
     # Test malformed JSON error
     resp_malformed = _make_response("https://api.com", 400, b'{"error": "cause"}')
-    assert RequestHelper._extract_error_message(resp_malformed) == "Unknown error"
+    assert http._extract_error_message(resp_malformed) == "Unknown error"
 
     # Test non-JSON error
     resp_not_json = _make_response("https://api.com", 400, b"not json")
-    assert (
-        RequestHelper._extract_error_message(resp_not_json)
-        == "Could not parse error message"
-    )
+    assert http._extract_error_message(resp_not_json) == "Could not parse error message"
 
 
 @pytest.mark.parametrize(
@@ -129,7 +127,7 @@ def test_handle_exception_raises(status, expected_exception):
     resp = _make_response(url, status, b'{"error":{"cause":"bad request"}}')
 
     with pytest.raises(expected_exception) as excinfo:
-        RequestHelper.handle_exception(Exception("boom"), resp)
+        http.raise_for_status(Exception("boom"), resp)
 
     # For 400, check that the message contains the URL and that it's redacted
     if status == 400:
@@ -141,7 +139,7 @@ def test_handle_exception_raises(status, expected_exception):
 def test_handle_exception_no_response():
     """Test that a generic error is raised when there is no response."""
     with pytest.raises(PermutiveAPIError, match="An unexpected error occurred"):
-        RequestHelper.handle_exception(Exception("boom"), None)
+        http.raise_for_status(Exception("boom"), None)
 
 
 def test_list_helpers():
@@ -220,48 +218,22 @@ def test_request_methods(monkeypatch):
         r.status_code = 200
         return r
 
-    monkeypatch.setattr(RequestHelper, "_with_retry", lambda *a, **k: dummy_response())
-    response = RequestHelper.get_static("k", "http://a")
+    monkeypatch.setattr(http, "_with_retry", lambda *a, **k: dummy_response())
+    response = http.get("k", "http://a")
     assert response is not None
     assert response.status_code == 200
-    response = RequestHelper.post_static("k", "http://a", {})
+    response = http.post("k", "http://a", {})
     assert response is not None
     assert response.status_code == 200
-    response = RequestHelper.patch_static("k", "http://a", {})
+    response = http.patch("k", "http://a", {})
     assert response is not None
     assert response.status_code == 200
-    response = RequestHelper.delete_static("k", "http://a")
-    assert response is not None
-    assert response.status_code == 200
-
-    helper = RequestHelper("k", "http://a")
-    monkeypatch.setattr(
-        RequestHelper, "get_static", lambda api_key, url: dummy_response()
-    )
-    monkeypatch.setattr(
-        RequestHelper, "post_static", lambda api_key, url, data: dummy_response()
-    )
-    monkeypatch.setattr(
-        RequestHelper, "patch_static", lambda api_key, url, data: dummy_response()
-    )
-    monkeypatch.setattr(
-        RequestHelper, "delete_static", lambda api_key, url: dummy_response()
-    )
-    response = helper.get("u")
-    assert response is not None
-    assert response.status_code == 200
-    response = helper.post("u", {})
-    assert response is not None
-    assert response.status_code == 200
-    response = helper.patch("u", {})
-    assert response is not None
-    assert response.status_code == 200
-    response = helper.delete("u")
+    response = http.delete("k", "http://a")
     assert response is not None
     assert response.status_code == 200
 
 
-def test_to_payload_static():
+def test_to_payload():
     """Test the payload creation from a dataclass."""
 
     @dataclass
@@ -269,9 +241,9 @@ def test_to_payload_static():
         a: int
         b: int | None = None
 
-    result = RequestHelper.to_payload_static(Data(1, None))
+    result = http.to_payload(Data(1, None))
     assert result == {"a": 1}
-    subset = RequestHelper.to_payload_static(Data(1, 2), ["b"])
+    subset = http.to_payload(Data(1, 2), ["b"])
     assert subset == {"b": 2}
 
 
@@ -289,7 +261,7 @@ def test_with_retry(monkeypatch):
         return resp
 
     monkeypatch.setattr(time, "sleep", lambda s: None)
-    resp = RequestHelper._with_retry(method, "http://a", "k")
+    resp = http._with_retry(method, "http://a", "k")
     assert resp is not None
     assert resp.status_code == 200
 
@@ -307,9 +279,7 @@ def test_with_retry_params(monkeypatch):
         return resp
 
     monkeypatch.setattr(time, "sleep", lambda s: None)
-    resp = RequestHelper._with_retry(
-        method, "http://a", "test-key", params={"test": "value"}
-    )
+    resp = http._with_retry(method, "http://a", "test-key", params={"test": "value"})
     assert resp is not None
     assert resp.status_code == 200
     assert calls["n"] == 1
@@ -330,7 +300,7 @@ def test_with_retry_429(monkeypatch):
         return resp
 
     monkeypatch.setattr(time, "sleep", lambda s: None)
-    resp = RequestHelper._with_retry(method, "http://a", "k")
+    resp = http._with_retry(method, "http://a", "k")
     assert resp is not None
     assert resp.status_code == 200
     assert calls["n"] == 1
@@ -349,9 +319,9 @@ def test_with_retry_max_retries_exceeded(monkeypatch):
     monkeypatch.setattr(time, "sleep", lambda s: None)
 
     with pytest.raises(Exception, match="Max retries reached"):
-        RequestHelper._with_retry(method, "http://a", "k")
+        http._with_retry(method, "http://a", "k")
 
-    assert calls["n"] == RequestHelper.MAX_RETRIES
+    assert calls["n"] == http.MAX_RETRIES
 
 
 def test_json_serializable_collections():

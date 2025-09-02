@@ -66,19 +66,19 @@ def test_import_list_method(mock_request_helper):
             }
         ]
     }
-    mock_request_helper.get_static.return_value = mock_response
+    mock_request_helper.get.return_value = mock_response
 
     imports = Import.list(api_key="test-key")
 
     assert len(imports) == 1
     assert imports[0].name == "Import1"
-    mock_request_helper.get_static.assert_called_once()
+    mock_request_helper.get.assert_called_once()
 
 
 @patch.object(Import, "_request_helper")
 def test_import_list_failure(mock_request_helper):
     """Test the Import.list method failure case."""
-    mock_request_helper.get_static.return_value = None
+    mock_request_helper.get.return_value = None
 
     with pytest.raises(ValueError, match="Response is None"):
         Import.list(api_key="test-key")
@@ -96,18 +96,18 @@ def test_import_get_by_id(mock_request_helper):
         "identifiers": ["i1"],
         "source": {"id": "s1", "state": {}, "type": "t1"},
     }
-    mock_request_helper.get_static.return_value = mock_response
+    mock_request_helper.get.return_value = mock_response
 
     imp = Import.get_by_id(id="1", api_key="test-key")
 
     assert imp.name == "Import1"
-    mock_request_helper.get_static.assert_called_once()
+    mock_request_helper.get.assert_called_once()
 
 
 @patch.object(Import, "_request_helper")
 def test_import_get_by_id_failure(mock_request_helper):
     """Test the Import.get_by_id method failure case."""
-    mock_request_helper.get_static.return_value = None
+    mock_request_helper.get.return_value = None
 
     with pytest.raises(ValueError, match="Unable to get_import"):
         Import.get_by_id(id="1", api_key="test-key")

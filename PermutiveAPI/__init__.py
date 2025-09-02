@@ -12,8 +12,7 @@ from PermutiveAPI.Identify.Identity import Identity
 from PermutiveAPI.Identify.Alias import Alias
 from PermutiveAPI.Cohort import Cohort, CohortList
 from PermutiveAPI.Workspace import Workspace, WorkspaceList
-from PermutiveAPI.Utils import customJSONEncoder
-from PermutiveAPI.errors import (
+from PermutiveAPI._Utils.http import (
     PermutiveAPIError,
     PermutiveAuthenticationError,
     PermutiveBadRequestError,
@@ -35,7 +34,6 @@ __all__ = [
     "WorkspaceList",
     "Identity",
     "Alias",
-    "customJSONEncoder",
     "PermutiveAPIError",
     "PermutiveAuthenticationError",
     "PermutiveBadRequestError",

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, Any
 
 
-from PermutiveAPI.Utils import JSONSerializable
+from PermutiveAPI._Utils.json import JSONSerializable
 
 
 @dataclass

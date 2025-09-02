@@ -6,12 +6,13 @@ from typing import Dict, List, Optional, DefaultDict, TYPE_CHECKING, Type, Union
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from PermutiveAPI.Audience.Segment import SegmentList
+    from .Segment import SegmentList
 from datetime import datetime, timezone
 from collections import defaultdict
-from PermutiveAPI.Utils import RequestHelper, JSONSerializable, load_json_list
-from PermutiveAPI.Audience import _API_ENDPOINT
-from PermutiveAPI.Audience.Source import Source
+from PermutiveAPI._Utils import http
+from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
+from . import _API_ENDPOINT
+from .Source import Source
 
 
 @dataclass
@@ -52,7 +53,7 @@ class Import(JSONSerializable[Dict[str, Any]]):
 
     """
 
-    _request_helper = RequestHelper
+    _request_helper = http
 
     id: str
     name: str
@@ -106,7 +107,7 @@ class Import(JSONSerializable[Dict[str, Any]]):
         """
         logging.debug(f"AudienceAPI::get_import::{id}")
         url = f"{_API_ENDPOINT}/{id}"
-        response = Import._request_helper.get_static(url=url, api_key=api_key)
+        response = Import._request_helper.get(url=url, api_key=api_key)
         if not response:
             raise ValueError("Unable to get_import")
         return Import.from_json(response.json())
@@ -132,7 +133,7 @@ class Import(JSONSerializable[Dict[str, Any]]):
         """
         logging.debug(f"AudienceAPI::list_imports")
         url = _API_ENDPOINT
-        response = Import._request_helper.get_static(api_key=api_key, url=url)
+        response = Import._request_helper.get(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         imports = response.json()

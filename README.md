@@ -13,6 +13,7 @@ PermutiveAPI is a Python module to interact with the Permutive API. It provides 
   - [Managing Segments](#managing-segments)
   - [Managing Imports](#managing-imports)
   - [Managing Users](#managing-users)
+  - [Error Handling](#error-handling)
 - [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
@@ -159,6 +160,31 @@ try:
     print("Successfully identified user.")
 except Exception as e:
     print(f"Error identifying user: {e}")
+
+### Error Handling
+
+The package raises purpose-specific exceptions that are also available at the
+top level of the package for convenience:
+
+```python
+from PermutiveAPI import (
+    PermutiveAPIError,
+    PermutiveAuthenticationError,
+    PermutiveBadRequestError,
+    PermutiveRateLimitError,
+    PermutiveResourceNotFoundError,
+    PermutiveServerError,
+)
+
+try:
+    # make an API call via the high-level classes
+    Cohort.list(api_key="your_api_key")
+except PermutiveBadRequestError as e:
+    # e.status, e.url, and e.response are available for debugging
+    print(e.status, e.url, e)
+except PermutiveAPIError as e:
+    print("Unhandled API error:", e)
+```
 ```
 
 ## Development

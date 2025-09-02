@@ -75,13 +75,13 @@ def test_cohort_create(mock_request_helper):
         "code": "new-code",
         "name": "New Cohort",
     }
-    mock_request_helper.post_static.return_value = mock_response
+    mock_request_helper.post.return_value = mock_response
 
     cohort.create(api_key="test-key")
 
     assert cohort.id == "new-id"
     assert cohort.code == "new-code"
-    mock_request_helper.post_static.assert_called_once()
+    mock_request_helper.post.assert_called_once()
 
 
 @patch.object(Cohort, "_request_helper")
@@ -94,7 +94,7 @@ def test_cohort_create_with_id_warning(mock_request_helper, caplog):
         "code": "new-code",
         "name": "New Cohort",
     }
-    mock_request_helper.post_static.return_value = mock_response
+    mock_request_helper.post.return_value = mock_response
 
     cohort.create(api_key="test-key")
     assert "id is specified" in caplog.text
@@ -110,18 +110,18 @@ def test_cohort_update(mock_request_helper):
         "name": "Updated Name",
         "last_updated_at": "2022-01-01T00:00:00Z",
     }
-    mock_request_helper.patch_static.return_value = mock_response
+    mock_request_helper.patch.return_value = mock_response
 
     cohort.update(api_key="test-key")
     assert cohort.last_updated_at is not None
-    mock_request_helper.patch_static.assert_called_once()
+    mock_request_helper.patch.assert_called_once()
 
 
 @patch.object(Cohort, "_request_helper")
 def test_cohort_update_failure(mock_request_helper):
     """Test that updating a cohort raises an error on failure."""
     cohort = Cohort(name="C1", id="1")
-    mock_request_helper.patch_static.return_value = None
+    mock_request_helper.patch.return_value = None
 
     with pytest.raises(ValueError, match="Response is None"):
         cohort.update(api_key="test-key")
@@ -131,11 +131,11 @@ def test_cohort_update_failure(mock_request_helper):
 def test_cohort_delete(mock_request_helper):
     """Test successful deletion of a cohort."""
     cohort = Cohort(name="C1", id="1")
-    mock_request_helper.delete_static.return_value = Mock(status_code=204)
+    mock_request_helper.delete.return_value = Mock(status_code=204)
 
     cohort.delete(api_key="test-key")
 
-    mock_request_helper.delete_static.assert_called_once()
+    mock_request_helper.delete.assert_called_once()
 
 
 @patch.object(Cohort, "_request_helper")
@@ -151,12 +151,12 @@ def test_cohort_get_by_id(mock_request_helper):
     """Test retrieving a cohort by its ID."""
     mock_response = Mock()
     mock_response.json.return_value = {"id": "1", "name": "Test Cohort"}
-    mock_request_helper.get_static.return_value = mock_response
+    mock_request_helper.get.return_value = mock_response
 
     cohort = Cohort.get_by_id(id="1", api_key="test-key")
 
     assert cohort.name == "Test Cohort"
-    mock_request_helper.get_static.assert_called_once()
+    mock_request_helper.get.assert_called_once()
 
 
 @patch.object(Cohort, "get_by_id")
@@ -198,11 +198,11 @@ def test_cohort_list_with_children(mock_request_helper):
     """Test that the list method includes child workspaces when requested."""
     mock_response = Mock()
     mock_response.json.return_value = [{"id": "1", "name": "Child Cohort"}]
-    mock_request_helper.get_static.return_value = mock_response
+    mock_request_helper.get.return_value = mock_response
 
     Cohort.list(api_key="test-key", include_child_workspaces=True)
 
-    mock_request_helper.get_static.assert_called_with(
+    mock_request_helper.get.assert_called_with(
         "test-key",
         _API_ENDPOINT,
         params={"include-child-workspaces": "true"},

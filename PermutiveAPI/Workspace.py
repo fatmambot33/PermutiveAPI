@@ -3,7 +3,7 @@
 from typing import Callable, Dict, List, Optional, Type, Union, Any
 from dataclasses import dataclass
 from pathlib import Path
-from PermutiveAPI.Utils import JSONSerializable, load_json_list
+from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
 from PermutiveAPI.Audience.Import import Import, ImportList
 from PermutiveAPI.Audience.Segment import Segment, SegmentList
 from PermutiveAPI.Cohort import Cohort, CohortList

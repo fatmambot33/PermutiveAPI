@@ -3,9 +3,10 @@
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Type, Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from PermutiveAPI.Utils import RequestHelper, JSONSerializable, load_json_list
+from PermutiveAPI._Utils import http
+from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
 from collections import defaultdict
 
 _API_VERSION = "v2"
@@ -68,7 +69,7 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         Fetch all cohorts from the API.
     """
 
-    _request_helper = RequestHelper
+    _request_helper = http
 
     name: str
     id: Optional[str] = None
@@ -126,8 +127,8 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         if self.id:
             logging.warning("id is specified")
         url = f"{_API_ENDPOINT}"
-        data = RequestHelper.to_payload_static(self, _API_PAYLOAD)
-        response = self._request_helper.post_static(
+        data = http.to_payload(self, _API_PAYLOAD)
+        response = self._request_helper.post(
             api_key=api_key,
             url=url,
             data=data,
@@ -166,8 +167,8 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         if not self.id:
             raise ValueError("Cohort ID must be specified for update.")
         url = f"{_API_ENDPOINT}{self.id}"
-        data = RequestHelper.to_payload_static(self, _API_PAYLOAD)
-        response = self._request_helper.patch_static(
+        data = http.to_payload(self, _API_PAYLOAD)
+        response = self._request_helper.patch(
             api_key=api_key,
             url=url,
             data=data,
@@ -198,7 +199,7 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         if not self.id:
             raise ValueError("Cohort ID must be specified for deletion.")
         url = f"{_API_ENDPOINT}{self.id}"
-        self._request_helper.delete_static(api_key=api_key, url=url)
+        self._request_helper.delete(api_key=api_key, url=url)
 
     @staticmethod
     def get_by_id(id: str, api_key: str) -> "Cohort":
@@ -223,7 +224,7 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         """
         logging.debug(f"CohortAPI::get::{id}")
         url = f"{_API_ENDPOINT}{id}"
-        response = Cohort._request_helper.get_static(api_key=api_key, url=url)
+        response = Cohort._request_helper.get(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
         return Cohort.from_json(response.json())
@@ -304,9 +305,7 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         if include_child_workspaces:
             params["include-child-workspaces"] = "true"
 
-        response = Cohort._request_helper.get_static(
-            api_key, _API_ENDPOINT, params=params
-        )
+        response = Cohort._request_helper.get(api_key, _API_ENDPOINT, params=params)
         if response is None:
             raise ValueError("Response is None")
         return CohortList.from_json(response.json())

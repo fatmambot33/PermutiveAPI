@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 
-from PermutiveAPI.Utils import JSONSerializable
+from PermutiveAPI._Utils.json import JSONSerializable
 
 
 @dataclass

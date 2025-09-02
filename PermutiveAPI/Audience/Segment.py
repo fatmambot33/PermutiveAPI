@@ -3,11 +3,12 @@
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Type, Union, Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from PermutiveAPI.Audience import _API_ENDPOINT
-from PermutiveAPI.Utils import RequestHelper, JSONSerializable, load_json_list
+from . import _API_ENDPOINT
+from PermutiveAPI._Utils import http
+from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
 
 _API_PAYLOAD = ["name", "code", "description", "cpm", "categories"]
 
@@ -54,7 +55,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
     """
 
     code: str
-    _request_helper = RequestHelper
+    _request_helper = http
 
     name: str
     import_id: str
@@ -97,12 +98,10 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         """
         logging.debug(f"SegmentAPI::create_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments"
-        response = self._request_helper.post_static(
+        response = self._request_helper.post(
             api_key=api_key,
             url=url,
-            data=RequestHelper.to_payload_static(
-                dataclass_obj=self, api_payload=_API_PAYLOAD
-            ),
+            data=http.to_payload(dataclass_obj=self, api_payload=_API_PAYLOAD),
         )
         if not response:
             raise ValueError("Unable to create_segment")
@@ -126,12 +125,10 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         """
         logging.debug(f"SegmentAPI::update_segment::{self.import_id}::{self.name}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
-        response = self._request_helper.patch_static(
+        response = self._request_helper.patch(
             api_key=api_key,
             url=url,
-            data=RequestHelper.to_payload_static(
-                dataclass_obj=self, api_payload=_API_PAYLOAD
-            ),
+            data=http.to_payload(dataclass_obj=self, api_payload=_API_PAYLOAD),
         )
         if not response:
             raise ValueError("Unable to update_segment")
@@ -155,7 +152,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         """
         logging.debug(f"SegmentAPI::delete_segment::{self.import_id}::{self.id}")
         url = f"{_API_ENDPOINT}/{self.import_id}/segments/{self.id}"
-        response = self._request_helper.delete_static(api_key=api_key, url=url)
+        response = self._request_helper.delete(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
 
@@ -184,7 +181,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         """
         logging.debug(f"SegmentAPI::get_segment_by_code::{import_id}::{segment_code}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/code/{segment_code}"
-        response = Segment._request_helper.get_static(url=url, api_key=api_key)
+        response = Segment._request_helper.get(url=url, api_key=api_key)
         if not response:
             raise ValueError("Unable to get_segment")
         return Segment.from_json(response.json())
@@ -214,7 +211,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         """
         logging.debug(f"SegmentAPI::get_segment_by_id::{import_id}::{segment_id}")
         url = f"{_API_ENDPOINT}/{import_id}/segments/{segment_id}"
-        response = Segment._request_helper.get_static(url=url, api_key=api_key)
+        response = Segment._request_helper.get(url=url, api_key=api_key)
         if not response:
             raise ValueError("Unable to get_by_id")
         return Segment.from_json(response.json())
@@ -253,9 +250,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
             if next_token:
                 params["pagination_token"] = next_token
 
-            response = Segment._request_helper.get_static(
-                api_key, base_url, params=params
-            )
+            response = Segment._request_helper.get(api_key, base_url, params=params)
             if response is None:
                 raise ValueError("Response is None")
             data = response.json()

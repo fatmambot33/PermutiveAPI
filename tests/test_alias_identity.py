@@ -34,12 +34,12 @@ def test_identify_success(mock_request_helper):
     identity = Identity(user_id="user123", aliases=[])
     mock_response = Mock()
     mock_response.status_code = 200
-    mock_request_helper.post_static.return_value = mock_response
+    mock_request_helper.post.return_value = mock_response
 
     result = identity.identify(api_key="test-key")
 
     assert result is None
-    mock_request_helper.post_static.assert_called_once()
+    mock_request_helper.post.assert_called_once()
 
 
 def test_identify_propagates_exception(monkeypatch):
@@ -49,9 +49,7 @@ def test_identify_propagates_exception(monkeypatch):
     def fake_post(api_key: str, url: str, data: dict):  # pragma: no cover - test stub
         raise RequestException("boom")
 
-    monkeypatch.setattr(
-        "PermutiveAPI.Identify.Identity.RequestHelper.post_static", fake_post
-    )
+    monkeypatch.setattr("PermutiveAPI.Identify.Identity.http.post", fake_post)
 
     with pytest.raises(RequestException):
         identity.identify("api-key")

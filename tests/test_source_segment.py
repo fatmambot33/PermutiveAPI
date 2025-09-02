@@ -75,19 +75,19 @@ def test_segment_create(mock_request_helper):
         "name": "Segment1",
         "import_id": "imp1",
     }
-    mock_request_helper.post_static.return_value = mock_response
+    mock_request_helper.post.return_value = mock_response
 
     segment.create(api_key="test-key")
 
     assert segment.id == "new-id"
-    mock_request_helper.post_static.assert_called_once()
+    mock_request_helper.post.assert_called_once()
 
 
 @patch.object(Segment, "_request_helper")
 def test_segment_create_failure(mock_request_helper):
     """Test that creating a segment raises an error on failure."""
     segment = Segment(code="c1", name="Segment1", import_id="imp1")
-    mock_request_helper.post_static.return_value = None
+    mock_request_helper.post.return_value = None
 
     with pytest.raises(ValueError, match="Unable to create_segment"):
         segment.create(api_key="test-key")
@@ -104,19 +104,19 @@ def test_segment_update(mock_request_helper):
         "name": "Updated Name",
         "import_id": "imp1",
     }
-    mock_request_helper.patch_static.return_value = mock_response
+    mock_request_helper.patch.return_value = mock_response
 
     segment.update(api_key="test-key")
 
     assert segment.name == "Updated Name"
-    mock_request_helper.patch_static.assert_called_once()
+    mock_request_helper.patch.assert_called_once()
 
 
 @patch.object(Segment, "_request_helper")
 def test_segment_update_failure(mock_request_helper):
     """Test that updating a segment raises an error on failure."""
     segment = Segment(code="c1", name="Segment1", import_id="imp1", id="seg-id")
-    mock_request_helper.patch_static.return_value = None
+    mock_request_helper.patch.return_value = None
 
     with pytest.raises(ValueError, match="Unable to update_segment"):
         segment.update(api_key="test-key")
@@ -128,19 +128,19 @@ def test_segment_delete(mock_request_helper):
     segment = Segment(code="c1", name="Segment1", import_id="imp1", id="seg-id")
     mock_response = Mock()
     mock_response.status_code = 204
-    mock_request_helper.delete_static.return_value = mock_response
+    mock_request_helper.delete.return_value = mock_response
 
     result = segment.delete(api_key="test-key")
 
     assert result is None
-    mock_request_helper.delete_static.assert_called_once()
+    mock_request_helper.delete.assert_called_once()
 
 
 @patch.object(Segment, "_request_helper")
 def test_segment_delete_failure(mock_request_helper):
     """Test that deleting a segment raises an error on failure."""
     segment = Segment(code="c1", name="Segment1", import_id="imp1", id="seg-id")
-    mock_request_helper.delete_static.return_value = None
+    mock_request_helper.delete.return_value = None
 
     with pytest.raises(ValueError, match="Response is None"):
         segment.delete(api_key="test-key")
@@ -156,20 +156,20 @@ def test_segment_get_by_id(mock_request_helper):
         "name": "Segment1",
         "import_id": "imp1",
     }
-    mock_request_helper.get_static.return_value = mock_response
+    mock_request_helper.get.return_value = mock_response
 
     segment = Segment.get_by_id(
         import_id="imp1", segment_id="seg-id", api_key="test-key"
     )
 
     assert segment.name == "Segment1"
-    mock_request_helper.get_static.assert_called_once()
+    mock_request_helper.get.assert_called_once()
 
 
 @patch.object(Segment, "_request_helper")
 def test_segment_get_by_id_failure(mock_request_helper):
     """Test that getting a segment by ID raises an error on failure."""
-    mock_request_helper.get_static.return_value = None
+    mock_request_helper.get.return_value = None
 
     with pytest.raises(ValueError, match="Unable to get_by_id"):
         Segment.get_by_id(import_id="imp1", segment_id="seg-id", api_key="test-key")
@@ -185,20 +185,20 @@ def test_segment_get_by_code(mock_request_helper):
         "name": "Segment1",
         "import_id": "imp1",
     }
-    mock_request_helper.get_static.return_value = mock_response
+    mock_request_helper.get.return_value = mock_response
 
     segment = Segment.get_by_code(
         import_id="imp1", segment_code="c1", api_key="test-key"
     )
 
     assert segment.name == "Segment1"
-    mock_request_helper.get_static.assert_called_once()
+    mock_request_helper.get.assert_called_once()
 
 
 @patch.object(Segment, "_request_helper")
 def test_segment_get_by_code_failure(mock_request_helper):
     """Test that getting a segment by code raises an error on failure."""
-    mock_request_helper.get_static.return_value = None
+    mock_request_helper.get.return_value = None
 
     with pytest.raises(ValueError, match="Unable to get_segment"):
         Segment.get_by_code(
@@ -221,7 +221,7 @@ def test_segment_list_pagination(mock_request_helper):
         "elements": [{"id": "2", "name": "s2", "code": "c2", "import_id": "imp1"}],
         "pagination": {},
     }
-    mock_request_helper.get_static.side_effect = [
+    mock_request_helper.get.side_effect = [
         mock_response_page1,
         mock_response_page2,
     ]
@@ -231,13 +231,13 @@ def test_segment_list_pagination(mock_request_helper):
     assert len(segments) == 2
     assert segments[0].id == "1"
     assert segments[1].id == "2"
-    assert mock_request_helper.get_static.call_count == 2
-    mock_request_helper.get_static.assert_any_call(
+    assert mock_request_helper.get.call_count == 2
+    mock_request_helper.get.assert_any_call(
         "test-key",
         f"{_API_ENDPOINT}/imp1/segments",
         params={},
     )
-    mock_request_helper.get_static.assert_any_call(
+    mock_request_helper.get.assert_any_call(
         "test-key",
         f"{_API_ENDPOINT}/imp1/segments",
         params={"pagination_token": "token2"},
