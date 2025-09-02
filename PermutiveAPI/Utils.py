@@ -21,6 +21,7 @@ from typing import (
     Tuple,
     cast,
 )
+from typing import get_origin, get_args
 import logging
 import os
 import urllib.parse
@@ -31,6 +32,7 @@ from enum import Enum
 import datetime
 from pathlib import Path
 import time
+import sys
 
 from PermutiveAPI.errors import (
     PermutiveAPIError,
@@ -848,30 +850,12 @@ class JSONSerializable(Generic[JSONOutput]):
     def to_json(self) -> JSONOutput:
         """Convert the object to a JSON-serializable format."""
 
-        def serialize_value(
-            v,
-        ) -> Union[Dict[str, Any], List[Any], str, int, float, None]:
-            if isinstance(v, JSONSerializable):
-                return v.to_json()
-            elif isinstance(v, list):
-                return [
-                    serialize_value(item) for item in v if item not in (None, [], {})
-                ]
-            elif isinstance(v, dict):
-                return {
-                    key: serialize_value(value)
-                    for key, value in v.items()
-                    if value not in (None, [], {})
-                }
-            else:
-                return json_default(v)
-
         # Case 1: if self is a dict-like object
         if isinstance(self, dict):
             return cast(
                 JSONOutput,
                 {
-                    k: serialize_value(v)
+                    k: JSONSerializable.serialize_value(v)
                     for k, v in self.items()
                     if not str(k).startswith("_")
                 },
@@ -881,7 +865,11 @@ class JSONSerializable(Generic[JSONOutput]):
         elif isinstance(self, list):
             return cast(
                 JSONOutput,
-                [serialize_value(item) for item in self if item not in (None, [], {})],
+                [
+                    JSONSerializable.serialize_value(item)
+                    for item in self
+                    if item not in (None, [], {})
+                ],
             )
 
         # Case 3: if self is a dataclass
@@ -890,7 +878,7 @@ class JSONSerializable(Generic[JSONOutput]):
             for f in fields(self):
                 try:
                     value = getattr(self, f.name)
-                    serialized = serialize_value(value)
+                    serialized = JSONSerializable.serialize_value(value)
                     if serialized not in (None, [], {}):
                         result[f.name] = serialized
                 except Exception as e:
@@ -902,7 +890,7 @@ class JSONSerializable(Generic[JSONOutput]):
             return cast(
                 JSONOutput,
                 {
-                    k: serialize_value(v)
+                    k: JSONSerializable.serialize_value(v)
                     for k, v in self.__dict__.items()
                     if not k.startswith("_")
                 },
@@ -910,6 +898,41 @@ class JSONSerializable(Generic[JSONOutput]):
 
         # Final fallback for unsupported objects — raise error instead of returning str/float
         raise TypeError(f"{type(self).__name__} is not JSON-serializable")
+
+    @staticmethod
+    def serialize_value(value: Any) -> Union[Dict[str, Any], List[Any], str, int, float, None]:
+        """
+        Convert a Python value into a JSON-compatible representation.
+
+        This is the counterpart to ``unserialize_value`` used by ``from_json``.
+        It handles nested JSONSerializable objects, lists, and dictionaries,
+        while dropping empty values for cleanliness.
+
+        Parameters
+        ----------
+        value : Any
+            The Python value to convert.
+
+        Returns
+        -------
+        Dict[str, Any] | List[Any] | str | int | float | None
+            A JSON-serializable value suitable for dumping.
+        """
+        if isinstance(value, JSONSerializable):
+            return value.to_json()
+        if isinstance(value, list):
+            return [
+                JSONSerializable.serialize_value(item)
+                for item in value
+                if item not in (None, [], {})
+            ]
+        if isinstance(value, dict):
+            return {
+                key: JSONSerializable.serialize_value(val)
+                for key, val in value.items()
+                if val not in (None, [], {})
+            }
+        return json_default(value)
 
     def to_json_file(self, filepath: str):
         """
@@ -977,8 +1000,109 @@ class JSONSerializable(Generic[JSONOutput]):
 
         # Single dict
         if isinstance(data, dict):
+            # If cls is a dataclass, coerce field values by annotation.
+            if is_dataclass(cls):
+                module = sys.modules.get(cls.__module__)
+                kwargs: Dict[str, Any] = {}
+                for f in fields(cls):
+                    if f.name in data:
+                        kwargs[f.name] = JSONSerializable.unserialize_value(
+                            data[f.name], f.type, module
+                        )
+                return cls(**kwargs)
+
+            # Fallback: construct directly
             return cls(**data)
 
         raise TypeError(
             f"`from_json()` expected a dict, JSON string, or Path, but got {type(data).__name__}"
         )
+
+    @staticmethod
+    def unserialize_value(value: Any, annotation: Any, module: Optional[Any] = None) -> Any:
+        """
+        Convert a JSON value into the annotated Python type.
+
+        This helper mirrors the ``serialize_value`` pattern used in ``to_json``
+        and centralizes all coercion logic (datetimes, nested dataclasses,
+        lists of typed items, and forward references).
+
+        Parameters
+        ----------
+        value : Any
+            The raw JSON value to convert.
+        annotation : Any
+            The target type annotation (e.g., ``datetime``, ``Optional[datetime]``,
+            ``List[Alias]``, or a ``JSONSerializable`` subclass).
+        module : Optional[Any], optional
+            Module used to resolve forward-referenced annotations written as
+            strings. Defaults to ``None``.
+
+        Returns
+        -------
+        Any
+            The converted value when a conversion is applicable, otherwise the
+            original value.
+        """
+        # Resolve forward references like "Source" -> actual class
+        if isinstance(annotation, str) and module is not None:
+            annotation = getattr(module, annotation, annotation)
+
+        def is_datetime_type(tp: Any) -> bool:
+            if tp is datetime.datetime:
+                return True
+            origin = get_origin(tp)
+            if origin is Union:
+                return any(arg is datetime.datetime for arg in get_args(tp))
+            return False
+
+        def parse_iso_datetime(val: Any) -> Any:
+            if isinstance(val, str):
+                try:
+                    iso = val.replace("Z", "+00:00")
+                    return datetime.datetime.fromisoformat(iso)
+                except Exception:
+                    return val
+            return val
+
+        def is_jsonserializable_subclass(tp: Any) -> bool:
+            try:
+                return isinstance(tp, type) and issubclass(tp, JSONSerializable)
+            except Exception:
+                return False
+
+        def is_classinfo(obj: Any) -> bool:
+            """Return True if obj can be used as the second arg to isinstance."""
+            if isinstance(obj, type):
+                return True
+            if isinstance(obj, tuple):
+                return all(isinstance(x, type) for x in obj)
+            return False
+
+        # If already of the right type (when possible), return
+        if is_classinfo(annotation):
+            classinfo = cast(Union[type, Tuple[type, ...]], annotation)
+            if isinstance(value, classinfo):
+                return value
+
+        # Datetime coercion
+        if is_datetime_type(annotation):
+            return parse_iso_datetime(value)
+
+        origin = get_origin(annotation)
+        args = get_args(annotation)
+
+        # List[T]
+        if origin in (list, List) and isinstance(value, list) and args:
+            return [JSONSerializable.unserialize_value(v, args[0], module) for v in value]
+
+        # Dict[...] – leave as-is (no strong schema)
+        if origin in (dict, Dict) and isinstance(value, dict):
+            return value
+
+        # Nested JSONSerializable dataclass
+        if is_jsonserializable_subclass(annotation) and isinstance(value, dict):
+            annot_cls = cast(Any, annotation)
+            return annot_cls.from_json(value)
+
+        return value

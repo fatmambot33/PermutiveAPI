@@ -64,21 +64,25 @@ The `Workspace` class is the main entry point for interacting with your Permutiv
 
 ```python
 # Create a workspace instance
-# You can pass credentials explicitly or let the client find them in your .env file
-workspace = Workspace(workspace_id="your-workspace-id", api_key="your-api-key")
+workspace = Workspace(
+    name="Main",
+    organisation_id="your-org-id",
+    workspace_id="your-workspace-id",
+    api_key="your-api-key",
+)
 
-# List all cohorts in a workspace
-all_cohorts = workspace.list_cohorts(include_child_workspaces=True)
+# List all cohorts in a workspace (includes child workspaces)
+all_cohorts = workspace.cohorts()
 for cohort in all_cohorts:
     print(f"Cohort ID: {cohort.id}, Name: {cohort.name}")
 
 # List all imports in a workspace
-all_imports = workspace.imports
+all_imports = workspace.imports()
 for imp in all_imports:
-    print(f"Import ID: {imp.id}, Status: {imp.status}")
+    print(f"Import ID: {imp.id}, Name: {imp.name}")
 
 # List segments for a specific import
-segments_in_import = workspace.list_segments(import_id="your-import-id")
+segments_in_import = workspace.segments(import_id="your-import-id")
 for segment in segments_in_import:
     print(f"Segment ID: {segment.id}, Name: {segment.name}")
 ```
@@ -102,8 +106,8 @@ new_cohort = Cohort(
     name="High-Value Customers",
     query={"type": "segment", "id": "segment-id-for-high-value-customers"}
 )
-created_cohort = new_cohort.create(api_key="your_api_key")
-print(f"Created cohort with ID: {created_cohort.id}")
+new_cohort.create(api_key="your_api_key")
+print(f"Created cohort with ID: {new_cohort.id}")
 ```
 
 ### Managing Segments
@@ -118,7 +122,7 @@ print(f"Found {len(segments)} segments in import {import_id}.")
 
 # Get a specific segment by ID
 segment_id = "your-segment-id"
-segment = Segment.get_by_id(id=segment_id, api_key="your_api_key")
+segment = Segment.get_by_id(import_id=import_id, segment_id=segment_id, api_key="your_api_key")
 print(f"Retrieved segment: {segment.name}")
 ```
 
@@ -130,12 +134,12 @@ You can list and retrieve imports using the `Import` class.
 # List all imports
 all_imports = Import.list(api_key="your_api_key")
 for imp in all_imports:
-    print(f"Import ID: {imp.id}, Status: {imp.status}, Source: {imp.source.name}")
+    print(f"Import ID: {imp.id}, Code: {imp.code}, Source Type: {imp.source.type}")
 
 # Get a specific import by ID
 import_id = "your-import-id"
 import_instance = Import.get_by_id(id=import_id, api_key="your_api_key")
-print(f"Retrieved import: {import_instance.id}, Source: {import_instance.source.name}")
+print(f"Retrieved import: {import_instance.id}, Source Type: {import_instance.source.type}")
 ```
 
 ### Managing Users
@@ -150,9 +154,8 @@ alias = Alias(id="user@example.com", tag="email", priority=1)
 identity = Identity(user_id="internal-user-id-123", aliases=[alias])
 
 # Send the identity information to Permutive
-# The private_key is different from the api_key and is used for this specific endpoint
 try:
-    identity.identify(private_key="your-private-key")
+    identity.identify(api_key="your-api-key")
     print("Successfully identified user.")
 except Exception as e:
     print(f"Error identifying user: {e}")
