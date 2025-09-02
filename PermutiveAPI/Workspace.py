@@ -73,7 +73,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Updated list of cohorts.
         """
         self._cohort_cache = Cohort.list(
-            include_child_workspaces=False, api_key=self.api_key
+            include_child_workspaces=True, api_key=self.api_key
         )
         return self._cohort_cache
 
