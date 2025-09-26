@@ -18,7 +18,7 @@ _API_ENDPOINT = f"https://api.permutive.app/ccs/{_API_VERSION}/segmentation"
 
 
 @dataclass
-class SegmentationEvent(JSONSerializable[Dict[str, Any]]):
+class Event(JSONSerializable[Dict[str, Any]]):
     """Represent a single event passed to the segmentation API.
 
     Parameters
@@ -50,7 +50,7 @@ class SegmentationEvent(JSONSerializable[Dict[str, Any]]):
 
 
 @dataclass
-class SegmentationRequest(JSONSerializable[Dict[str, Any]]):
+class Segmentation(JSONSerializable[Dict[str, Any]]):
     """Submit events to the Permutive segmentation API.
 
     Parameters
@@ -87,7 +87,7 @@ class SegmentationRequest(JSONSerializable[Dict[str, Any]]):
 
     _request_helper = http
 
-    events: List[SegmentationEvent]
+    events: List[Event]
     user_id: str
     activations: bool = False
     synchronous_validation: bool = False
@@ -134,9 +134,11 @@ class SegmentationRequest(JSONSerializable[Dict[str, Any]]):
         """
         params = self._build_params(
             activations if activations is not None else self.activations,
-            synchronous_validation
-            if synchronous_validation is not None
-            else self.synchronous_validation,
+            (
+                synchronous_validation
+                if synchronous_validation is not None
+                else self.synchronous_validation
+            ),
         )
         response = self._request_helper.request(
             method="POST",
@@ -149,7 +151,9 @@ class SegmentationRequest(JSONSerializable[Dict[str, Any]]):
         return response.json()
 
     @staticmethod
-    def _build_params(activations: bool, synchronous_validation: bool) -> Dict[str, str]:
+    def _build_params(
+        activations: bool, synchronous_validation: bool
+    ) -> Dict[str, str]:
         """Return query parameters for the segmentation endpoint."""
         return {
             "activations": str(activations).lower(),
