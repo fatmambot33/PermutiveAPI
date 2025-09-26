@@ -15,6 +15,7 @@ from PermutiveAPI._Utils.json import JSONSerializable
 
 _API_VERSION = "v1"
 _API_ENDPOINT = f"https://api.permutive.app/ccs/{_API_VERSION}/segmentation"
+_API_PAYLOAD = ["events", "user_id"]
 
 
 @dataclass
@@ -94,10 +95,7 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
 
     def to_json(self) -> Dict[str, Any]:
         """Return the JSON payload accepted by the segmentation API."""
-        return {
-            "events": [event.to_json() for event in self.events],
-            "user_id": self.user_id,
-        }
+        return http.to_payload(self, _API_PAYLOAD)
 
     def send(
         self,
