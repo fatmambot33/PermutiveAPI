@@ -9,7 +9,7 @@ from PermutiveAPI._Utils.json import JSONSerializable
 
 @dataclass
 class Alias(JSONSerializable[Dict[str, Any]]):
-    """Dataclass for the Alias entity in the Permutive ecosystem.
+    """Represents an Alias entity in the Permutive ecosystem.
 
     Parameters
     ----------

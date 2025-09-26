@@ -168,7 +168,19 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
         cls: Type["WorkspaceList"],
         data: Union[dict, List[dict], str, Path],
     ) -> "WorkspaceList":
-        """Deserialize a list of workspaces from various JSON representations."""
+        """Deserialize a list of workspaces from various JSON representations.
+
+        Parameters
+        ----------
+        data : Union[dict, List[dict], str, Path]
+            The JSON data to deserialize. It can be a dictionary, a list of
+            dictionaries, a JSON string, or a path to a JSON file.
+
+        Returns
+        -------
+        WorkspaceList
+            A `WorkspaceList` instance created from the provided JSON data.
+        """
         data_list = load_json_list(data, cls.__name__, "Workspace")
         return cls([Workspace.from_json(item) for item in data_list])
 

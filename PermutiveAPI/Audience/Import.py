@@ -164,7 +164,19 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
         cls: Type["ImportList"],
         data: Union[dict, List[dict], str, Path],
     ) -> "ImportList":
-        """Deserialize a list of imports from various JSON representations."""
+        """Deserialize a list of imports from various JSON representations.
+
+        Parameters
+        ----------
+        data : Union[dict, List[dict], str, Path]
+            The JSON data to deserialize. It can be a dictionary, a list of
+            dictionaries, a JSON string, or a path to a JSON file.
+
+        Returns
+        -------
+        ImportList
+            An `ImportList` instance created from the provided JSON data.
+        """
         import_list = load_json_list(data, cls.__name__, "Import")
 
         # Special handling for 'source' which is a nested JSONSerializable

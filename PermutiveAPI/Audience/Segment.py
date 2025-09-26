@@ -287,7 +287,19 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
         cls: Type["SegmentList"],
         data: Union[dict, List[dict], str, Path],
     ) -> "SegmentList":
-        """Deserialize a list of segments from various JSON representations."""
+        """Deserialize a list of segments from various JSON representations.
+
+        Parameters
+        ----------
+        data : Union[dict, List[dict], str, Path]
+            The JSON data to deserialize. It can be a dictionary, a list of
+            dictionaries, a JSON string, or a path to a JSON file.
+
+        Returns
+        -------
+        SegmentList
+            A `SegmentList` instance created from the provided JSON data.
+        """
         data_list = load_json_list(data, cls.__name__, "Segment")
         return cls([Segment.from_json(item) for item in data_list])
 
