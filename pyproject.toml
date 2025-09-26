@@ -7,7 +7,7 @@ version = "v5.3.0"
 description = "A Python wrapper for the Permutive API."
 readme = "README.md"
 authors = [{ name = "fatmambo33", email = "fatmambo33@gmail.com" }]
-license = "MIT"
+license = { file = "LICENSE" }
 requires-python = ">=3.8"
 dependencies = ["requests", "python-dotenv"]
 classifiers = [
