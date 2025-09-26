@@ -1,6 +1,0 @@
--r requirements.txt
-pydocstyle
-pytest-pydocstyle
-pyright
-black
-pytest-cov

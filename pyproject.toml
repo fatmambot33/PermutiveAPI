@@ -23,5 +23,14 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pydocstyle",
+    "pytest-pydocstyle",
+    "pyright",
+    "black",
+    "pytest-cov",
+]
+
 [tool.setuptools.package-data]
 "PermutiveAPI" = ["py.typed"]
