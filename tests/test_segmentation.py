@@ -1,6 +1,10 @@
 """Tests for the Segmentation module."""
 
+from types import SimpleNamespace
+from unittest.mock import Mock
+
 from PermutiveAPI.Segmentation import Event, Segmentation
+from PermutiveAPI.Audience.Segment import Segment, SegmentList
 
 
 def test_segmentation_to_json():
@@ -28,3 +32,62 @@ def test_segmentation_to_json():
     }
 
     assert request.to_json() == expected_payload
+
+
+def test_segment_list_pagination_is_sequential(monkeypatch):
+    """Ensure ``Segment.list`` fetches pages sequentially without overlap."""
+
+    payloads = iter(
+        [
+            {
+                "elements": [
+                    {
+                        "id": "1",
+                        "name": "Segment 1",
+                        "code": "s1",
+                        "import_id": "import-1",
+                    }
+                ],
+                "pagination": {"next_token": "cursor-2"},
+            },
+            {
+                "elements": [
+                    {
+                        "id": "2",
+                        "name": "Segment 2",
+                        "code": "s2",
+                        "import_id": "import-1",
+                    }
+                ],
+                "pagination": {},
+            },
+        ]
+    )
+
+    in_flight = {"active": False}
+    seen_tokens = []
+
+    def fake_get(api_key, url, params=None):  # noqa: ANN001 - mirror signature
+        if in_flight["active"]:
+            raise AssertionError("Segment.list should not issue overlapping requests")
+        in_flight["active"] = True
+        try:
+            token = (params or {}).get("pagination_token")
+            seen_tokens.append(token)
+            response = Mock()
+            response.json.return_value = next(payloads)
+            return response
+        finally:
+            in_flight["active"] = False
+
+    monkeypatch.setattr(
+        Segment,
+        "_request_helper",
+        SimpleNamespace(get=fake_get),
+    )
+
+    segments = Segment.list("import-1", api_key="test-key")
+
+    assert isinstance(segments, SegmentList)
+    assert [segment.id for segment in segments] == ["1", "2"]
+    assert seen_tokens == [None, "cursor-2"]
