@@ -65,7 +65,21 @@ def convert_list(val: Union[str, List[Any]]) -> List[Any]:
 
 
 def compare_list(list1: List[str], list2: List[str]) -> bool:
-    """Return True if lists contain the same items (set equality)."""
+    """Compare two lists for set equality (order-insensitive).
+
+    Parameters
+    ----------
+    list1 : list[str]
+        The first list to compare.
+    list2 : list[str]
+        The second list to compare.
+
+    Returns
+    -------
+    bool
+        ``True`` if both lists contain the same elements, regardless of
+        order, otherwise ``False``.
+    """
     return set(list1) == set(list2)
 
 

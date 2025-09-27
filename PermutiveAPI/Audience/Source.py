@@ -8,7 +8,7 @@ from PermutiveAPI._Utils.json import JSONSerializable
 
 @dataclass
 class Source(JSONSerializable[Dict[str, Any]]):
-    """Dataclass for the Source entity in the Permutive ecosystem.
+    """Represents a Source entity in the Permutive ecosystem.
 
     Parameters
     ----------

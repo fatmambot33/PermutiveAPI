@@ -56,14 +56,15 @@ def to_payload(
     Parameters
     ----------
     dataclass_obj : Any
-        Object to convert (typically a dataclass instance).
+        The dataclass instance to convert into a payload.
     api_payload : list[str] | None, optional
-        Subset of keys to include. Defaults to ``None`` (all non-None fields).
+        A specific list of keys to include in the payload. If ``None``, all
+        non-None fields are included. Defaults to ``None``.
 
     Returns
     -------
-    dict
-        A JSON-serializable dictionary.
+    Dict[str, Any]
+        A JSON-serializable dictionary representing the payload.
     """
     dataclass_dict = vars(dataclass_obj)
     filtered_dict = {
@@ -85,8 +86,9 @@ def load_json_list(
 
     Parameters
     ----------
-    data : dict | list[dict] | str | pathlib.Path
-        The JSON representation to load.
+    data : Union[dict, List[dict], str, Path]
+        The JSON data to deserialize. It can be a dictionary, a list of
+        dictionaries, a JSON string, or a path to a JSON file.
     list_name : str
         Name of the list class for error messages.
     item_name : str | None, optional
@@ -340,8 +342,9 @@ class JSONSerializable(Generic[JSONOutput]):
 
         Parameters
         ----------
-        data : dict | str | pathlib.Path
-            JSON dict, JSON string, or path to a JSON file.
+        data : Union[dict, str, Path]
+            The JSON data to deserialize. It can be a dictionary, a JSON
+            string, or a path to a JSON file.
 
         Returns
         -------

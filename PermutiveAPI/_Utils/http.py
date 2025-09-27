@@ -124,22 +124,100 @@ class RetryConfig:
 
 
 def get(api_key: str, url: str, params: Optional[Dict[str, Any]] = None) -> Response:
-    """Perform a GET request with retry logic."""
+    """Perform a GET request with retry logic.
+
+    Parameters
+    ----------
+    api_key : str
+        The API key for authentication.
+    url : str
+        The URL for the request.
+    params : dict, optional
+        Query parameters to include in the request.
+
+    Returns
+    -------
+    requests.Response
+        The response object from the API.
+
+    Raises
+    ------
+    PermutiveAPIError
+        If the request fails after all retries.
+    """
     return _with_retry(requests.get, url, api_key, params=params)
 
 
 def post(api_key: str, url: str, data: dict) -> Response:
-    """Perform a POST request with retry logic."""
+    """Perform a POST request with retry logic.
+
+    Parameters
+    ----------
+    api_key : str
+        The API key for authentication.
+    url : str
+        The URL for the request.
+    data : dict
+        The JSON payload to send with the request.
+
+    Returns
+    -------
+    requests.Response
+        The response object from the API.
+
+    Raises
+    ------
+    PermutiveAPIError
+        If the request fails after all retries.
+    """
     return _with_retry(requests.post, url, api_key, json=data)
 
 
 def patch(api_key: str, url: str, data: dict) -> Response:
-    """Perform a PATCH request with retry logic."""
+    """Perform a PATCH request with retry logic.
+
+    Parameters
+    ----------
+    api_key : str
+        The API key for authentication.
+    url : str
+        The URL for the request.
+    data : dict
+        The JSON payload to send with the request.
+
+    Returns
+    -------
+    requests.Response
+        The response object from the API.
+
+    Raises
+    ------
+    PermutiveAPIError
+        If the request fails after all retries.
+    """
     return _with_retry(requests.patch, url, api_key, json=data)
 
 
 def delete(api_key: str, url: str) -> Response:
-    """Perform a DELETE request with retry logic."""
+    """Perform a DELETE request with retry logic.
+
+    Parameters
+    ----------
+    api_key : str
+        The API key for authentication.
+    url : str
+        The URL for the request.
+
+    Returns
+    -------
+    requests.Response
+        The response object from the API.
+
+    Raises
+    ------
+    PermutiveAPIError
+        If the request fails after all retries.
+    """
     return _with_retry(requests.delete, url, api_key)
 
 
@@ -174,6 +252,18 @@ def request(
         Requests timeout in seconds. Defaults to 10.0.
     retry : RetryConfig | None, optional
         Override retry configuration. Defaults to module constants.
+
+    Returns
+    -------
+    requests.Response
+        The response object from the API.
+
+    Raises
+    ------
+    ValueError
+        If an unsupported HTTP method is provided.
+    PermutiveAPIError
+        If the request fails after all retries.
     """
     session_method_map = {
         "GET": requests.get,
@@ -255,6 +345,19 @@ def to_payload(
 
     Fields with ``None`` values are omitted. If ``api_payload`` is provided,
     only keys included in this list are kept.
+
+    Parameters
+    ----------
+    dataclass_obj : Any
+        The dataclass instance to convert.
+    api_payload : list[str], optional
+        A list of attribute names to include in the payload. If `None`, all
+        attributes are considered. Defaults to `None`.
+
+    Returns
+    -------
+    dict[str, Any]
+        A dictionary representing the JSON payload.
     """
     dataclass_dict = vars(dataclass_obj)
     filtered_dict = {
@@ -317,7 +420,18 @@ def _with_retry(method: Callable, url: str, api_key: str, **kwargs) -> Response:
 
 
 def redact_message(message: str) -> str:
-    """Redact sensitive tokens in free-form text and JSON snippets."""
+    """Redact sensitive tokens in free-form text and JSON snippets.
+
+    Parameters
+    ----------
+    message : str
+        The string containing potentially sensitive information.
+
+    Returns
+    -------
+    str
+        The message with sensitive tokens redacted.
+    """
     for key in SENSITIVE_QUERY_PARAMS:
         message = re.sub(
             rf"({key})=([^\s&]+)", rf"\1=[REDACTED]", message, flags=re.IGNORECASE
@@ -332,7 +446,18 @@ def redact_message(message: str) -> str:
 
 
 def redact_url(url: str) -> str:
-    """Return a copy of url with sensitive query parameter values redacted."""
+    """Return a copy of url with sensitive query parameter values redacted.
+
+    Parameters
+    ----------
+    url : str
+        The URL to redact.
+
+    Returns
+    -------
+    str
+        The redacted URL.
+    """
     try:
         parsed = urllib.parse.urlparse(url)
         q = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
@@ -382,7 +507,20 @@ def _extract_error_message(response: Response) -> str:
 
 
 def raise_for_status(e: Exception, response: Optional[Response]) -> None:
-    """Raise a custom exception based on HTTP status, with redaction."""
+    """Raise a custom exception based on HTTP status, with redaction.
+
+    Parameters
+    ----------
+    e : Exception
+        The original exception that was caught.
+    response : requests.Response, optional
+        The HTTP response object, if available.
+
+    Raises
+    ------
+    PermutiveAPIError
+        Or one of its subclasses, depending on the response status code.
+    """
     if response is not None:
         status = response.status_code
         if status in SUCCESS_RANGE:
