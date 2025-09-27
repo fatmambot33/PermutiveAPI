@@ -23,6 +23,7 @@ from PermutiveAPI._Utils.http import (
     PermutiveServerError,
     process_batch,
 )
+from requests.exceptions import RequestException
 from requests.models import PreparedRequest, Response
 from requests.structures import CaseInsensitiveDict
 
@@ -504,6 +505,36 @@ def test_with_retry_max_retries_exceeded(monkeypatch):
         http._with_retry(method, "http://a", "k")
 
     assert calls["n"] == http.MAX_RETRIES
+
+
+def test_with_retry_logs_only_after_exhaustion(monkeypatch, caplog):
+    """Ensure request errors are logged once after retries with redaction."""
+
+    calls = {"count": 0}
+
+    def method(url, headers=None, **kwargs):
+        calls["count"] += 1
+        raise RequestException(
+            "HTTPSConnectionPool(host='api.permutive.com', port=443): Max retries exceeded "
+            "with url: /v2.0/identify?k=super-secret"
+        )
+
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(PermutiveAPIError) as exc:
+            http._with_retry(
+                method, "https://api.permutive.com/v2.0/identify", "super-secret"
+            )
+
+    assert calls["count"] == http.MAX_RETRIES
+    messages = [record.getMessage() for record in caplog.records]
+    redacted_logs = [m for m in messages if "Request failed after" in m]
+    assert len(redacted_logs) == 1
+    assert "[REDACTED]" in redacted_logs[0]
+    assert "super-secret" not in redacted_logs[0]
+    assert "[REDACTED]" in str(exc.value)
+    assert "super-secret" not in str(exc.value)
 
 
 def test_json_serializable_collections():
