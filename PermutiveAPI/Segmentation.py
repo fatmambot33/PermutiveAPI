@@ -200,6 +200,40 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         Notes
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> events = [
+        ...     Event(
+        ...         name="SlotViewable",
+        ...         time="2025-07-01T15:39:11.594Z",
+        ...         session_id="session-1",
+        ...         view_id="view-1",
+        ...         properties={"campaign_id": "3747123491"},
+        ...     )
+        ... ]
+        >>> requests = [
+        ...     Segmentation(user_id="user-1", events=events),
+        ...     Segmentation(user_id="user-2", events=events),
+        ... ]
+        >>> responses, failures = Segmentation.batch_send(
+        ...     requests,
+        ...     api_key="test-key",
+        ... )  # doctest: +SKIP
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(completed, total, batch_request):
+        ...     print(f"{completed}/{total}: {batch_request.url}")
+        >>> _responses, _failures = Segmentation.batch_send(
+        ...     requests,
+        ...     api_key="test-key",
+        ...     activations=True,
+        ...     synchronous_validation=True,
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
         """
         results: List[Dict[str, Any]] = []
         batch_requests: List[BatchRequest] = []

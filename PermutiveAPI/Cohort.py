@@ -247,6 +247,29 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         Notes
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> cohorts = [
+        ...     Cohort(name="VIP Users", query={"type": "users"}),
+        ...     Cohort(name="Returning Visitors", query={"type": "visitors"}),
+        ... ]
+        >>> responses, failures = Cohort.batch_create(
+        ...     cohorts,
+        ...     api_key="test-key",
+        ... )  # doctest: +SKIP
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(completed, total, batch_request):
+        ...     print(f"{completed}/{total}: {batch_request.url}")
+        >>> _responses, _failures = Cohort.batch_create(
+        ...     cohorts,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
         """
         batch_requests: List[BatchRequest] = []
 
@@ -314,6 +337,29 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         Notes
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> cohorts = [
+        ...     Cohort(id="123", name="VIP Users", query={"type": "users"}),
+        ...     Cohort(id="456", name="Returning Visitors", query={"type": "visitors"}),
+        ... ]
+        >>> responses, failures = Cohort.batch_update(
+        ...     cohorts,
+        ...     api_key="test-key",
+        ... )  # doctest: +SKIP
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(completed, total, batch_request):
+        ...     print(f"{completed}/{total}: {batch_request.url}")
+        >>> _responses, _failures = Cohort.batch_update(
+        ...     cohorts,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
         """
         batch_requests: List[BatchRequest] = []
 
@@ -381,6 +427,29 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         Notes
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> cohorts = [
+        ...     Cohort(id="123", name="VIP Users"),
+        ...     Cohort(id="456", name="Returning Visitors"),
+        ... ]
+        >>> responses, failures = Cohort.batch_delete(
+        ...     cohorts,
+        ...     api_key="test-key",
+        ... )  # doctest: +SKIP
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(completed, total, batch_request):
+        ...     print(f"{completed}/{total}: {batch_request.url}")
+        >>> _responses, _failures = Cohort.batch_delete(
+        ...     cohorts,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
         """
         batch_requests: List[BatchRequest] = []
 

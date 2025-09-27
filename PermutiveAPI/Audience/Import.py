@@ -191,6 +191,26 @@ class Import(JSONSerializable[Dict[str, Any]]):
         Notes
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> ids = ["import-1", "import-2"]
+        >>> imports, failures = Import.batch_get_by_id(
+        ...     ids,
+        ...     api_key="test-key",
+        ... )  # doctest: +SKIP
+        >>> sorted(imports.keys())  # doctest: +SKIP
+        ['import-1', 'import-2']
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(completed, total, batch_request):
+        ...     print(f"{completed}/{total}: {batch_request.url}")
+        >>> _imports, _failures = Import.batch_get_by_id(
+        ...     ids,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
         """
         results: Dict[str, "Import"] = {}
         batch_requests: List[BatchRequest] = []

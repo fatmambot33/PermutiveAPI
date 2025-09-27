@@ -201,6 +201,29 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         Notes
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> segments = [
+        ...     Segment(import_id="import-1", name="VIP", code="vip"),
+        ...     Segment(import_id="import-1", name="Returning", code="returning"),
+        ... ]
+        >>> responses, failures = Segment.batch_create(
+        ...     segments,
+        ...     api_key="test-key",
+        ... )  # doctest: +SKIP
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(completed, total, batch_request):
+        ...     print(f"{completed}/{total}: {batch_request.url}")
+        >>> _responses, _failures = Segment.batch_create(
+        ...     segments,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
         """
         batch_requests: List[BatchRequest] = []
 
@@ -269,6 +292,29 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         Notes
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> segments = [
+        ...     Segment(import_id="import-1", id="seg-1", name="VIP", code="vip"),
+        ...     Segment(import_id="import-1", id="seg-2", name="Returning", code="returning"),
+        ... ]
+        >>> responses, failures = Segment.batch_update(
+        ...     segments,
+        ...     api_key="test-key",
+        ... )  # doctest: +SKIP
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(completed, total, batch_request):
+        ...     print(f"{completed}/{total}: {batch_request.url}")
+        >>> _responses, _failures = Segment.batch_update(
+        ...     segments,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
         """
         batch_requests: List[BatchRequest] = []
 
@@ -336,6 +382,29 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         Notes
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> segments = [
+        ...     Segment(import_id="import-1", id="seg-1", name="VIP"),
+        ...     Segment(import_id="import-1", id="seg-2", name="Returning"),
+        ... ]
+        >>> responses, failures = Segment.batch_delete(
+        ...     segments,
+        ...     api_key="test-key",
+        ... )  # doctest: +SKIP
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(completed, total, batch_request):
+        ...     print(f"{completed}/{total}: {batch_request.url}")
+        >>> _responses, _failures = Segment.batch_delete(
+        ...     segments,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
         """
         batch_requests: List[BatchRequest] = []
 
