@@ -218,6 +218,39 @@ helpers. When the API responds with ``HTTP 429`` (rate limiting), the helper
 retries using the exponential backoff already built into the package before
 surfacing the error in the ``failures`` list.
 
+Segmentation workflows follow the same pattern. For example, you can create
+multiple segments for a given import in one request batch while reporting
+progress back to an observability system:
+
+```python
+from PermutiveAPI import Segment
+
+
+segments = [
+    Segment(
+        import_id="import-123",
+        name="Frequent Flyers",
+        query={"type": "users", "filter": {"country": "US"}},
+    ),
+    Segment(
+        import_id="import-123",
+        name="Dormant Subscribers",
+        query={"type": "users", "filter": {"status": "inactive"}},
+    ),
+]
+
+segment_responses, segment_failures = Segment.batch_create(
+    segments,
+    api_key="your-api-key",
+    max_workers=4,
+    progress_callback=on_progress,
+)
+
+if segment_failures:
+    for failed_request, error in segment_failures:
+        print("Segment creation retry candidate:", failed_request.url, error)
+```
+
 ### Error Handling
 
 The package raises purpose-specific exceptions that are also available at the
