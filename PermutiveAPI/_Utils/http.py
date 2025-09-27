@@ -394,7 +394,6 @@ def process_batch(
     errors : list[tuple[BatchRequest, Exception]]
         Collected failures paired with their originating request.
     """
-
     batch_requests = list(requests)
     total = len(batch_requests)
     if total == 0:
