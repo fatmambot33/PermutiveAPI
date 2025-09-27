@@ -13,6 +13,7 @@ PermutiveAPI is a Python module to interact with the Permutive API. It provides 
   - [Managing Segments](#managing-segments)
   - [Managing Imports](#managing-imports)
   - [Managing Users](#managing-users)
+  - [Batch Helpers and Progress Callbacks](#batch-helpers-and-progress-callbacks)
   - [Error Handling](#error-handling)
 - [Development](#development)
 - [Contributing](#contributing)
@@ -160,6 +161,41 @@ try:
     print("Successfully identified user.")
 except Exception as e:
     print(f"Error identifying user: {e}")
+
+### Batch Helpers and Progress Callbacks
+
+High-volume workflows often rely on the ``batch_*`` helpers to run requests
+concurrently. Every helper accepts an optional ``progress_callback`` that is
+invoked after each request completes with ``(completed, total, errors,
+batch_request)`` where ``errors`` is the number of failures observed so far.
+
+```python
+from PermutiveAPI import Cohort
+
+
+def on_progress(completed: int, total: int, errors: int, request) -> None:
+    print(f"{completed}/{total} (errors: {errors}): {request.method} {request.url}")
+
+
+cohorts = [
+    Cohort(name="VIP Customers", query={"type": "users"}),
+    Cohort(name="Returning Visitors", query={"type": "visitors"}),
+]
+
+responses, failures = Cohort.batch_create(
+    cohorts,
+    api_key="your-api-key",
+    progress_callback=on_progress,
+)
+
+if failures:
+    for failed_request, error in failures:
+        print("Retry or inspect:", failed_request.url, error)
+```
+
+The same signature is used across helpers such as
+``Identity.batch_identify`` and ``Segment.batch_create``, enabling shared
+progress reporting utilities that surface both throughput and error counts.
 
 ### Error Handling
 

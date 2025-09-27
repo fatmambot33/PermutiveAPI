@@ -76,7 +76,9 @@ class Identity(JSONSerializable[Dict[str, Any]]):
         *,
         api_key: str,
         max_workers: Optional[int] = None,
-        progress_callback: Optional[Callable[[int, int, BatchRequest], None]] = None,
+        progress_callback: Optional[
+            Callable[[int, int, int, BatchRequest], None]
+        ] = None,
     ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
         """Identify multiple users concurrently.
 
@@ -89,9 +91,10 @@ class Identity(JSONSerializable[Dict[str, Any]]):
         max_workers : int | None, optional
             Maximum number of worker threads (default: ``None`` to defer to the
             shared batch runner's default).
-        progress_callback : Callable[[int, int, BatchRequest], None] | None, optional
+        progress_callback : Callable[[int, int, int, BatchRequest], None] | None, optional
             Invoked after each request completes. Receives ``(completed, total,
-            batch_request)``.
+            errors, batch_request)`` where ``errors`` counts failures observed so
+            far.
 
         Returns
         -------
@@ -116,8 +119,10 @@ class Identity(JSONSerializable[Dict[str, Any]]):
         2
         >>> failures  # doctest: +SKIP
         []
-        >>> def on_progress(completed, total, batch_request):
-        ...     print(f"{completed}/{total}: {batch_request.url}")
+        >>> def on_progress(completed, total, errors, batch_request):
+        ...     print(
+        ...         f"{completed}/{total} (errors: {errors}): {batch_request.url}"
+        ...     )
         >>> _responses, _failures = Identity.batch_identify(
         ...     identities,
         ...     api_key="test-key",

@@ -473,7 +473,9 @@ def process_batch(
     *,
     api_key: str,
     max_workers: Optional[int],
-    progress_callback: Optional[Callable[[int, int, BatchRequest], None]] = None,
+    progress_callback: Optional[
+        Callable[[int, int, int, BatchRequest], None]
+    ] = None,
 ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
     """Execute multiple HTTP requests concurrently.
 
@@ -486,9 +488,10 @@ def process_batch(
     max_workers : int | None
         Maximum number of worker threads. When ``None`` the executor applies
         its default limit (``min(32, os.cpu_count() + 4)``).
-    progress_callback : Callable[[int, int, BatchRequest], None] | None, optional
-        Invoked after each request completes with ``(completed, total,
-        batch_request)``. Defaults to ``None``.
+    progress_callback : Callable[[int, int, int, BatchRequest], None] | None, optional
+        Invoked after each request completes with ``(completed, total, errors,
+        batch_request)`` where ``errors`` is the number of failed requests
+        observed so far. Defaults to ``None``.
 
     Returns
     -------
@@ -544,7 +547,12 @@ def process_batch(
                 completed += 1
                 if progress_callback is not None:
                     try:
-                        progress_callback(completed, total, batch_request)
+                        progress_callback(
+                            completed,
+                            total,
+                            len(errors),
+                            batch_request,
+                        )
                     except Exception:  # pragma: no cover - defensive logging
                         logging.exception("Progress callback raised an exception")
 
