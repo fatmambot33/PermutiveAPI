@@ -372,7 +372,7 @@ def request(
         and retry.backoff_factor == BACKOFF_FACTOR
         and retry.initial_delay == INITIAL_DELAY
     ):
-        return _with_retry(m, url, api_key, **kwargs)
+        return _with_retry(m, url, api_key, headers=hdrs, **kwargs)
 
     params_copy = (kwargs.pop("params", {}) or {}).copy()
     params_copy["k"] = api_key
@@ -449,7 +449,14 @@ def to_payload(
     return json.loads(filtered_dict_string)
 
 
-def _with_retry(method: Callable, url: str, api_key: str, **kwargs) -> Response:
+def _with_retry(
+    method: Callable,
+    url: str,
+    api_key: str,
+    *,
+    headers: Optional[Dict[str, str]] = None,
+    **kwargs: Any,
+) -> Response:
     """Retry logic for transient errors and rate limiting."""
     params = (kwargs.pop("params", {}) or {}).copy()
     params["k"] = api_key
@@ -461,7 +468,8 @@ def _with_retry(method: Callable, url: str, api_key: str, **kwargs) -> Response:
 
     while attempt < MAX_RETRIES:
         try:
-            response = method(url, headers=DEFAULT_HEADERS, **kwargs)
+            merged_headers = headers if headers is not None else DEFAULT_HEADERS
+            response = method(url, headers=merged_headers, **kwargs)
             assert response is not None
             if response.status_code in SUCCESS_RANGE:
                 return response
