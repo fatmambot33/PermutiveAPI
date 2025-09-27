@@ -387,6 +387,32 @@ def test_request_methods(monkeypatch):
     assert response.status_code == 200
 
 
+def test_request_merges_headers_with_default_retry(monkeypatch):
+    """Ensure custom headers reach the transport when using default retry."""
+
+    captured: Dict[str, Dict[str, str]] = {}
+
+    def fake_get(url, headers=None, **kwargs):  # noqa: ANN001 - signature mirrors requests.get
+        captured["headers"] = headers or {}
+        resp = Response()
+        resp.status_code = 200
+        return resp
+
+    monkeypatch.setattr(http.requests, "get", fake_get)
+
+    response = http.request(
+        "GET",
+        api_key="test-key",
+        url="https://example.com/resource",
+        headers={"X-Test": "value"},
+    )
+
+    assert response.status_code == 200
+    assert captured["headers"]["X-Test"] == "value"
+    assert captured["headers"]["Accept"] == "application/json"
+    assert captured["headers"]["Content-Type"] == "application/json"
+
+
 def test_to_payload():
     """Test the payload creation from a dataclass."""
 
