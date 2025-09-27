@@ -405,12 +405,15 @@ def request(
                 )
         except RequestException as e:
             if attempt >= retry.max_retries - 1:
+                redacted_error = redact_message(str(e))
+                logging.error(
+                    "Request failed after %s attempts: %s",
+                    attempt + 1,
+                    redacted_error,
+                )
                 raise PermutiveAPIError(
-                    f"Request failed after {attempt+1} attempts: {e}"
+                    f"Request failed after {attempt+1} attempts: {redacted_error}"
                 ) from e
-            logging.warning(
-                f"Request failed ({e}), retrying in {delay}s (attempt {attempt+1})"
-            )
             time.sleep(delay)
             delay *= retry.backoff_factor
         attempt += 1
@@ -485,12 +488,15 @@ def _with_retry(method: Callable, url: str, api_key: str, **kwargs) -> Response:
 
         except RequestException as e:
             if attempt >= MAX_RETRIES - 1:
+                redacted_error = redact_message(str(e))
+                logging.error(
+                    "Request failed after %s attempts: %s",
+                    attempt + 1,
+                    redacted_error,
+                )
                 raise PermutiveAPIError(
-                    f"Request failed after {attempt+1} attempts: {e}"
+                    f"Request failed after {attempt+1} attempts: {redacted_error}"
                 ) from e
-            logging.warning(
-                f"Request failed ({e}), retrying in {delay}s (attempt {attempt+1})"
-            )
             time.sleep(delay)
             delay *= BACKOFF_FACTOR
 
