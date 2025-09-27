@@ -171,7 +171,10 @@ invoked after each request completes with a
 throughput. The dataclass includes counters for completed requests, failure
 totals, elapsed time, and the estimated seconds required to process 1,000
 requests, making it straightforward to surface both reliability and latency
-trends in dashboards or logs.
+trends in dashboards or logs. Most workloads achieve a good balance between
+throughput and API friendliness with ``max_workers=4``. Increase the pool size
+gradually (for example to 6 or 8 workers) only after observing stable latency
+and error rates because the Permutive API enforces rate limits.
 
 ```python
 from PermutiveAPI import Cohort
@@ -196,6 +199,7 @@ cohorts = [
 responses, failures = Cohort.batch_create(
     cohorts,
     api_key="your-api-key",
+    max_workers=4,  # recommended starting point for concurrent writes
     progress_callback=on_progress,
 )
 
@@ -207,7 +211,12 @@ if failures:
 The same callback shape is shared across helpers such as
 ``Identity.batch_identify`` and ``Segment.batch_create``, enabling reuse of
 progress reporting utilities that surface throughput, error counts, and
-latency projections.
+latency projections. The helpers delegate to
+:func:`PermutiveAPI._Utils.http.process_batch`, so they automatically benefit
+from the shared retry/backoff configuration used by the underlying request
+helpers. When the API responds with ``HTTP 429`` (rate limiting), the helper
+retries using the exponential backoff already built into the package before
+surfacing the error in the ``failures`` list.
 
 ### Error Handling
 
