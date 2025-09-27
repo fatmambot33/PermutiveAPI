@@ -104,6 +104,26 @@ class Identity(JSONSerializable[Dict[str, Any]]):
         Notes
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> identities = [
+        ...     Identity(user_id="user-1", aliases=[Alias(alias_type="crm", alias_id="123")]),
+        ...     Identity(user_id="user-2", aliases=[Alias(alias_type="crm", alias_id="456")]),
+        ... ]
+        >>> responses, failures = Identity.batch_identify(identities, api_key="test-key")
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(completed, total, batch_request):
+        ...     print(f"{completed}/{total}: {batch_request.url}")
+        >>> _responses, _failures = Identity.batch_identify(
+        ...     identities,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
         """
         batch_requests: List[BatchRequest] = []
 
