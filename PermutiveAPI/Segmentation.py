@@ -201,7 +201,6 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
         """
-
         results: List[Dict[str, Any]] = []
         batch_requests: List[BatchRequest] = []
 

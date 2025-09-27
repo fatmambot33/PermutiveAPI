@@ -202,7 +202,6 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
         """
-
         batch_requests: List[BatchRequest] = []
 
         for segment in segments:
@@ -271,7 +270,6 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
         """
-
         batch_requests: List[BatchRequest] = []
 
         for segment in segments:
@@ -339,7 +337,6 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
         """
-
         batch_requests: List[BatchRequest] = []
 
         for segment in segments:

@@ -192,7 +192,6 @@ class Import(JSONSerializable[Dict[str, Any]]):
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
         """
-
         results: Dict[str, "Import"] = {}
         batch_requests: List[BatchRequest] = []
 

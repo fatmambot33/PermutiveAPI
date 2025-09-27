@@ -248,7 +248,6 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
         """
-
         batch_requests: List[BatchRequest] = []
 
         for cohort in cohorts:
@@ -316,7 +315,6 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
         """
-
         batch_requests: List[BatchRequest] = []
 
         for cohort in cohorts:
@@ -384,7 +382,6 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         -----
         This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
         """
-
         batch_requests: List[BatchRequest] = []
 
         for cohort in cohorts:
