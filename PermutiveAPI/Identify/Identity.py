@@ -1,7 +1,7 @@
 """User identification helpers for the Permutive API."""
 
 import logging
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 from dataclasses import dataclass
 
 
