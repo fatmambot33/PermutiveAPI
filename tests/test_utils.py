@@ -495,7 +495,9 @@ def test_with_retry_logs_only_after_exhaustion(monkeypatch, caplog):
 
     with caplog.at_level(logging.ERROR):
         with pytest.raises(PermutiveAPIError) as exc:
-            http._with_retry(method, "https://api.permutive.com/v2.0/identify", "super-secret")
+            http._with_retry(
+                method, "https://api.permutive.com/v2.0/identify", "super-secret"
+            )
 
     assert calls["count"] == http.MAX_RETRIES
     messages = [record.getMessage() for record in caplog.records]
@@ -505,6 +507,7 @@ def test_with_retry_logs_only_after_exhaustion(monkeypatch, caplog):
     assert "super-secret" not in redacted_logs[0]
     assert "[REDACTED]" in str(exc.value)
     assert "super-secret" not in str(exc.value)
+
 
 def test_json_serializable_collections():
     """Test the JSONSerializable base class for collections."""
