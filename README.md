@@ -166,15 +166,26 @@ except Exception as e:
 
 High-volume workflows often rely on the ``batch_*`` helpers to run requests
 concurrently. Every helper accepts an optional ``progress_callback`` that is
-invoked after each request completes with ``(completed, total, errors,
-batch_request)`` where ``errors`` is the number of failures observed so far.
+invoked after each request completes with a
+:class:`~PermutiveAPI._Utils.http.Progress` snapshot describing aggregate
+throughput. The dataclass includes counters for completed requests, failure
+totals, elapsed time, and the estimated seconds required to process 1,000
+requests, making it straightforward to surface both reliability and latency
+trends in dashboards or logs.
 
 ```python
 from PermutiveAPI import Cohort
+from PermutiveAPI._Utils.http import Progress
 
 
-def on_progress(completed: int, total: int, errors: int, request) -> None:
-    print(f"{completed}/{total} (errors: {errors}): {request.method} {request.url}")
+def on_progress(progress: Progress) -> None:
+    avg = progress.average_per_thousand_seconds
+    avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
+    print(
+        f"{progress.completed}/{progress.total} "
+        f"(errors: {progress.errors}, avg/1000: {avg_display}): "
+        f"{progress.batch_request.method} {progress.batch_request.url}"
+    )
 
 
 cohorts = [
@@ -193,9 +204,10 @@ if failures:
         print("Retry or inspect:", failed_request.url, error)
 ```
 
-The same signature is used across helpers such as
-``Identity.batch_identify`` and ``Segment.batch_create``, enabling shared
-progress reporting utilities that surface both throughput and error counts.
+The same callback shape is shared across helpers such as
+``Identity.batch_identify`` and ``Segment.batch_create``, enabling reuse of
+progress reporting utilities that surface throughput, error counts, and
+latency projections.
 
 ### Error Handling
 

@@ -172,6 +172,37 @@ class BatchRequest:
     error_callback: Optional[Callable[[Exception], None]] = None
 
 
+@dataclass(frozen=True)
+class Progress:
+    """Immutable snapshot describing batch processing progress.
+
+    Parameters
+    ----------
+    completed : int
+        Number of requests that have finished (successfully or with an
+        exception).
+    total : int
+        Total number of requests in the batch.
+    errors : int
+        Number of requests that have failed so far.
+    batch_request : BatchRequest
+        Descriptor corresponding to the request that just finished.
+    elapsed_seconds : float
+        Wall-clock seconds elapsed since :func:`process_batch` started.
+    average_per_thousand_seconds : float | None
+        Estimated seconds required to process 1,000 requests based on the
+        observed throughput. ``None`` when insufficient data is available
+        (e.g. before any request has completed).
+    """
+
+    completed: int
+    total: int
+    errors: int
+    batch_request: BatchRequest
+    elapsed_seconds: float
+    average_per_thousand_seconds: Optional[float]
+
+
 def get(api_key: str, url: str, params: Optional[Dict[str, Any]] = None) -> Response:
     """Perform a GET request with retry logic.
 
@@ -473,9 +504,7 @@ def process_batch(
     *,
     api_key: str,
     max_workers: Optional[int],
-    progress_callback: Optional[
-        Callable[[int, int, int, BatchRequest], None]
-    ] = None,
+    progress_callback: Optional[Callable[[Progress], None]] = None,
 ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
     """Execute multiple HTTP requests concurrently.
 
@@ -488,10 +517,10 @@ def process_batch(
     max_workers : int | None
         Maximum number of worker threads. When ``None`` the executor applies
         its default limit (``min(32, os.cpu_count() + 4)``).
-    progress_callback : Callable[[int, int, int, BatchRequest], None] | None, optional
-        Invoked after each request completes with ``(completed, total, errors,
-        batch_request)`` where ``errors`` is the number of failed requests
-        observed so far. Defaults to ``None``.
+    progress_callback : Callable[[Progress], None] | None, optional
+        Invoked after each request completes with a
+        :class:`~PermutiveAPI._Utils.http.Progress` snapshot containing the
+        aggregate metrics recorded so far. Defaults to ``None``.
 
     Returns
     -------
@@ -507,6 +536,8 @@ def process_batch(
 
     responses: List[Response] = []
     errors: List[Tuple[BatchRequest, Exception]] = []
+
+    start_time = time.perf_counter()
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_request = {
@@ -547,11 +578,19 @@ def process_batch(
                 completed += 1
                 if progress_callback is not None:
                     try:
+                        elapsed = time.perf_counter() - start_time
+                        average_per_thousand = (
+                            (elapsed / completed) * 1000 if completed else None
+                        )
                         progress_callback(
-                            completed,
-                            total,
-                            len(errors),
-                            batch_request,
+                            Progress(
+                                completed=completed,
+                                total=total,
+                                errors=len(errors),
+                                batch_request=batch_request,
+                                elapsed_seconds=elapsed,
+                                average_per_thousand_seconds=average_per_thousand,
+                            )
                         )
                     except Exception:  # pragma: no cover - defensive logging
                         logging.exception("Progress callback raised an exception")

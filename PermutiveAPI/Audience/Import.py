@@ -24,7 +24,7 @@ from collections import defaultdict
 from requests import Response
 
 from PermutiveAPI._Utils import http
-from PermutiveAPI._Utils.http import BatchRequest, process_batch
+from PermutiveAPI._Utils.http import BatchRequest, Progress, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
 from . import _API_ENDPOINT
 from .Source import Source
@@ -163,9 +163,7 @@ class Import(JSONSerializable[Dict[str, Any]]):
         *,
         api_key: str,
         max_workers: Optional[int] = None,
-        progress_callback: Optional[
-            Callable[[int, int, int, BatchRequest], None]
-        ] = None,
+        progress_callback: Optional[Callable[[Progress], None]] = None,
     ) -> Tuple[Dict[str, "Import"], List[Tuple[BatchRequest, Exception]]]:
         """Fetch multiple imports concurrently.
 
@@ -178,10 +176,11 @@ class Import(JSONSerializable[Dict[str, Any]]):
         max_workers : int | None, optional
             Maximum number of worker threads (default: ``None`` to defer to the
             shared batch runner's default).
-        progress_callback : Callable[[int, int, int, BatchRequest], None] | None, optional
-            Invoked after each request completes. Receives ``(completed, total,
-            errors, batch_request)`` where ``errors`` counts failures observed so
-            far.
+        progress_callback : Callable[[Progress], None] | None, optional
+            Invoked after each request completes. Receives a
+            :class:`~PermutiveAPI._Utils.http.Progress` snapshot describing the
+            batch throughput and latency (including the estimated seconds per
+            1,000 requests).
 
         Returns
         -------
@@ -206,9 +205,12 @@ class Import(JSONSerializable[Dict[str, Any]]):
         ['import-1', 'import-2']
         >>> failures  # doctest: +SKIP
         []
-        >>> def on_progress(completed, total, errors, batch_request):
+        >>> def on_progress(progress):
+        ...     avg = progress.average_per_thousand_seconds
+        ...     avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
         ...     print(
-        ...         f"{completed}/{total} (errors: {errors}): {batch_request.url}"
+        ...         f"{progress.completed}/{progress.total} (errors: {progress.errors}) "
+        ...         f"avg/1000: {avg_display}"
         ...     )
         >>> _imports, _failures = Import.batch_get_by_id(
         ...     ids,

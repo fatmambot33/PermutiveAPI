@@ -10,7 +10,7 @@ from . import _API_ENDPOINT
 from requests import Response
 
 from PermutiveAPI._Utils import http
-from PermutiveAPI._Utils.http import BatchRequest, process_batch
+from PermutiveAPI._Utils.http import BatchRequest, Progress, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
 
 _API_PAYLOAD = ["name", "code", "description", "cpm", "categories"]
@@ -172,9 +172,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         *,
         api_key: str,
         max_workers: Optional[int] = None,
-        progress_callback: Optional[
-            Callable[[int, int, int, BatchRequest], None]
-        ] = None,
+        progress_callback: Optional[Callable[[Progress], None]] = None,
     ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
         """Create multiple segments concurrently.
 
@@ -188,10 +186,11 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         max_workers : int | None, optional
             Maximum number of worker threads (default: ``None`` to defer to the
             shared batch runner's default).
-        progress_callback : Callable[[int, int, int, BatchRequest], None] | None, optional
-            Invoked after each request completes. Receives ``(completed, total,
-            errors, batch_request)`` where ``errors`` counts failures observed so
-            far.
+        progress_callback : Callable[[Progress], None] | None, optional
+            Invoked after each request completes. Receives a
+            :class:`~PermutiveAPI._Utils.http.Progress` snapshot describing the
+            batch throughput and latency (including the estimated seconds per
+            1,000 requests).
 
         Returns
         -------
@@ -219,9 +218,12 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         2
         >>> failures  # doctest: +SKIP
         []
-        >>> def on_progress(completed, total, errors, batch_request):
+        >>> def on_progress(progress):
+        ...     avg = progress.average_per_thousand_seconds
+        ...     avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
         ...     print(
-        ...         f"{completed}/{total} (errors: {errors}): {batch_request.url}"
+        ...         f"{progress.completed}/{progress.total} (errors: {progress.errors}) "
+        ...         f"avg/1000: {avg_display}"
         ...     )
         >>> _responses, _failures = Segment.batch_create(
         ...     segments,
@@ -267,9 +269,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         *,
         api_key: str,
         max_workers: Optional[int] = None,
-        progress_callback: Optional[
-            Callable[[int, int, int, BatchRequest], None]
-        ] = None,
+        progress_callback: Optional[Callable[[Progress], None]] = None,
     ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
         """Update multiple segments concurrently.
 
@@ -284,10 +284,11 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         max_workers : int | None, optional
             Maximum number of worker threads (default: ``None`` to defer to the
             shared batch runner's default).
-        progress_callback : Callable[[int, int, int, BatchRequest], None] | None, optional
-            Invoked after each request completes. Receives ``(completed, total,
-            errors, batch_request)`` where ``errors`` counts failures observed so
-            far.
+        progress_callback : Callable[[Progress], None] | None, optional
+            Invoked after each request completes. Receives a
+            :class:`~PermutiveAPI._Utils.http.Progress` snapshot describing the
+            batch throughput and latency (including the estimated seconds per
+            1,000 requests).
 
         Returns
         -------
@@ -315,9 +316,12 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         2
         >>> failures  # doctest: +SKIP
         []
-        >>> def on_progress(completed, total, errors, batch_request):
+        >>> def on_progress(progress):
+        ...     avg = progress.average_per_thousand_seconds
+        ...     avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
         ...     print(
-        ...         f"{completed}/{total} (errors: {errors}): {batch_request.url}"
+        ...         f"{progress.completed}/{progress.total} (errors: {progress.errors}) "
+        ...         f"avg/1000: {avg_display}"
         ...     )
         >>> _responses, _failures = Segment.batch_update(
         ...     segments,
@@ -365,9 +369,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         *,
         api_key: str,
         max_workers: Optional[int] = None,
-        progress_callback: Optional[
-            Callable[[int, int, int, BatchRequest], None]
-        ] = None,
+        progress_callback: Optional[Callable[[Progress], None]] = None,
     ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
         """Delete multiple segments concurrently.
 
@@ -379,10 +381,11 @@ class Segment(JSONSerializable[Dict[str, Any]]):
             API key for authentication.
         max_workers : int | None, optional
             Maximum number of worker threads (default: ``None``).
-        progress_callback : Callable[[int, int, int, BatchRequest], None] | None, optional
-            Invoked after each request completes. Receives ``(completed, total,
-            errors, batch_request)`` where ``errors`` counts failures observed so
-            far.
+        progress_callback : Callable[[Progress], None] | None, optional
+            Invoked after each request completes. Receives a
+            :class:`~PermutiveAPI._Utils.http.Progress` snapshot describing the
+            batch throughput and latency (including the estimated seconds per
+            1,000 requests).
 
         Returns
         -------
@@ -410,9 +413,12 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         2
         >>> failures  # doctest: +SKIP
         []
-        >>> def on_progress(completed, total, errors, batch_request):
+        >>> def on_progress(progress):
+        ...     avg = progress.average_per_thousand_seconds
+        ...     avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
         ...     print(
-        ...         f"{completed}/{total} (errors: {errors}): {batch_request.url}"
+        ...         f"{progress.completed}/{progress.total} (errors: {progress.errors}) "
+        ...         f"avg/1000: {avg_display}"
         ...     )
         >>> _responses, _failures = Segment.batch_delete(
         ...     segments,
