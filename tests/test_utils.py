@@ -6,19 +6,22 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
+from unittest.mock import Mock
 import uuid
 import urllib.parse
 import time
-from typing import Dict, Any, List
+from typing import Any, Callable, Dict, List, Tuple
 
 import pytest
 from PermutiveAPI._Utils.http import (
+    BatchRequest,
     PermutiveAPIError,
     PermutiveAuthenticationError,
     PermutiveBadRequestError,
     PermutiveRateLimitError,
     PermutiveResourceNotFoundError,
     PermutiveServerError,
+    process_batch,
 )
 from requests.models import PreparedRequest, Response
 from requests.structures import CaseInsensitiveDict
@@ -208,6 +211,157 @@ def test_json_serializable(tmp_path):
         Dummy.from_json(123)  # type: ignore[arg-type]
     with pytest.raises(TypeError):
         Dummy.from_json("not json")
+
+
+def test_process_batch_multiple_successes(fake_thread_pool, monkeypatch):
+    """Ensure ``process_batch`` handles multiple successes and tracks progress."""
+
+    recorded_calls = []
+
+    def fake_request(method, api_key, url, **kwargs):  # noqa: ANN001 - mirror signature
+        recorded_calls.append((method, api_key, url, kwargs))
+        response = Mock(spec=Response)
+        response.url = url
+        response.payload = kwargs.get("json", {})
+        return response
+
+    monkeypatch.setattr(http, "request", fake_request)
+
+    progress_updates: List[http.Progress] = []
+    batch_requests = [
+        BatchRequest(method="POST", url="https://example.com/one", json={"idx": 1}),
+        BatchRequest(method="POST", url="https://example.com/two", json={"idx": 2}),
+        BatchRequest(method="POST", url="https://example.com/three", json={"idx": 3}),
+    ]
+
+    responses, errors = process_batch(
+        batch_requests,
+        api_key="test-key",
+        max_workers=2,
+        progress_callback=progress_updates.append,
+    )
+
+    assert len(fake_thread_pool) == 1
+    assert fake_thread_pool[0].max_workers == 2
+    assert len(recorded_calls) == len(batch_requests)
+    assert len(responses) == len(batch_requests)
+    assert errors == []
+
+    assert len(progress_updates) == len(batch_requests)
+    assert [p.completed for p in progress_updates] == [1, 2, 3]
+    assert all(p.total == len(batch_requests) for p in progress_updates)
+    assert all(p.errors == 0 for p in progress_updates)
+    assert {id(p.batch_request) for p in progress_updates} == {
+        id(b) for b in batch_requests
+    }
+    assert all(
+        p.average_per_thousand_seconds is None or p.average_per_thousand_seconds >= 0
+        for p in progress_updates
+    )
+
+
+def test_process_batch_aggregates_errors(fake_thread_pool, monkeypatch):
+    """Verify errors are aggregated and callbacks execute correctly."""
+
+    success_callbacks: List[str] = []
+    error_callbacks: List[Tuple[str, Exception]] = []
+
+    def fake_request(method, api_key, url, **kwargs):  # noqa: ANN001 - mirror signature
+        if url.endswith("/fail"):
+            raise PermutiveAPIError("boom")
+        response = Mock(spec=Response)
+        response.url = url
+        return response
+
+    monkeypatch.setattr(http, "request", fake_request)
+
+    def make_success(label: str) -> Callable[[Response], None]:
+        def _callback(response: Response) -> None:
+            success_callbacks.append(label)
+
+        return _callback
+
+    def make_error(label: str) -> Callable[[Exception], None]:
+        def _callback(exc: Exception) -> None:
+            error_callbacks.append((label, exc))
+
+        return _callback
+
+    failing_request = BatchRequest(
+        method="GET",
+        url="https://example.com/fail",
+        error_callback=make_error("fail"),
+    )
+    batch_requests = [
+        BatchRequest(
+            method="GET",
+            url="https://example.com/success-1",
+            callback=make_success("one"),
+        ),
+        failing_request,
+        BatchRequest(
+            method="GET",
+            url="https://example.com/success-2",
+            callback=make_success("two"),
+        ),
+    ]
+
+    progress_updates: List[http.Progress] = []
+    responses, aggregated_errors = process_batch(
+        batch_requests,
+        api_key="test-key",
+        max_workers=1,
+        progress_callback=progress_updates.append,
+    )
+
+    assert len(fake_thread_pool) == 1
+    assert fake_thread_pool[0].max_workers == 1
+    assert len(responses) == 2
+    assert sorted(success_callbacks) == ["one", "two"]
+    assert len(success_callbacks) == 2
+
+    assert len(aggregated_errors) == 1
+    recorded_request, recorded_exc = aggregated_errors[0]
+    assert recorded_request is failing_request
+    assert isinstance(recorded_exc, PermutiveAPIError)
+    assert error_callbacks == [("fail", recorded_exc)]
+
+    assert len(progress_updates) == len(batch_requests)
+    assert [p.completed for p in progress_updates] == [1, 2, 3]
+    error_counts = [p.errors for p in progress_updates]
+    assert error_counts[-1] == len(aggregated_errors)
+    assert all(0 <= count <= len(aggregated_errors) for count in error_counts)
+
+
+def test_process_batch_respects_retry(fake_thread_pool, monkeypatch):
+    """Simulate a retried request to ensure eventual success is captured."""
+
+    attempt_counter = {"count": 0}
+
+    def fake_post(url, **kwargs):  # noqa: ANN001 - signature mirrors requests.post
+        attempt_counter["count"] += 1
+        if attempt_counter["count"] == 1:
+            return _make_response(url, 500, headers={"Retry-After": "0"})
+        return _make_response(url, 200)
+
+    monkeypatch.setattr(http.requests, "post", fake_post)
+    monkeypatch.setattr(http.time, "sleep", lambda *args, **kwargs: None)
+
+    progress_updates: List[http.Progress] = []
+    responses, errors = process_batch(
+        [BatchRequest(method="POST", url="https://example.com/retry")],
+        api_key="test-key",
+        max_workers=1,
+        progress_callback=progress_updates.append,
+    )
+
+    assert attempt_counter["count"] == 2
+    assert len(fake_thread_pool) == 1
+    assert fake_thread_pool[0].max_workers == 1
+    assert len(responses) == 1
+    assert errors == []
+    assert len(progress_updates) == 1
+    assert progress_updates[0].errors == 0
 
 
 def test_request_methods(monkeypatch):

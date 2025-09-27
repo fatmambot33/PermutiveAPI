@@ -1,6 +1,8 @@
 import json
 import pytest
 from unittest.mock import Mock, patch
+from PermutiveAPI._Utils import http
+from PermutiveAPI._Utils.http import PermutiveAPIError
 from PermutiveAPI.Cohort import Cohort, CohortList, _API_ENDPOINT
 
 
@@ -246,3 +248,104 @@ def test_cohort_list_cache_refresh():
     cohorts[0].workspace_id = "w1"
     assert cohorts.workspace_dictionary["w1"][0].id == "1"
     assert cohorts._workspace_dictionary_cache
+
+
+def test_cohort_batch_create_updates_instances(fake_thread_pool, monkeypatch):
+    """Batch creation should mutate cohort instances with API payloads."""
+
+    payloads = {
+        "Alpha": {
+            "id": "id-alpha",
+            "code": "code-alpha",
+            "name": "Alpha",
+            "request_id": "req-alpha",
+        },
+        "Beta": {
+            "id": "id-beta",
+            "code": "code-beta",
+            "name": "Beta",
+            "request_id": "req-beta",
+        },
+    }
+
+    def fake_request(method, api_key, url, **kwargs):  # noqa: ANN001 - mirror signature
+        name = kwargs["json"]["name"]
+        response = Mock()
+        response.json.return_value = payloads[name]
+        return response
+
+    monkeypatch.setattr(http, "request", fake_request)
+
+    cohorts = [
+        Cohort(name="Alpha", query={"type": "example"}),
+        Cohort(name="Beta", query={"type": "example"}),
+    ]
+
+    progress = []
+    responses, errors = Cohort.batch_create(
+        cohorts,
+        api_key="test-key",
+        max_workers=2,
+        progress_callback=progress.append,
+    )
+
+    assert len(fake_thread_pool) == 1
+    assert fake_thread_pool[0].max_workers == 2
+    assert len(responses) == 2
+    assert errors == []
+
+    assert {cohort.id for cohort in cohorts} == {"id-alpha", "id-beta"}
+    assert {cohort.code for cohort in cohorts} == {"code-alpha", "code-beta"}
+    assert {cohort.request_id for cohort in cohorts} == {"req-alpha", "req-beta"}
+
+    assert len(progress) == 2
+    assert [p.completed for p in progress] == [1, 2]
+    assert progress[-1].errors == 0
+
+
+def test_cohort_batch_create_propagates_errors(fake_thread_pool, monkeypatch):
+    """Ensure batch creation surfaces API errors and partial success."""
+
+    def fake_request(method, api_key, url, **kwargs):  # noqa: ANN001 - mirror signature
+        name = kwargs["json"]["name"]
+        if name == "Failing":
+            raise PermutiveAPIError("cohort failed")
+        response = Mock()
+        response.json.return_value = {
+            "id": f"id-{name.lower()}",
+            "code": f"code-{name.lower()}",
+            "name": name,
+        }
+        return response
+
+    monkeypatch.setattr(http, "request", fake_request)
+
+    cohorts = [
+        Cohort(name="Working", query={"type": "example"}),
+        Cohort(name="Failing", query={"type": "example"}),
+    ]
+
+    progress = []
+    responses, errors = Cohort.batch_create(
+        cohorts,
+        api_key="test-key",
+        max_workers=1,
+        progress_callback=progress.append,
+    )
+
+    assert len(fake_thread_pool) == 1
+    assert fake_thread_pool[0].max_workers == 1
+    assert len(responses) == 1
+    assert len(errors) == 1
+
+    failing_request, exception = errors[0]
+    assert failing_request.json["name"] == "Failing"
+    assert isinstance(exception, PermutiveAPIError)
+
+    assert cohorts[0].id == "id-working"
+    assert cohorts[1].id is None
+
+    assert len(progress) == 2
+    error_counts = [p.errors for p in progress]
+    assert error_counts[-1] == len(errors)
+    assert all(0 <= count <= len(errors) for count in error_counts)
