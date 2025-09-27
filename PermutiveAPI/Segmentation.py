@@ -8,9 +8,12 @@ membership in a structured way.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+
+from requests import Response
 
 from PermutiveAPI._Utils import http
+from PermutiveAPI._Utils.http import BatchRequest, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable
 
 _API_VERSION = "v1"
@@ -71,6 +74,9 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         Convert the request into the JSON payload expected by the API.
     send(api_key, activations=None, synchronous_validation=None, timeout=10.0)
         Dispatch the request to the segmentation endpoint and return the API response.
+    batch_send(requests, api_key, max_workers=None, progress_callback=None, activations=None,
+               synchronous_validation=None, timeout=10.0)
+        Dispatch multiple segmentation requests concurrently using the shared batch runner.
 
     Examples
     --------
@@ -147,6 +153,93 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
             timeout=timeout,
         )
         return response.json()
+
+    @classmethod
+    def batch_send(
+        cls,
+        requests: Iterable["Segmentation"],
+        *,
+        api_key: str,
+        max_workers: Optional[int] = None,
+        progress_callback: Optional[Callable[[int, int, BatchRequest], None]] = None,
+        activations: Optional[bool] = None,
+        synchronous_validation: Optional[bool] = None,
+        timeout: Optional[float] = 10.0,
+    ) -> Tuple[List[Dict[str, Any]], List[Tuple[BatchRequest, Exception]]]:
+        """Submit multiple segmentation requests concurrently.
+
+        Parameters
+        ----------
+        requests : Iterable[Segmentation]
+            Segmentation payloads to dispatch.
+        api_key : str
+            API key used to authenticate with Permutive.
+        max_workers : int | None, optional
+            Maximum number of worker threads (default: ``None`` to defer to the
+            shared batch runner's default).
+        progress_callback : Callable[[int, int, BatchRequest], None] | None, optional
+            Invoked after each request completes. Receives ``(completed, total,
+            batch_request)``.
+        activations : bool | None, optional
+            Override for the activations query parameter applied to every
+            request (default: ``None`` to use each instance's value).
+        synchronous_validation : bool | None, optional
+            Override for synchronous validation applied to every request
+            (default: ``None`` to use each instance's value).
+        timeout : float | None, optional
+            Timeout shared across the dispatched requests (default: ``10.0``).
+
+        Returns
+        -------
+        list[dict[str, Any]]
+            Parsed JSON payloads for successful responses in completion order.
+        list[tuple[BatchRequest, Exception]]
+            Requests that raised exceptions alongside their originating
+            descriptors.
+
+        Notes
+        -----
+        This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+        """
+
+        results: List[Dict[str, Any]] = []
+        batch_requests: List[BatchRequest] = []
+
+        for request in requests:
+            params = cls._build_params(
+                activations if activations is not None else request.activations,
+                (
+                    synchronous_validation
+                    if synchronous_validation is not None
+                    else request.synchronous_validation
+                ),
+            )
+            payload = request.to_json()
+
+            def _make_callback(target: "Segmentation") -> Callable[[Response], None]:
+                def _callback(response: Response) -> None:
+                    results.append(response.json())
+
+                return _callback
+
+            batch_requests.append(
+                BatchRequest(
+                    method="POST",
+                    url=_API_ENDPOINT,
+                    params=params,
+                    json=payload,
+                    timeout=timeout,
+                    callback=_make_callback(request),
+                )
+            )
+
+        _, errors = process_batch(
+            batch_requests,
+            api_key=api_key,
+            max_workers=max_workers,
+            progress_callback=progress_callback,
+        )
+        return results, errors
 
     @staticmethod
     def _build_params(

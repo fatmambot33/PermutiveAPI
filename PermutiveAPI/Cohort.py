@@ -2,10 +2,13 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Type, Any
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from requests import Response
+
 from PermutiveAPI._Utils import http
+from PermutiveAPI._Utils.http import BatchRequest, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
 from collections import defaultdict
 
@@ -59,6 +62,12 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         Update an existing cohort in Permutive.
     delete(api_key)
         Delete a cohort from Permutive.
+    batch_create(cohorts, api_key, max_workers=None, progress_callback=None)
+        Create multiple cohorts concurrently using the batch runner.
+    batch_update(cohorts, api_key, max_workers=None, progress_callback=None)
+        Update multiple cohorts concurrently using the batch runner.
+    batch_delete(cohorts, api_key, max_workers=None, progress_callback=None)
+        Delete multiple cohorts concurrently using the batch runner.
     get_by_id(id, api_key)
         Fetch a specific cohort from the API using its ID.
     get_by_name(name, api_key)
@@ -200,6 +209,196 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             raise ValueError("Cohort ID must be specified for deletion.")
         url = f"{_API_ENDPOINT}{self.id}"
         self._request_helper.delete(api_key=api_key, url=url)
+
+    @classmethod
+    def batch_create(
+        cls,
+        cohorts: Iterable["Cohort"],
+        *,
+        api_key: str,
+        max_workers: Optional[int] = None,
+        progress_callback: Optional[Callable[[int, int, BatchRequest], None]] = None,
+    ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
+        """Create multiple cohorts concurrently.
+
+        Parameters
+        ----------
+        cohorts : Iterable[Cohort]
+            Cohort instances to submit. Each instance is updated with the API
+            payload returned from its respective request before invoking the
+            progress callback.
+        api_key : str
+            API key for authentication.
+        max_workers : int | None, optional
+            Maximum number of worker threads (default: ``None`` to defer to the
+            shared batch runner's default).
+        progress_callback : Callable[[int, int, BatchRequest], None] | None, optional
+            Invoked after each request completes. Receives ``(completed, total,
+            batch_request)``.
+
+        Returns
+        -------
+        list[Response]
+            Successful HTTP responses in completion order.
+        list[tuple[BatchRequest, Exception]]
+            Requests that raised exceptions alongside their originating
+            descriptors.
+
+        Notes
+        -----
+        This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+        """
+
+        batch_requests: List[BatchRequest] = []
+
+        for cohort in cohorts:
+            payload = http.to_payload(cohort, _API_PAYLOAD)
+
+            def _make_callback(target: "Cohort") -> Callable[[Response], None]:
+                def _callback(response: Response) -> None:
+                    created = cls.from_json(response.json())
+                    if isinstance(created, cls):
+                        target.__dict__.update(created.__dict__)
+
+                return _callback
+
+            batch_requests.append(
+                BatchRequest(
+                    method="POST",
+                    url=_API_ENDPOINT,
+                    json=payload,
+                    callback=_make_callback(cohort),
+                )
+            )
+
+        return process_batch(
+            batch_requests,
+            api_key=api_key,
+            max_workers=max_workers,
+            progress_callback=progress_callback,
+        )
+
+    @classmethod
+    def batch_update(
+        cls,
+        cohorts: Iterable["Cohort"],
+        *,
+        api_key: str,
+        max_workers: Optional[int] = None,
+        progress_callback: Optional[Callable[[int, int, BatchRequest], None]] = None,
+    ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
+        """Update multiple cohorts concurrently.
+
+        Parameters
+        ----------
+        cohorts : Iterable[Cohort]
+            Cohorts to patch. Each cohort must define ``id`` and is updated
+            in-place with the response payload before the progress callback
+            executes.
+        api_key : str
+            API key for authentication.
+        max_workers : int | None, optional
+            Maximum number of worker threads (default: ``None`` to defer to the
+            shared batch runner's default).
+        progress_callback : Callable[[int, int, BatchRequest], None] | None, optional
+            Invoked after each request completes. Receives ``(completed, total,
+            batch_request)``.
+
+        Returns
+        -------
+        list[Response]
+            Successful HTTP responses in completion order.
+        list[tuple[BatchRequest, Exception]]
+            Requests that raised exceptions alongside their originating
+            descriptors.
+
+        Notes
+        -----
+        This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+        """
+
+        batch_requests: List[BatchRequest] = []
+
+        for cohort in cohorts:
+            if not cohort.id:
+                raise ValueError("Cohort ID must be specified for update.")
+            payload = http.to_payload(cohort, _API_PAYLOAD)
+            url = f"{_API_ENDPOINT}{cohort.id}"
+
+            def _make_callback(target: "Cohort") -> Callable[[Response], None]:
+                def _callback(response: Response) -> None:
+                    updated = cls.from_json(response.json())
+                    if isinstance(updated, cls):
+                        target.__dict__.update(updated.__dict__)
+
+                return _callback
+
+            batch_requests.append(
+                BatchRequest(
+                    method="PATCH",
+                    url=url,
+                    json=payload,
+                    callback=_make_callback(cohort),
+                )
+            )
+
+        return process_batch(
+            batch_requests,
+            api_key=api_key,
+            max_workers=max_workers,
+            progress_callback=progress_callback,
+        )
+
+    @classmethod
+    def batch_delete(
+        cls,
+        cohorts: Iterable["Cohort"],
+        *,
+        api_key: str,
+        max_workers: Optional[int] = None,
+        progress_callback: Optional[Callable[[int, int, BatchRequest], None]] = None,
+    ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
+        """Delete multiple cohorts concurrently.
+
+        Parameters
+        ----------
+        cohorts : Iterable[Cohort]
+            Cohorts to delete. Each cohort must define ``id``.
+        api_key : str
+            API key for authentication.
+        max_workers : int | None, optional
+            Maximum number of worker threads (default: ``None``).
+        progress_callback : Callable[[int, int, BatchRequest], None] | None, optional
+            Invoked after each request completes. Receives ``(completed, total,
+            batch_request)``.
+
+        Returns
+        -------
+        list[Response]
+            Successful HTTP responses in completion order.
+        list[tuple[BatchRequest, Exception]]
+            Requests that raised exceptions alongside their originating
+            descriptors.
+
+        Notes
+        -----
+        This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+        """
+
+        batch_requests: List[BatchRequest] = []
+
+        for cohort in cohorts:
+            if not cohort.id:
+                raise ValueError("Cohort ID must be specified for deletion.")
+            url = f"{_API_ENDPOINT}{cohort.id}"
+            batch_requests.append(BatchRequest(method="DELETE", url=url))
+
+        return process_batch(
+            batch_requests,
+            api_key=api_key,
+            max_workers=max_workers,
+            progress_callback=progress_callback,
+        )
 
     @staticmethod
     def get_by_id(id: str, api_key: str) -> "Cohort":

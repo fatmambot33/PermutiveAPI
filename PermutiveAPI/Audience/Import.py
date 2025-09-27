@@ -2,14 +2,29 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, DefaultDict, TYPE_CHECKING, Type, Union, Any
+from typing import (
+    Any,
+    Callable,
+    DefaultDict,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    TYPE_CHECKING,
+    Type,
+    Union,
+)
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
     from .Segment import SegmentList
 from datetime import datetime, timezone
 from collections import defaultdict
+from requests import Response
+
 from PermutiveAPI._Utils import http
+from PermutiveAPI._Utils.http import BatchRequest, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
 from . import _API_ENDPOINT
 from .Source import Source
@@ -50,6 +65,8 @@ class Import(JSONSerializable[Dict[str, Any]]):
         Fetch a specific import by its ID.
     list(api_key)
         Retrieve a list of all imports.
+    batch_get_by_id(ids, api_key, max_workers=None, progress_callback=None)
+        Fetch multiple imports concurrently using the shared batch runner.
 
     """
 
@@ -138,6 +155,71 @@ class Import(JSONSerializable[Dict[str, Any]]):
             raise ValueError("Response is None")
         imports = response.json()
         return ImportList.from_json(imports["items"])
+
+    @classmethod
+    def batch_get_by_id(
+        cls,
+        ids: Iterable[str],
+        *,
+        api_key: str,
+        max_workers: Optional[int] = None,
+        progress_callback: Optional[Callable[[int, int, BatchRequest], None]] = None,
+    ) -> Tuple[Dict[str, "Import"], List[Tuple[BatchRequest, Exception]]]:
+        """Fetch multiple imports concurrently.
+
+        Parameters
+        ----------
+        ids : Iterable[str]
+            Import identifiers to retrieve.
+        api_key : str
+            API key for authentication.
+        max_workers : int | None, optional
+            Maximum number of worker threads (default: ``None`` to defer to the
+            shared batch runner's default).
+        progress_callback : Callable[[int, int, BatchRequest], None] | None, optional
+            Invoked after each request completes. Receives ``(completed, total,
+            batch_request)``.
+
+        Returns
+        -------
+        dict[str, Import]
+            Mapping of successfully fetched IDs to :class:`Import` instances.
+        list[tuple[BatchRequest, Exception]]
+            Requests that raised exceptions alongside their originating
+            descriptors.
+
+        Notes
+        -----
+        This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+        """
+
+        results: Dict[str, "Import"] = {}
+        batch_requests: List[BatchRequest] = []
+
+        for import_id in ids:
+            url = f"{_API_ENDPOINT}/{import_id}"
+
+            def _make_callback(target_id: str) -> Callable[[Response], None]:
+                def _callback(response: Response) -> None:
+                    results[target_id] = cls.from_json(response.json())
+
+                return _callback
+
+            batch_requests.append(
+                BatchRequest(
+                    method="GET",
+                    url=url,
+                    callback=_make_callback(import_id),
+                )
+            )
+
+        _, errors = process_batch(
+            batch_requests,
+            api_key=api_key,
+            max_workers=max_workers,
+            progress_callback=progress_callback,
+        )
+        return results, errors
 
 
 class ImportList(List[Import], JSONSerializable[List[Any]]):

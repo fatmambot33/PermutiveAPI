@@ -1,13 +1,16 @@
 """User identification helpers for the Permutive API."""
 
 import logging
-from typing import List, Dict, Any
+from typing import Any, Callable, Iterable, List, Optional, Tuple
 from dataclasses import dataclass
 
 
 from . import _API_ENDPOINT
 from .Alias import Alias
+from requests import Response
+
 from PermutiveAPI._Utils import http
+from PermutiveAPI._Utils.http import BatchRequest, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable
 
 _API_PAYLOAD = ["user_id", "aliases"]
@@ -28,6 +31,8 @@ class Identity(JSONSerializable[Dict[str, Any]]):
     -------
     identify(api_key)
         Identify a user in Permutive.
+    batch_identify(identities, api_key, max_workers=None, progress_callback=None)
+        Identify multiple users concurrently via the shared batch runner.
     """
 
     _request_helper = http
@@ -62,4 +67,60 @@ class Identity(JSONSerializable[Dict[str, Any]]):
             api_key=api_key,
             url=url,
             data=self._request_helper.to_payload(self, _API_PAYLOAD),
+        )
+
+    @classmethod
+    def batch_identify(
+        cls,
+        identities: Iterable["Identity"],
+        *,
+        api_key: str,
+        max_workers: Optional[int] = None,
+        progress_callback: Optional[Callable[[int, int, BatchRequest], None]] = None,
+    ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
+        """Identify multiple users concurrently.
+
+        Parameters
+        ----------
+        identities : Iterable[Identity]
+            Identity payloads to submit.
+        api_key : str
+            API key for authentication.
+        max_workers : int | None, optional
+            Maximum number of worker threads (default: ``None`` to defer to the
+            shared batch runner's default).
+        progress_callback : Callable[[int, int, BatchRequest], None] | None, optional
+            Invoked after each request completes. Receives ``(completed, total,
+            batch_request)``.
+
+        Returns
+        -------
+        list[Response]
+            Successful HTTP responses in completion order.
+        list[tuple[BatchRequest, Exception]]
+            Requests that raised exceptions alongside their originating
+            descriptors.
+
+        Notes
+        -----
+        This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+        """
+
+        batch_requests: List[BatchRequest] = []
+
+        for identity in identities:
+            payload = cls._request_helper.to_payload(identity, _API_PAYLOAD)
+            batch_requests.append(
+                BatchRequest(
+                    method="POST",
+                    url=_API_ENDPOINT,
+                    json=payload,
+                )
+            )
+
+        return process_batch(
+            batch_requests,
+            api_key=api_key,
+            max_workers=max_workers,
+            progress_callback=progress_callback,
         )
