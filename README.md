@@ -13,6 +13,7 @@ PermutiveAPI is a Python module to interact with the Permutive API. It provides 
   - [Managing Segments](#managing-segments)
   - [Managing Imports](#managing-imports)
   - [Managing Users](#managing-users)
+  - [Batch Helpers and Progress Callbacks](#batch-helpers-and-progress-callbacks)
   - [Error Handling](#error-handling)
 - [Development](#development)
 - [Contributing](#contributing)
@@ -160,6 +161,53 @@ try:
     print("Successfully identified user.")
 except Exception as e:
     print(f"Error identifying user: {e}")
+
+### Batch Helpers and Progress Callbacks
+
+High-volume workflows often rely on the ``batch_*`` helpers to run requests
+concurrently. Every helper accepts an optional ``progress_callback`` that is
+invoked after each request completes with a
+:class:`~PermutiveAPI._Utils.http.Progress` snapshot describing aggregate
+throughput. The dataclass includes counters for completed requests, failure
+totals, elapsed time, and the estimated seconds required to process 1,000
+requests, making it straightforward to surface both reliability and latency
+trends in dashboards or logs.
+
+```python
+from PermutiveAPI import Cohort
+from PermutiveAPI._Utils.http import Progress
+
+
+def on_progress(progress: Progress) -> None:
+    avg = progress.average_per_thousand_seconds
+    avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
+    print(
+        f"{progress.completed}/{progress.total} "
+        f"(errors: {progress.errors}, avg/1000: {avg_display}): "
+        f"{progress.batch_request.method} {progress.batch_request.url}"
+    )
+
+
+cohorts = [
+    Cohort(name="VIP Customers", query={"type": "users"}),
+    Cohort(name="Returning Visitors", query={"type": "visitors"}),
+]
+
+responses, failures = Cohort.batch_create(
+    cohorts,
+    api_key="your-api-key",
+    progress_callback=on_progress,
+)
+
+if failures:
+    for failed_request, error in failures:
+        print("Retry or inspect:", failed_request.url, error)
+```
+
+The same callback shape is shared across helpers such as
+``Identity.batch_identify`` and ``Segment.batch_create``, enabling reuse of
+progress reporting utilities that surface throughput, error counts, and
+latency projections.
 
 ### Error Handling
 

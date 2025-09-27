@@ -2,12 +2,15 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Type, Union, Any
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from . import _API_ENDPOINT
+from requests import Response
+
 from PermutiveAPI._Utils import http
+from PermutiveAPI._Utils.http import BatchRequest, Progress, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
 
 _API_PAYLOAD = ["name", "code", "description", "cpm", "categories"]
@@ -46,6 +49,12 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         Update the segment.
     delete(api_key)
         Delete a segment.
+    batch_create(segments, api_key, max_workers=None, progress_callback=None)
+        Create multiple segments concurrently via the shared batch runner.
+    batch_update(segments, api_key, max_workers=None, progress_callback=None)
+        Update multiple segments concurrently via the shared batch runner.
+    batch_delete(segments, api_key, max_workers=None, progress_callback=None)
+        Delete multiple segments concurrently via the shared batch runner.
     get_by_code(import_id, segment_code, api_key)
         Retrieve a segment by its code.
     get_by_id(import_id, segment_id, api_key)
@@ -155,6 +164,283 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         response = self._request_helper.delete(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
+
+    @classmethod
+    def batch_create(
+        cls,
+        segments: Iterable["Segment"],
+        *,
+        api_key: str,
+        max_workers: Optional[int] = None,
+        progress_callback: Optional[Callable[[Progress], None]] = None,
+    ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
+        """Create multiple segments concurrently.
+
+        Parameters
+        ----------
+        segments : Iterable[Segment]
+            Segment instances to submit. Each instance is updated in-place with
+            the API payload before the shared progress callback executes.
+        api_key : str
+            API key for authentication.
+        max_workers : int | None, optional
+            Maximum number of worker threads (default: ``None`` to defer to the
+            shared batch runner's default).
+        progress_callback : Callable[[Progress], None] | None, optional
+            Invoked after each request completes. Receives a
+            :class:`~PermutiveAPI._Utils.http.Progress` snapshot describing the
+            batch throughput and latency (including the estimated seconds per
+            1,000 requests).
+
+        Returns
+        -------
+        list[Response]
+            Successful HTTP responses in completion order.
+        list[tuple[BatchRequest, Exception]]
+            Requests that raised exceptions alongside their originating
+            descriptors.
+
+        Notes
+        -----
+        This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> segments = [
+        ...     Segment(import_id="import-1", name="VIP", code="vip"),
+        ...     Segment(import_id="import-1", name="Returning", code="returning"),
+        ... ]
+        >>> responses, failures = Segment.batch_create(
+        ...     segments,
+        ...     api_key="test-key",
+        ... )  # doctest: +SKIP
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(progress):
+        ...     avg = progress.average_per_thousand_seconds
+        ...     avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
+        ...     print(
+        ...         f"{progress.completed}/{progress.total} (errors: {progress.errors}) "
+        ...         f"avg/1000: {avg_display}"
+        ...     )
+        >>> _responses, _failures = Segment.batch_create(
+        ...     segments,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
+        """
+        batch_requests: List[BatchRequest] = []
+
+        for segment in segments:
+            url = f"{_API_ENDPOINT}/{segment.import_id}/segments"
+            payload = http.to_payload(dataclass_obj=segment, api_payload=_API_PAYLOAD)
+
+            def _make_callback(target: "Segment") -> Callable[[Response], None]:
+                def _callback(response: Response) -> None:
+                    created = cls.from_json(response.json())
+                    if isinstance(created, cls):
+                        target.__dict__.update(created.__dict__)
+
+                return _callback
+
+            batch_requests.append(
+                BatchRequest(
+                    method="POST",
+                    url=url,
+                    json=payload,
+                    callback=_make_callback(segment),
+                )
+            )
+
+        return process_batch(
+            batch_requests,
+            api_key=api_key,
+            max_workers=max_workers,
+            progress_callback=progress_callback,
+        )
+
+    @classmethod
+    def batch_update(
+        cls,
+        segments: Iterable["Segment"],
+        *,
+        api_key: str,
+        max_workers: Optional[int] = None,
+        progress_callback: Optional[Callable[[Progress], None]] = None,
+    ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
+        """Update multiple segments concurrently.
+
+        Parameters
+        ----------
+        segments : Iterable[Segment]
+            Segment instances to update. Each must define ``id`` and is updated
+            in-place with the response payload before the progress callback
+            executes.
+        api_key : str
+            API key for authentication.
+        max_workers : int | None, optional
+            Maximum number of worker threads (default: ``None`` to defer to the
+            shared batch runner's default).
+        progress_callback : Callable[[Progress], None] | None, optional
+            Invoked after each request completes. Receives a
+            :class:`~PermutiveAPI._Utils.http.Progress` snapshot describing the
+            batch throughput and latency (including the estimated seconds per
+            1,000 requests).
+
+        Returns
+        -------
+        list[Response]
+            Successful HTTP responses in completion order.
+        list[tuple[BatchRequest, Exception]]
+            Requests that raised exceptions alongside their originating
+            descriptors.
+
+        Notes
+        -----
+        This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> segments = [
+        ...     Segment(import_id="import-1", id="seg-1", name="VIP", code="vip"),
+        ...     Segment(import_id="import-1", id="seg-2", name="Returning", code="returning"),
+        ... ]
+        >>> responses, failures = Segment.batch_update(
+        ...     segments,
+        ...     api_key="test-key",
+        ... )  # doctest: +SKIP
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(progress):
+        ...     avg = progress.average_per_thousand_seconds
+        ...     avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
+        ...     print(
+        ...         f"{progress.completed}/{progress.total} (errors: {progress.errors}) "
+        ...         f"avg/1000: {avg_display}"
+        ...     )
+        >>> _responses, _failures = Segment.batch_update(
+        ...     segments,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
+        """
+        batch_requests: List[BatchRequest] = []
+
+        for segment in segments:
+            if not segment.id:
+                raise ValueError("Segment ID must be specified for update.")
+            url = f"{_API_ENDPOINT}/{segment.import_id}/segments/{segment.id}"
+            payload = http.to_payload(dataclass_obj=segment, api_payload=_API_PAYLOAD)
+
+            def _make_callback(target: "Segment") -> Callable[[Response], None]:
+                def _callback(response: Response) -> None:
+                    updated = cls.from_json(response.json())
+                    if isinstance(updated, cls):
+                        target.__dict__.update(updated.__dict__)
+
+                return _callback
+
+            batch_requests.append(
+                BatchRequest(
+                    method="PATCH",
+                    url=url,
+                    json=payload,
+                    callback=_make_callback(segment),
+                )
+            )
+
+        return process_batch(
+            batch_requests,
+            api_key=api_key,
+            max_workers=max_workers,
+            progress_callback=progress_callback,
+        )
+
+    @classmethod
+    def batch_delete(
+        cls,
+        segments: Iterable["Segment"],
+        *,
+        api_key: str,
+        max_workers: Optional[int] = None,
+        progress_callback: Optional[Callable[[Progress], None]] = None,
+    ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
+        """Delete multiple segments concurrently.
+
+        Parameters
+        ----------
+        segments : Iterable[Segment]
+            Segment instances to delete. Each must define ``id``.
+        api_key : str
+            API key for authentication.
+        max_workers : int | None, optional
+            Maximum number of worker threads (default: ``None``).
+        progress_callback : Callable[[Progress], None] | None, optional
+            Invoked after each request completes. Receives a
+            :class:`~PermutiveAPI._Utils.http.Progress` snapshot describing the
+            batch throughput and latency (including the estimated seconds per
+            1,000 requests).
+
+        Returns
+        -------
+        list[Response]
+            Successful HTTP responses in completion order.
+        list[tuple[BatchRequest, Exception]]
+            Requests that raised exceptions alongside their originating
+            descriptors.
+
+        Notes
+        -----
+        This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> segments = [
+        ...     Segment(import_id="import-1", id="seg-1", name="VIP"),
+        ...     Segment(import_id="import-1", id="seg-2", name="Returning"),
+        ... ]
+        >>> responses, failures = Segment.batch_delete(
+        ...     segments,
+        ...     api_key="test-key",
+        ... )  # doctest: +SKIP
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(progress):
+        ...     avg = progress.average_per_thousand_seconds
+        ...     avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
+        ...     print(
+        ...         f"{progress.completed}/{progress.total} (errors: {progress.errors}) "
+        ...         f"avg/1000: {avg_display}"
+        ...     )
+        >>> _responses, _failures = Segment.batch_delete(
+        ...     segments,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
+        """
+        batch_requests: List[BatchRequest] = []
+
+        for segment in segments:
+            if not segment.id:
+                raise ValueError("Segment ID must be specified for deletion.")
+            url = f"{_API_ENDPOINT}/{segment.import_id}/segments/{segment.id}"
+            batch_requests.append(BatchRequest(method="DELETE", url=url))
+
+        return process_batch(
+            batch_requests,
+            api_key=api_key,
+            max_workers=max_workers,
+            progress_callback=progress_callback,
+        )
 
     @staticmethod
     def get_by_code(import_id: str, segment_code: str, api_key: str) -> "Segment":
