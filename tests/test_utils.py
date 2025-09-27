@@ -392,7 +392,9 @@ def test_request_merges_headers_with_default_retry(monkeypatch):
 
     captured: Dict[str, Dict[str, str]] = {}
 
-    def fake_get(url, headers=None, **kwargs):  # noqa: ANN001 - signature mirrors requests.get
+    def fake_get(
+        url, headers=None, **kwargs
+    ):  # noqa: ANN001 - signature mirrors requests.get
         captured["headers"] = headers or {}
         resp = Response()
         resp.status_code = 200
