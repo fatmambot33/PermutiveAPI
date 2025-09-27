@@ -2,20 +2,26 @@
 
 This module provides:
 - Lightweight HTTP helpers (get, post, patch, delete) with retry logic,
-  redaction, and consistent error handling
-- to_payload helper for dataclass-to-JSON conversion using the custom encoder
-- Exception classes representing API error conditions
+  redaction, and consistent error handling.
+- ``BatchRequest``/``process_batch`` utilities for concurrent operations
+  powered by :class:`~concurrent.futures.ThreadPoolExecutor`. The default
+  worker limit follows the standard Python behaviour (``min(32, os.cpu_count()
+  + 4)``) when ``max_workers`` is ``None``. Helpers only rely on stateless
+  module-level functions, so they are safe to call concurrently provided that
+  user-supplied callbacks are thread-safe.
+- to_payload helper for dataclass-to-JSON conversion using the custom encoder.
+- Exception classes representing API error conditions.
 """
 
 from __future__ import annotations
-from dataclasses import dataclass
-
 import json
 import logging
 import re
 import time
 import urllib.parse
-from typing import Any, Callable, Dict, List, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import requests
 from requests.exceptions import RequestException
@@ -121,6 +127,49 @@ class RetryConfig:
     max_retries: int = MAX_RETRIES
     backoff_factor: int = BACKOFF_FACTOR
     initial_delay: int = INITIAL_DELAY
+
+
+@dataclass
+class BatchRequest:
+    """Container describing an HTTP request executed within a batch.
+
+    Methods
+    -------
+    None
+        Instances provide dataclass-generated attribute access only.
+
+    Parameters
+    ----------
+    method : str
+        HTTP method name (GET, POST, PATCH, DELETE).
+    url : str
+        Absolute URL to target.
+    params : dict | None, optional
+        Query parameters to include. Defaults to ``None``.
+    json : dict | None, optional
+        JSON payload for methods that support it. Defaults to ``None``.
+    headers : dict | None, optional
+        Extra headers merged with :data:`DEFAULT_HEADERS`. Defaults to ``None``.
+    timeout : float | None, optional
+        Requests timeout in seconds. Defaults to ``10.0``.
+    retry : RetryConfig | None, optional
+        Override retry configuration for the request. Defaults to ``None``.
+    callback : Callable[[requests.Response], None] | None, optional
+        Invoked with the successful response. Defaults to ``None``.
+    error_callback : Callable[[Exception], None] | None, optional
+        Invoked with the raised exception if the request fails. Defaults to
+        ``None``.
+    """
+
+    method: str
+    url: str
+    params: Optional[Dict[str, Any]] = None
+    json: Optional[Dict[str, Any]] = None
+    headers: Optional[Dict[str, str]] = None
+    timeout: Optional[float] = 10.0
+    retry: Optional[RetryConfig] = None
+    callback: Optional[Callable[[Response], None]] = None
+    error_callback: Optional[Callable[[Exception], None]] = None
 
 
 def get(api_key: str, url: str, params: Optional[Dict[str, Any]] = None) -> Response:
@@ -419,6 +468,89 @@ def _with_retry(method: Callable, url: str, api_key: str, **kwargs) -> Response:
     raise RequestException("Max retries reached")
 
 
+def process_batch(
+    requests: Iterable[BatchRequest],
+    *,
+    api_key: str,
+    max_workers: Optional[int],
+    progress_callback: Optional[Callable[[int, int, BatchRequest], None]] = None,
+) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
+    """Execute multiple HTTP requests concurrently.
+
+    Parameters
+    ----------
+    requests : Iterable[BatchRequest]
+        Sequence of :class:`BatchRequest` descriptors.
+    api_key : str
+        API key appended to each request.
+    max_workers : int | None
+        Maximum number of worker threads. When ``None`` the executor applies
+        its default limit (``min(32, os.cpu_count() + 4)``).
+    progress_callback : Callable[[int, int, BatchRequest], None] | None, optional
+        Invoked after each request completes with ``(completed, total,
+        batch_request)``. Defaults to ``None``.
+
+    Returns
+    -------
+    responses : list[requests.Response]
+        Successful responses in the order they complete.
+    errors : list[tuple[BatchRequest, Exception]]
+        Collected failures paired with their originating request.
+    """
+    batch_requests = list(requests)
+    total = len(batch_requests)
+    if total == 0:
+        return [], []
+
+    responses: List[Response] = []
+    errors: List[Tuple[BatchRequest, Exception]] = []
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_request = {
+            executor.submit(
+                request,
+                batch_request.method,
+                api_key,
+                batch_request.url,
+                params=batch_request.params,
+                json=batch_request.json,
+                headers=batch_request.headers,
+                timeout=batch_request.timeout,
+                retry=batch_request.retry,
+            ): batch_request
+            for batch_request in batch_requests
+        }
+
+        completed = 0
+        for future in as_completed(future_to_request):
+            batch_request = future_to_request[future]
+            try:
+                response = future.result()
+            except Exception as exc:  # noqa: BLE001
+                errors.append((batch_request, exc))
+                if batch_request.error_callback is not None:
+                    try:
+                        batch_request.error_callback(exc)
+                    except Exception:  # pragma: no cover - defensive logging
+                        logging.exception("Error callback raised an exception")
+            else:
+                responses.append(response)
+                if batch_request.callback is not None:
+                    try:
+                        batch_request.callback(response)
+                    except Exception:  # pragma: no cover - defensive logging
+                        logging.exception("Success callback raised an exception")
+            finally:
+                completed += 1
+                if progress_callback is not None:
+                    try:
+                        progress_callback(completed, total, batch_request)
+                    except Exception:  # pragma: no cover - defensive logging
+                        logging.exception("Progress callback raised an exception")
+
+    return responses, errors
+
+
 def redact_message(message: str) -> str:
     """Redact sensitive tokens in free-form text and JSON snippets.
 
@@ -576,6 +708,7 @@ def raise_for_status(e: Exception, response: Optional[Response]) -> None:
 
 __all__ = [
     "request",
+    "process_batch",
     "get",
     "post",
     "patch",
@@ -584,6 +717,7 @@ __all__ = [
     "redact_url",
     "redact_message",
     "RetryConfig",
+    "BatchRequest",
     "raise_for_status",
     "PermutiveAPIError",
     "PermutiveAuthenticationError",
