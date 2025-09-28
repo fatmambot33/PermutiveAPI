@@ -211,6 +211,8 @@ class JSONSerializable(Generic[JSONOutput]):
     -------
     __str__() -> str
         Pretty-print JSON when calling ``print(object)``.
+    __repr__() -> str
+        Return a concise representation highlighting key fields.
     to_json() -> JSONOutput
         Convert the object to a JSON-serializable format.
     from_json(cls, data: dict) -> T
@@ -222,8 +224,74 @@ class JSONSerializable(Generic[JSONOutput]):
     """
 
     def __str__(self) -> str:
-        """Return pretty-printed JSON when printing the object."""
+        """Return a human-readable JSON representation.
+
+        Returns
+        -------
+        str
+            Pretty-printed JSON for the instance using ``customJSONEncoder``.
+        """
         return json.dumps(self.to_json(), indent=4, cls=customJSONEncoder)
+
+    def __repr__(self) -> str:
+        """Return a concise developer-friendly representation.
+
+        The representation prefers key identity fields when available
+        (e.g., ``name``, ``id``, ``code``) and otherwise summarises content.
+
+        Returns
+        -------
+        str
+            A concise, informative string describing this instance.
+        """
+        tname = type(self).__name__
+
+        # List-like containers: summarise by length to avoid verbose output
+        if isinstance(self, list):
+            return f"{tname}(n={len(self)})"
+
+        # Dict-like containers: summarise by number of keys
+        if isinstance(self, dict):
+            return f"{tname}(keys={len(self)})"
+
+        # Dataclasses: prefer common identity fields when present
+        if is_dataclass(self):
+            try:
+                values: Dict[str, Any] = {
+                    f.name: getattr(self, f.name) for f in fields(self)
+                }
+            except Exception:
+                values = {}
+
+            parts: List[str] = []
+            for key in ("name", "id", "code"):
+                if key in values and values[key] not in (None, ""):
+                    parts.append(f"{key}={values[key]!r}")
+
+            # If none of the identity fields exist, include up to three simple fields
+            if not parts:
+                simple_keys = [
+                    k
+                    for k, v in values.items()
+                    if k not in ("created_at", "updated_at", "last_updated_at")
+                    and not k.startswith("_")
+                    and isinstance(v, (str, int, float, bool))
+                    and v not in (None, "")
+                ][:3]
+                parts = [f"{k}={values[k]!r}" for k in simple_keys]
+
+            return f"{tname}({', '.join(parts)})" if parts else f"{tname}()"
+
+        # Fallback to attribute dict summary for other objects
+        if hasattr(self, "__dict__"):
+            public = {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+            keys = [
+                k for k, v in public.items() if isinstance(v, (str, int, float, bool))
+            ][:3]
+            parts = [f"{k}={public[k]!r}" for k in keys]
+            return f"{tname}({', '.join(parts)})" if parts else f"{tname}()"
+
+        return f"{tname}()"
 
     def to_json(self) -> JSONOutput:
         """Convert the object to a JSON-serializable format.

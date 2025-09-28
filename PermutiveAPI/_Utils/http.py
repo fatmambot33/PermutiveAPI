@@ -27,7 +27,7 @@ import requests
 from requests.exceptions import RequestException
 from requests.models import Response
 
-from .json import customJSONEncoder
+from .json import to_payload as _json_to_payload
 
 
 class PermutiveAPIError(Exception):
@@ -424,32 +424,27 @@ def request(
 def to_payload(
     dataclass_obj: Any, api_payload: Optional[List[str]] = None
 ) -> Dict[str, Any]:
-    """Convert a dataclass object to a dictionary payload.
+    """Convert a dataclass object to a JSON-compatible dictionary payload.
 
-    Fields with ``None`` values are omitted. If ``api_payload`` is provided,
-    only keys included in this list are kept.
+    This helper simply delegates to :func:`PermutiveAPI._Utils.json.to_payload`
+    so that every payload produced by the HTTP module benefits from the
+    centralised ``customJSONEncoder`` handling. The wrapper is kept for
+    backwards compatibility with existing imports.
 
     Parameters
     ----------
     dataclass_obj : Any
         The dataclass instance to convert.
-    api_payload : list[str], optional
-        A list of attribute names to include in the payload. If `None`, all
-        attributes are considered. Defaults to `None`.
+    api_payload : list[str] | None, optional
+        A list of attribute names to include in the payload. If ``None``, all
+        attributes are considered. Defaults to ``None``.
 
     Returns
     -------
     dict[str, Any]
         A dictionary representing the JSON payload.
     """
-    dataclass_dict = vars(dataclass_obj)
-    filtered_dict = {
-        k: v
-        for k, v in dataclass_dict.items()
-        if v is not None and (api_payload is None or k in api_payload)
-    }
-    filtered_dict_string = json.dumps(filtered_dict, indent=4, cls=customJSONEncoder)
-    return json.loads(filtered_dict_string)
+    return _json_to_payload(dataclass_obj, api_payload)
 
 
 def _with_retry(
