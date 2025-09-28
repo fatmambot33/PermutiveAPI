@@ -257,7 +257,9 @@ class JSONSerializable(Generic[JSONOutput]):
         # Dataclasses: prefer common identity fields when present
         if is_dataclass(self):
             try:
-                values: Dict[str, Any] = {f.name: getattr(self, f.name) for f in fields(self)}
+                values: Dict[str, Any] = {
+                    f.name: getattr(self, f.name) for f in fields(self)
+                }
             except Exception:
                 values = {}
 
@@ -283,7 +285,9 @@ class JSONSerializable(Generic[JSONOutput]):
         # Fallback to attribute dict summary for other objects
         if hasattr(self, "__dict__"):
             public = {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
-            keys = [k for k, v in public.items() if isinstance(v, (str, int, float, bool))][:3]
+            keys = [
+                k for k, v in public.items() if isinstance(v, (str, int, float, bool))
+            ][:3]
             parts = [f"{k}={public[k]!r}" for k in keys]
             return f"{tname}({', '.join(parts)})" if parts else f"{tname}()"
 

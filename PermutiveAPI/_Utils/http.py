@@ -444,7 +444,6 @@ def to_payload(
     dict[str, Any]
         A dictionary representing the JSON payload.
     """
-
     return _json_to_payload(dataclass_obj, api_payload)
 
 
