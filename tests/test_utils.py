@@ -162,14 +162,17 @@ def test_file_helpers(tmp_path):
     # Test check_filepath
     dir_path = tmp_path / "test_dir"
     file_path = dir_path / "test.txt"
-    check_filepath(str(file_path))
+    check_filepath(file_path)
     assert dir_path.exists()
 
     # Test split_filepath
-    path, name, ext = split_filepath(str(file_path))
+    path, name, ext = split_filepath(file_path)
     assert path == str(dir_path)
     assert name == "test"
     assert ext == ".txt"
+
+    path_str, *_ = split_filepath(str(file_path))
+    assert path_str == str(dir_path)
 
 
 def test_json_default():
@@ -199,8 +202,8 @@ def test_json_serializable(tmp_path):
     """Test the JSONSerializable base class for an object."""
     dummy = Dummy(1, "a", [1, 2])
     path = tmp_path / "dummy.json"
-    dummy.to_json_file(str(path))
-    assert Dummy.from_json_file(str(path)) == dummy
+    dummy.to_json_file(path)
+    assert Dummy.from_json_file(path) == dummy
     assert str(dummy).startswith("{")
 
     json_str = json.dumps(dummy.to_json())
