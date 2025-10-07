@@ -1,14 +1,26 @@
 """Segment management for the Permutive API."""
 
 import logging
-from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
+
+from requests import Response
+import pandas as pd
 
 from . import _API_ENDPOINT
-from requests import Response
-
 from PermutiveAPI._Utils import http
 from PermutiveAPI._Utils.http import BatchRequest, Progress, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
@@ -566,6 +578,8 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
         Return a dictionary of segments indexed by their names.
     code_dictionary()
         Return a dictionary of segments indexed by their codes.
+    to_pd_dataframe()
+        Convert the segment list into a pandas ``DataFrame``.
     """
 
     @classmethod
@@ -653,3 +667,14 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
         if not self._code_dictionary_cache:
             self._refresh_cache()
         return self._code_dictionary_cache
+
+    def to_pd_dataframe(self) -> "pd.DataFrame":
+        """Convert the segment list into a pandas ``DataFrame``.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A dataframe containing one row per segment with serialized fields.
+        """
+        records = [cast(Dict[str, Any], segment.to_json()) for segment in self]
+        return pd.DataFrame(records)

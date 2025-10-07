@@ -1,6 +1,6 @@
 import json
-from unittest.mock import Mock, patch
 from datetime import datetime, timezone
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -44,6 +44,38 @@ def test_import_list_from_json_and_caches(tmp_path):
         assert imports.name_dictionary["Import2"].id == "2"
         assert imports.identifier_dictionary["b"][0].id == "1"
         assert isinstance(imports[0].source, Source)
+
+
+def test_import_list_to_pd_dataframe():
+    """Ensure ``to_pd_dataframe`` converts imports into a pandas ``DataFrame``."""
+
+    source = Source(id="s1", state={}, type="type")
+    imports = ImportList(
+        [
+            Import(
+                id="1",
+                name="Import1",
+                code="I1",
+                relation="rel1",
+                identifiers=["a"],
+                source=source,
+            ),
+            Import(
+                id="2",
+                name="Import2",
+                code="I2",
+                relation="rel2",
+                identifiers=["b", "c"],
+                source=source,
+            ),
+        ]
+    )
+
+    df = imports.to_pd_dataframe()
+
+    assert df.shape[0] == 2
+    assert set(df["name"]) == {"Import1", "Import2"}
+    assert "identifiers" in df.columns
 
 
 @patch.object(Import, "_request_helper")

@@ -11,10 +11,11 @@ PermutiveAPI is a Python module to interact with the Permutive API. It provides 
   - [Managing Workspaces](#managing-workspaces)
   - [Managing Cohorts](#managing-cohorts)
   - [Managing Segments](#managing-segments)
-  - [Managing Imports](#managing-imports)
-  - [Managing Users](#managing-users)
-  - [Batch Helpers and Progress Callbacks](#batch-helpers-and-progress-callbacks)
-  - [Error Handling](#error-handling)
+- [Managing Imports](#managing-imports)
+- [Managing Users](#managing-users)
+- [Working with pandas DataFrames](#working-with-pandas-dataframes)
+- [Batch Helpers and Progress Callbacks](#batch-helpers-and-progress-callbacks)
+- [Error Handling](#error-handling)
 - [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
@@ -26,6 +27,12 @@ You can install the PermutiveAPI module using pip:
 ```sh
 pip install PermutiveAPI --upgrade
 ```
+
+> **Note**
+> PermutiveAPI depends on [`pandas`](https://pandas.pydata.org/) for its DataFrame
+> export helpers. The dependency is installed automatically with the package,
+> but make sure your runtime environment includes it before using the
+> `to_pd_dataframe` utilities described below.
 
 ## Configuration
 
@@ -161,6 +168,31 @@ try:
     print("Successfully identified user.")
 except Exception as e:
     print(f"Error identifying user: {e}")
+
+```
+
+### Working with pandas DataFrames
+
+The list models expose helpers for quick DataFrame exports when you need to
+analyze your data using pandas. Each list class provides a `to_pd_dataframe`
+method that returns a `pandas.DataFrame` populated with the model attributes:
+
+```python
+from PermutiveAPI import Cohort, CohortList
+
+cohorts = CohortList(
+    [
+        Cohort(name="C1", id="1", code="c1", tags=["t1"]),
+        Cohort(name="C2", id="2", description="second cohort"),
+    ]
+)
+
+df = cohorts.to_pd_dataframe()
+print(df[["id", "name"]])
+```
+
+The same helper is available on `SegmentList` and `ImportList` for consistency
+across the API.
 
 ### Batch Helpers and Progress Callbacks
 

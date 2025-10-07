@@ -1,6 +1,8 @@
 import json
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
+
 from PermutiveAPI._Utils import http
 from PermutiveAPI._Utils.http import PermutiveAPIError
 from PermutiveAPI.Cohort import Cohort, CohortList, _API_ENDPOINT
@@ -65,6 +67,23 @@ def test_cohort_list_caches(tmp_path):
         assert cohorts.tag_dictionary["t2"][0].id == "2"
         assert cohorts.segment_type_dictionary["s1"][0].id == "1"
         assert cohorts.workspace_dictionary["w1"][0].name == "C1"
+
+
+def test_cohort_list_to_pd_dataframe():
+    """Ensure ``to_pd_dataframe`` converts cohorts into a pandas ``DataFrame``."""
+
+    cohorts = CohortList(
+        [
+            Cohort(name="C1", id="1", code="c1", tags=["t1"]),
+            Cohort(name="C2", id="2", description="second cohort"),
+        ]
+    )
+
+    df = cohorts.to_pd_dataframe()
+
+    assert df.shape[0] == 2
+    assert set(df["name"]) == {"C1", "C2"}
+    assert "code" in df.columns
 
 
 @patch.object(Cohort, "_request_helper")

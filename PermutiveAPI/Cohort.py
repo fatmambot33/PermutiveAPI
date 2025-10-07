@@ -1,16 +1,29 @@
 """Cohort management utilities for the Permutive API."""
 
 import logging
-from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
+
 from requests import Response
+import pandas as pd
 
 from PermutiveAPI._Utils import http
 from PermutiveAPI._Utils.http import BatchRequest, Progress, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
-from collections import defaultdict
 
 _API_VERSION = "v2"
 _API_ENDPOINT = f"https://api.permutive.app/cohorts-api/{_API_VERSION}/cohorts/"
@@ -618,6 +631,8 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
         Return a dictionary of cohorts indexed by their segment types.
     workspace_dictionary()
         Return a dictionary of cohorts indexed by their workspace IDs.
+    to_pd_dataframe()
+        Convert the cohort list into a pandas ``DataFrame``.
     """
 
     @classmethod
@@ -758,3 +773,14 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
         if not self._workspace_dictionary_cache:
             self._refresh_cache()
         return self._workspace_dictionary_cache
+
+    def to_pd_dataframe(self) -> "pd.DataFrame":
+        """Convert the cohort list into a pandas ``DataFrame``.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A dataframe containing one row per cohort with serialized fields.
+        """
+        records = [cast(Dict[str, Any], cohort.to_json()) for cohort in self]
+        return pd.DataFrame(records)
