@@ -217,9 +217,9 @@ class JSONSerializable(Generic[JSONOutput]):
         Convert the object to a JSON-serializable format.
     from_json(cls, data: dict) -> T
         Create an instance of the class from a JSON dictionary.
-    to_json_file(filepath: str)
+    to_json_file(filepath: str | Path)
         Serialize the object to a JSON file using ``customJSONEncoder``.
-    from_json_file(cls, filepath: str) -> T
+    from_json_file(cls, filepath: str | Path) -> T
         Create an instance of the class from a JSON file.
     """
 
@@ -376,15 +376,15 @@ class JSONSerializable(Generic[JSONOutput]):
         except Exception:
             return value  # Fallback to raw value
 
-    def to_json_file(self, filepath: str) -> None:
+    def to_json_file(self, filepath: str | Path) -> None:
         """Write the JSON representation to a file.
 
         Parameters
         ----------
-        filepath : str
+        filepath : str or Path
             Destination file path.
         """
-        with open(filepath, "w", encoding="utf-8") as f:
+        with open(Path(filepath), "w", encoding="utf-8") as f:
             json.dump(self.to_json(), f, indent=4, cls=customJSONEncoder)
 
     @classmethod
@@ -393,7 +393,7 @@ class JSONSerializable(Generic[JSONOutput]):
 
         Parameters
         ----------
-        filepath : str | pathlib.Path
+        filepath : str or Path
             Path to a JSON file.
 
         Returns

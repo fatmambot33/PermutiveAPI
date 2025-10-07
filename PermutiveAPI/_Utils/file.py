@@ -11,28 +11,30 @@ split_filepath(fullfilepath)
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Tuple
 
 
-def check_filepath(filepath: str) -> None:
+def check_filepath(filepath: str | Path) -> None:
     """Ensure the parent directory exists for a target file path.
 
     Parameters
     ----------
-    filepath : str
+    filepath : str or Path
         Absolute or relative path to the file to be written.
     """
-    directory = os.path.dirname(filepath)
+    path_str = os.fspath(filepath)
+    directory = os.path.dirname(path_str)
     if directory and not os.path.exists(directory):
         os.makedirs(directory, exist_ok=True)
 
 
-def split_filepath(fullfilepath: str) -> Tuple[str, str, str]:
+def split_filepath(fullfilepath: str | Path) -> Tuple[str, str, str]:
     """Split a file path into directory, base name, and extension.
 
     Parameters
     ----------
-    fullfilepath : str
+    fullfilepath : str or Path
         Absolute or relative file path.
 
     Returns
@@ -40,8 +42,9 @@ def split_filepath(fullfilepath: str) -> Tuple[str, str, str]:
     tuple[str, str, str]
         A 3-tuple of ``(directory, name, extension)``.
     """
-    path = os.path.dirname(fullfilepath)
-    name, ext = os.path.splitext(os.path.basename(fullfilepath))
+    path_str = os.fspath(fullfilepath)
+    path = os.path.dirname(path_str)
+    name, ext = os.path.splitext(os.path.basename(path_str))
     return path, name, ext
 
 
