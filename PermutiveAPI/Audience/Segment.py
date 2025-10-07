@@ -676,6 +676,5 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
         pandas.DataFrame
             A dataframe containing one row per segment with serialized fields.
         """
-
         records = [cast(Dict[str, Any], segment.to_json()) for segment in self]
         return pd.DataFrame(records)

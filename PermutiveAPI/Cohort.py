@@ -782,6 +782,5 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
         pandas.DataFrame
             A dataframe containing one row per cohort with serialized fields.
         """
-
         records = [cast(Dict[str, Any], cohort.to_json()) for cohort in self]
         return pd.DataFrame(records)

@@ -389,6 +389,5 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
         pandas.DataFrame
             A dataframe containing one row per import with serialized fields.
         """
-
         records = [cast(Dict[str, Any], _import.to_json()) for _import in self]
         return pd.DataFrame(records)
