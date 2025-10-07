@@ -9,7 +9,7 @@ readme = "README.md"
 authors = [{ name = "fatmambo33", email = "fatmambo33@gmail.com" }]
 license = { file = "LICENSE" }
 requires-python = ">=3.8"
-dependencies = ["requests", "python-dotenv"]
+dependencies = ["requests", "python-dotenv", "pandas"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",

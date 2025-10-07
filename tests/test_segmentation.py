@@ -3,6 +3,8 @@
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+import pytest
+
 from PermutiveAPI.Segmentation import Event, Segmentation
 from PermutiveAPI.Audience.Segment import Segment, SegmentList
 
@@ -32,6 +34,23 @@ def test_segmentation_to_json():
     }
 
     assert request.to_json() == expected_payload
+
+
+def test_segment_list_to_pd_dataframe():
+    """Ensure ``to_pd_dataframe`` converts segments into a pandas ``DataFrame``."""
+
+    segments = SegmentList(
+        [
+            Segment(code="s1", name="Segment 1", import_id="import-1", id="1"),
+            Segment(code="s2", name="Segment 2", import_id="import-1"),
+        ]
+    )
+
+    df = segments.to_pd_dataframe()
+
+    assert df.shape[0] == 2
+    assert set(df["code"]) == {"s1", "s2"}
+    assert "import_id" in df.columns
 
 
 def test_segment_list_pagination_is_sequential(monkeypatch):

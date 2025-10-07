@@ -1,6 +1,9 @@
 """Import management for the Permutive API."""
 
 import logging
+from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import (
     Any,
@@ -11,23 +14,20 @@ from typing import (
     List,
     Optional,
     Tuple,
-    TYPE_CHECKING,
     Type,
     Union,
+    cast,
 )
-from dataclasses import dataclass, field
 
-if TYPE_CHECKING:
-    from .Segment import SegmentList
-from datetime import datetime, timezone
-from collections import defaultdict
 from requests import Response
+import pandas as pd
 
 from PermutiveAPI._Utils import http
 from PermutiveAPI._Utils.http import BatchRequest, Progress, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
 from . import _API_ENDPOINT
 from .Source import Source
+from .Segment import SegmentList
 
 
 @dataclass
@@ -265,6 +265,8 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
         Return a dictionary of imports indexed by their codes.
     identifier_dictionary()
         Return a dictionary of imports indexed by their identifiers.
+    to_pd_dataframe()
+        Convert the import list into a pandas ``DataFrame``.
     """
 
     @classmethod
@@ -378,3 +380,15 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
         if not self._identifier_dictionary_cache:
             self._refresh_cache()
         return self._identifier_dictionary_cache
+
+    def to_pd_dataframe(self) -> "pd.DataFrame":
+        """Convert the import list into a pandas ``DataFrame``.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A dataframe containing one row per import with serialized fields.
+        """
+
+        records = [cast(Dict[str, Any], _import.to_json()) for _import in self]
+        return pd.DataFrame(records)
