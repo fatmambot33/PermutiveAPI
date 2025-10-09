@@ -16,7 +16,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 @pytest.fixture
 def fake_thread_pool(monkeypatch: pytest.MonkeyPatch) -> List[object]:
     """Patch ``ThreadPoolExecutor`` with a synchronous test double."""
-
     created_executors: List[object] = []
 
     class FakeThreadPoolExecutor:  # noqa: D401 - simple test double

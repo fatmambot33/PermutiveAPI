@@ -358,6 +358,7 @@ def test_cohort_batch_create_propagates_errors(fake_thread_pool, monkeypatch):
     assert len(errors) == 1
 
     failing_request, exception = errors[0]
+    assert failing_request.json is not None
     assert failing_request.json["name"] == "Failing"
     assert isinstance(exception, PermutiveAPIError)
 

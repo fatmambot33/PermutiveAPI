@@ -578,7 +578,11 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             return Cohort.get_by_id(cohort.id, api_key)
 
     @staticmethod
-    def list(api_key: str, include_child_workspaces: bool = False) -> "CohortList":
+    def list(
+        api_key: str,
+        include_child_workspaces: bool = False,
+        include_query: bool = False,
+    ) -> "CohortList":
         """Fetch all cohorts from the API.
 
         Parameters
@@ -587,6 +591,8 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             The API key for authentication.
         include_child_workspaces : bool, optional
             Whether to include cohorts from child workspaces (default: False).
+        include_query : bool, optional
+            Whether to include the full query for each cohort (default: False).
 
         Returns
         -------
@@ -607,7 +613,15 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         response = Cohort._request_helper.get(api_key, _API_ENDPOINT, params=params)
         if response is None:
             raise ValueError("Response is None")
-        return CohortList.from_json(response.json())
+        cohorts_list = CohortList.from_json(response.json())
+        if include_query:
+            detailed_cohorts = CohortList()
+            for cohort in cohorts_list:
+                if cohort.id is not None:
+                    detailed_cohort = Cohort.get_by_id(cohort.id, api_key)
+                    detailed_cohorts.append(detailed_cohort)
+            return detailed_cohorts
+        return cohorts_list
 
 
 class CohortList(List[Cohort], JSONSerializable[List[Any]]):
