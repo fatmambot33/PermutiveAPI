@@ -118,7 +118,6 @@ DEFAULT_BATCH_TIMEOUT = 10.0
 
 def _normalise_env_value(name: str) -> Optional[str]:
     """Return a stripped environment variable value or ``None`` if unset/empty."""
-
     value = os.getenv(name)
     if value is None:
         return None
@@ -128,7 +127,6 @@ def _normalise_env_value(name: str) -> Optional[str]:
 
 def _parse_positive_int(value: str, *, env_var: str) -> int:
     """Return ``value`` parsed as a strictly positive integer."""
-
     try:
         parsed = int(value)
     except ValueError as exc:  # pragma: no cover - defensive
@@ -144,7 +142,6 @@ def _parse_positive_int(value: str, *, env_var: str) -> int:
 
 def _parse_positive_float(value: str, *, env_var: str) -> float:
     """Return ``value`` parsed as a strictly positive float."""
-
     try:
         parsed = float(value)
     except ValueError as exc:  # pragma: no cover - defensive
@@ -160,7 +157,6 @@ def _parse_positive_float(value: str, *, env_var: str) -> float:
 
 def _default_batch_timeout() -> Optional[float]:
     """Resolve the default timeout for :class:`BatchRequest` instances."""
-
     env_timeout = _normalise_env_value(BATCH_TIMEOUT_ENV_VAR)
     if env_timeout is None:
         return DEFAULT_BATCH_TIMEOUT
@@ -169,7 +165,6 @@ def _default_batch_timeout() -> Optional[float]:
 
 def _resolve_max_workers(max_workers: Optional[int]) -> Optional[int]:
     """Return the executor worker count honouring environment overrides."""
-
     if max_workers is not None:
         return max_workers
     env_workers = _normalise_env_value(BATCH_MAX_WORKERS_ENV_VAR)
