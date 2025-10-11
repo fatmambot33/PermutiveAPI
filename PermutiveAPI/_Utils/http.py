@@ -14,13 +14,15 @@ This module provides:
 """
 
 from __future__ import annotations
+
 import json
 import logging
+import os
 import re
 import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import requests
@@ -106,8 +108,97 @@ SENSITIVE_QUERY_PARAMS = ("k", "api_key", "token", "access_token", "key")
 SUCCESS_RANGE = range(200, 300)
 
 MAX_RETRIES = 3
-BACKOFF_FACTOR = 2
-INITIAL_DELAY = 1
+BACKOFF_FACTOR = 2.0
+INITIAL_DELAY = 1.0
+
+BATCH_MAX_WORKERS_ENV_VAR = "PERMUTIVE_BATCH_MAX_WORKERS"
+BATCH_TIMEOUT_ENV_VAR = "PERMUTIVE_BATCH_TIMEOUT_SECONDS"
+DEFAULT_BATCH_TIMEOUT = 10.0
+
+RETRY_MAX_RETRIES_ENV_VAR = "PERMUTIVE_RETRY_MAX_RETRIES"
+RETRY_BACKOFF_FACTOR_ENV_VAR = "PERMUTIVE_RETRY_BACKOFF_FACTOR"
+RETRY_INITIAL_DELAY_ENV_VAR = "PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS"
+
+
+def _normalise_env_value(name: str) -> Optional[str]:
+    """Return a stripped environment variable value or ``None`` if unset/empty."""
+    value = os.getenv(name)
+    if value is None:
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
+def _parse_positive_int(value: str, *, env_var: str) -> int:
+    """Return ``value`` parsed as a strictly positive integer."""
+    try:
+        parsed = int(value)
+    except ValueError as exc:  # pragma: no cover - defensive
+        raise ValueError(
+            f"Environment variable {env_var} must be a positive integer, got {value!r}."
+        ) from exc
+    if parsed <= 0:
+        raise ValueError(
+            f"Environment variable {env_var} must be a positive integer, got {value!r}."
+        )
+    return parsed
+
+
+def _parse_positive_float(value: str, *, env_var: str) -> float:
+    """Return ``value`` parsed as a strictly positive float."""
+    try:
+        parsed = float(value)
+    except ValueError as exc:  # pragma: no cover - defensive
+        raise ValueError(
+            f"Environment variable {env_var} must be a positive float, got {value!r}."
+        ) from exc
+    if parsed <= 0:
+        raise ValueError(
+            f"Environment variable {env_var} must be a positive float, got {value!r}."
+        )
+    return parsed
+
+
+def _default_batch_timeout() -> Optional[float]:
+    """Resolve the default timeout for :class:`BatchRequest` instances."""
+    env_timeout = _normalise_env_value(BATCH_TIMEOUT_ENV_VAR)
+    if env_timeout is None:
+        return DEFAULT_BATCH_TIMEOUT
+    return _parse_positive_float(env_timeout, env_var=BATCH_TIMEOUT_ENV_VAR)
+
+
+def _resolve_max_workers(max_workers: Optional[int]) -> Optional[int]:
+    """Return the executor worker count honouring environment overrides."""
+    if max_workers is not None:
+        return max_workers
+    env_workers = _normalise_env_value(BATCH_MAX_WORKERS_ENV_VAR)
+    if env_workers is None:
+        return None
+    return _parse_positive_int(env_workers, env_var=BATCH_MAX_WORKERS_ENV_VAR)
+
+
+def _default_max_retries() -> int:
+    """Return the default retry attempt count."""
+    env_value = _normalise_env_value(RETRY_MAX_RETRIES_ENV_VAR)
+    if env_value is None:
+        return MAX_RETRIES
+    return _parse_positive_int(env_value, env_var=RETRY_MAX_RETRIES_ENV_VAR)
+
+
+def _default_backoff_factor() -> float:
+    """Return the default retry backoff multiplier."""
+    env_value = _normalise_env_value(RETRY_BACKOFF_FACTOR_ENV_VAR)
+    if env_value is None:
+        return BACKOFF_FACTOR
+    return _parse_positive_float(env_value, env_var=RETRY_BACKOFF_FACTOR_ENV_VAR)
+
+
+def _default_initial_delay() -> float:
+    """Return the default initial delay applied before retrying."""
+    env_value = _normalise_env_value(RETRY_INITIAL_DELAY_ENV_VAR)
+    if env_value is None:
+        return INITIAL_DELAY
+    return _parse_positive_float(env_value, env_var=RETRY_INITIAL_DELAY_ENV_VAR)
 
 
 @dataclass
@@ -117,16 +208,19 @@ class RetryConfig:
     Parameters
     ----------
     max_retries : int
-        Maximum retry attempts. Defaults to 3.
-    backoff_factor : int
-        Exponential backoff multiplier. Defaults to 2.
-    initial_delay : int
-        Initial delay in seconds before the first retry. Defaults to 1.
+        Maximum retry attempts. Defaults to 3 or
+        ``PERMUTIVE_RETRY_MAX_RETRIES`` when set.
+    backoff_factor : float
+        Exponential backoff multiplier. Defaults to 2.0 or
+        ``PERMUTIVE_RETRY_BACKOFF_FACTOR`` when set.
+    initial_delay : float
+        Initial delay in seconds before the first retry. Defaults to 1.0 or
+        ``PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS`` when set.
     """
 
-    max_retries: int = MAX_RETRIES
-    backoff_factor: int = BACKOFF_FACTOR
-    initial_delay: int = INITIAL_DELAY
+    max_retries: int = field(default_factory=_default_max_retries)
+    backoff_factor: float = field(default_factory=_default_backoff_factor)
+    initial_delay: float = field(default_factory=_default_initial_delay)
 
 
 @dataclass
@@ -151,7 +245,8 @@ class BatchRequest:
     headers : dict | None, optional
         Extra headers merged with :data:`DEFAULT_HEADERS`. Defaults to ``None``.
     timeout : float | None, optional
-        Requests timeout in seconds. Defaults to ``10.0``.
+        Requests timeout in seconds. Defaults to the value of
+        ``PERMUTIVE_BATCH_TIMEOUT_SECONDS`` when set, otherwise ``10.0``.
     retry : RetryConfig | None, optional
         Override retry configuration for the request. Defaults to ``None``.
     callback : Callable[[requests.Response], None] | None, optional
@@ -166,7 +261,7 @@ class BatchRequest:
     params: Optional[Dict[str, Any]] = None
     json: Optional[Dict[str, Any]] = None
     headers: Optional[Dict[str, str]] = None
-    timeout: Optional[float] = 10.0
+    timeout: Optional[float] = field(default_factory=_default_batch_timeout)
     retry: Optional[RetryConfig] = None
     callback: Optional[Callable[[Response], None]] = None
     error_callback: Optional[Callable[[Exception], None]] = None
@@ -367,58 +462,7 @@ def request(
     if timeout is not None:
         kwargs["timeout"] = timeout
 
-    if retry is None or (
-        retry.max_retries == MAX_RETRIES
-        and retry.backoff_factor == BACKOFF_FACTOR
-        and retry.initial_delay == INITIAL_DELAY
-    ):
-        return _with_retry(m, url, api_key, headers=hdrs, **kwargs)
-
-    params_copy = (kwargs.pop("params", {}) or {}).copy()
-    params_copy["k"] = api_key
-    kwargs["params"] = params_copy
-
-    attempt = 0
-    delay = retry.initial_delay
-    response: Optional[Response] = None
-    while attempt < retry.max_retries:
-        try:
-            response = m(url, headers=hdrs, **kwargs)
-            assert response is not None
-            if response.status_code in SUCCESS_RANGE:
-                return response
-            if response.status_code == 429:
-                retry_after = int(response.headers.get("Retry-After", delay))
-                logging.warning(
-                    f"429 Too Many Requests: retrying in {retry_after}s (attempt {attempt+1})"
-                )
-                time.sleep(retry_after)
-            elif 500 <= response.status_code < 600:
-                logging.warning(
-                    f"{response.status_code} Server Error: retrying in {delay}s (attempt {attempt+1})"
-                )
-                time.sleep(delay)
-                delay *= retry.backoff_factor
-            else:
-                raise_for_status(
-                    RequestException(f"HTTP {response.status_code}"), response
-                )
-        except RequestException as e:
-            if attempt >= retry.max_retries - 1:
-                redacted_error = redact_message(str(e))
-                logging.error(
-                    "Request failed after %s attempts: %s",
-                    attempt + 1,
-                    redacted_error,
-                )
-                raise PermutiveAPIError(
-                    f"Request failed after {attempt+1} attempts: {redacted_error}"
-                ) from e
-            time.sleep(delay)
-            delay *= retry.backoff_factor
-        attempt += 1
-
-    raise RequestException("Max retries reached")
+    return _with_retry(m, url, api_key, headers=hdrs, retry=retry, **kwargs)
 
 
 def to_payload(
@@ -453,18 +497,20 @@ def _with_retry(
     api_key: str,
     *,
     headers: Optional[Dict[str, str]] = None,
+    retry: Optional[RetryConfig] = None,
     **kwargs: Any,
 ) -> Response:
     """Retry logic for transient errors and rate limiting."""
+    resolved_retry = retry or RetryConfig()
     params = (kwargs.pop("params", {}) or {}).copy()
     params["k"] = api_key
     kwargs["params"] = params
 
     attempt = 0
-    delay = INITIAL_DELAY
+    delay = resolved_retry.initial_delay
     response: Optional[Response] = None
 
-    while attempt < MAX_RETRIES:
+    while attempt < resolved_retry.max_retries:
         try:
             merged_headers = headers if headers is not None else DEFAULT_HEADERS
             response = method(url, headers=merged_headers, **kwargs)
@@ -483,14 +529,14 @@ def _with_retry(
                     f"{response.status_code} Server Error: retrying in {delay}s (attempt {attempt+1})"
                 )
                 time.sleep(delay)
-                delay *= BACKOFF_FACTOR
+                delay *= resolved_retry.backoff_factor
             else:
                 raise_for_status(
                     RequestException(f"HTTP {response.status_code}"), response
                 )
 
         except RequestException as e:
-            if attempt >= MAX_RETRIES - 1:
+            if attempt >= resolved_retry.max_retries - 1:
                 redacted_error = redact_message(str(e))
                 logging.error(
                     "Request failed after %s attempts: %s",
@@ -501,7 +547,7 @@ def _with_retry(
                     f"Request failed after {attempt+1} attempts: {redacted_error}"
                 ) from e
             time.sleep(delay)
-            delay *= BACKOFF_FACTOR
+            delay *= resolved_retry.backoff_factor
 
         attempt += 1
 
@@ -525,7 +571,9 @@ def process_batch(
         API key appended to each request.
     max_workers : int | None
         Maximum number of worker threads. When ``None`` the executor applies
-        its default limit (``min(32, os.cpu_count() + 4)``).
+        its default limit (``min(32, os.cpu_count() + 4)``). Set the
+        ``PERMUTIVE_BATCH_MAX_WORKERS`` environment variable to override this
+        default globally.
     progress_callback : Callable[[Progress], None] | None, optional
         Invoked after each request completes with a
         :class:`~PermutiveAPI._Utils.http.Progress` snapshot containing the
@@ -547,8 +595,9 @@ def process_batch(
     errors: List[Tuple[BatchRequest, Exception]] = []
 
     start_time = time.perf_counter()
+    resolved_max_workers = _resolve_max_workers(max_workers)
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with ThreadPoolExecutor(max_workers=resolved_max_workers) as executor:
         future_to_request = {
             executor.submit(
                 request,

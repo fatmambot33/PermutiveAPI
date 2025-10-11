@@ -250,6 +250,38 @@ helpers. When the API responds with ``HTTP 429`` (rate limiting), the helper
 retries using the exponential backoff already built into the package before
 surfacing the error in the ``failures`` list.
 
+#### Configuring batch defaults
+
+Two environment variables allow you to tune the default behaviour without
+touching application code:
+
+- ``PERMUTIVE_BATCH_MAX_WORKERS`` controls the worker pool size used by the
+  shared batch runner when ``max_workers`` is omitted. Provide a positive
+  integer to cap concurrency or leave it unset to use Python's default
+  heuristic.
+- ``PERMUTIVE_BATCH_TIMEOUT_SECONDS`` controls the default timeout applied to
+  each ``PermutiveAPI._Utils.http.BatchRequest``. Set it to a positive
+  float (in seconds) to align the HTTP timeout with your infrastructure's
+  expectations.
+
+Invalid values raise ``ValueError`` during initialisation to surface mistakes
+early in the development cycle.
+
+#### Configuring retry defaults
+
+Transient failure handling can also be adjusted through environment variables.
+When unset, the package uses the standard ``RetryConfig`` defaults.
+
+- ``PERMUTIVE_RETRY_MAX_RETRIES`` sets the number of attempts performed by the
+  HTTP helpers before surfacing an error. Provide a positive integer.
+- ``PERMUTIVE_RETRY_BACKOFF_FACTOR`` controls the exponential multiplier applied
+  after each failed attempt. Provide a positive number (floats are accepted).
+- ``PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS`` specifies the starting delay in
+  seconds before retrying. Provide a positive number.
+
+Supplying invalid values for any of these variables raises ``ValueError`` when
+the retry configuration is evaluated, helping catch misconfiguration early.
+
 Segmentation workflows follow the same pattern. For example, you can create
 multiple segments for a given import in one request batch while reporting
 progress back to an observability system:
