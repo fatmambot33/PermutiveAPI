@@ -427,6 +427,66 @@ def test_batch_request_timeout_env_validation(monkeypatch):
         BatchRequest(method="GET", url="https://example.com/timeout")
 
 
+def test_retry_config_env_defaults(monkeypatch):
+    """Retry defaults honour environment overrides when provided."""
+
+    monkeypatch.delenv("PERMUTIVE_RETRY_MAX_RETRIES", raising=False)
+    monkeypatch.delenv("PERMUTIVE_RETRY_BACKOFF_FACTOR", raising=False)
+    monkeypatch.delenv("PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS", raising=False)
+
+    baseline = http.RetryConfig()
+    assert baseline.max_retries == http.MAX_RETRIES
+    assert baseline.backoff_factor == pytest.approx(http.BACKOFF_FACTOR)
+    assert baseline.initial_delay == pytest.approx(http.INITIAL_DELAY)
+
+    monkeypatch.setenv("PERMUTIVE_RETRY_MAX_RETRIES", "7")
+    monkeypatch.setenv("PERMUTIVE_RETRY_BACKOFF_FACTOR", "3.5")
+    monkeypatch.setenv("PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS", "2.5")
+
+    overridden = http.RetryConfig()
+    assert overridden.max_retries == 7
+    assert overridden.backoff_factor == pytest.approx(3.5)
+    assert overridden.initial_delay == pytest.approx(2.5)
+
+
+def test_retry_config_env_validation(monkeypatch):
+    """Invalid retry environment configuration raises ValueError."""
+
+    monkeypatch.setenv("PERMUTIVE_RETRY_MAX_RETRIES", "zero")
+    with pytest.raises(ValueError, match="PERMUTIVE_RETRY_MAX_RETRIES"):
+        http.RetryConfig()
+
+    monkeypatch.setenv("PERMUTIVE_RETRY_MAX_RETRIES", "5")
+    monkeypatch.setenv("PERMUTIVE_RETRY_BACKOFF_FACTOR", "nope")
+    with pytest.raises(ValueError, match="PERMUTIVE_RETRY_BACKOFF_FACTOR"):
+        http.RetryConfig()
+
+    monkeypatch.setenv("PERMUTIVE_RETRY_BACKOFF_FACTOR", "3")
+    monkeypatch.setenv("PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS", "-1")
+    with pytest.raises(ValueError, match="PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS"):
+        http.RetryConfig()
+
+
+def test_with_retry_respects_env_defaults(monkeypatch):
+    """Environment overrides control the retry loop when unspecified."""
+
+    calls = {"n": 0}
+
+    def method(url, headers=None, **kwargs):
+        calls["n"] += 1
+        resp = Response()
+        resp.status_code = 503
+        return resp
+
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    monkeypatch.setenv("PERMUTIVE_RETRY_MAX_RETRIES", "2")
+
+    with pytest.raises(Exception, match="Max retries reached"):
+        http._with_retry(method, "http://example.com", "api-key")
+
+    assert calls["n"] == 2
+
+
 def test_request_methods(monkeypatch):
     """Test the static and instance request methods."""
 
@@ -566,7 +626,7 @@ def test_with_retry_max_retries_exceeded(monkeypatch):
     with pytest.raises(Exception, match="Max retries reached"):
         http._with_retry(method, "http://a", "k")
 
-    assert calls["n"] == http.MAX_RETRIES
+    assert calls["n"] == http.RetryConfig().max_retries
 
 
 def test_with_retry_logs_only_after_exhaustion(monkeypatch, caplog):
@@ -589,7 +649,7 @@ def test_with_retry_logs_only_after_exhaustion(monkeypatch, caplog):
                 method, "https://api.permutive.com/v2.0/identify", "super-secret"
             )
 
-    assert calls["count"] == http.MAX_RETRIES
+    assert calls["count"] == http.RetryConfig().max_retries
     messages = [record.getMessage() for record in caplog.records]
     redacted_logs = [m for m in messages if "Request failed after" in m]
     assert len(redacted_logs) == 1

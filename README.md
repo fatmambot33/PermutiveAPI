@@ -267,6 +267,21 @@ touching application code:
 Invalid values raise ``ValueError`` during initialisation to surface mistakes
 early in the development cycle.
 
+#### Configuring retry defaults
+
+Transient failure handling can also be adjusted through environment variables.
+When unset, the package uses the standard ``RetryConfig`` defaults.
+
+- ``PERMUTIVE_RETRY_MAX_RETRIES`` sets the number of attempts performed by the
+  HTTP helpers before surfacing an error. Provide a positive integer.
+- ``PERMUTIVE_RETRY_BACKOFF_FACTOR`` controls the exponential multiplier applied
+  after each failed attempt. Provide a positive number (floats are accepted).
+- ``PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS`` specifies the starting delay in
+  seconds before retrying. Provide a positive number.
+
+Supplying invalid values for any of these variables raises ``ValueError`` when
+the retry configuration is evaluated, helping catch misconfiguration early.
+
 Segmentation workflows follow the same pattern. For example, you can create
 multiple segments for a given import in one request batch while reporting
 progress back to an observability system:
