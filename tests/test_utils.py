@@ -368,6 +368,65 @@ def test_process_batch_respects_retry(fake_thread_pool, monkeypatch):
     assert progress_updates[0].errors == 0
 
 
+def test_process_batch_uses_env_max_workers(fake_thread_pool, monkeypatch):
+    """Use the environment when ``max_workers`` is omitted."""
+
+    def fake_request(method, api_key, url, **kwargs):  # noqa: ANN001 - mirror helper
+        response = Mock(spec=Response)
+        response.url = url
+        return response
+
+    monkeypatch.setenv("PERMUTIVE_BATCH_MAX_WORKERS", "6")
+    monkeypatch.setattr(http, "request", fake_request)
+
+    responses, errors = process_batch(
+        [BatchRequest(method="GET", url="https://example.com/env")],
+        api_key="test-key",
+        max_workers=None,
+        progress_callback=None,
+    )
+
+    assert len(fake_thread_pool) == 1
+    assert fake_thread_pool[0].max_workers == 6
+    assert len(responses) == 1
+    assert errors == []
+
+
+def test_process_batch_rejects_invalid_env_max_workers(monkeypatch):
+    """Surface invalid ``PERMUTIVE_BATCH_MAX_WORKERS`` configuration."""
+
+    monkeypatch.setenv("PERMUTIVE_BATCH_MAX_WORKERS", "not-a-number")
+
+    with pytest.raises(ValueError, match="PERMUTIVE_BATCH_MAX_WORKERS"):
+        process_batch(
+            [BatchRequest(method="GET", url="https://example.com/env")],
+            api_key="test-key",
+            max_workers=None,
+            progress_callback=None,
+        )
+
+
+def test_batch_request_timeout_env_default(monkeypatch):
+    """Default batch timeout follows the environment override when provided."""
+
+    monkeypatch.delenv("PERMUTIVE_BATCH_TIMEOUT_SECONDS", raising=False)
+    request_default = BatchRequest(method="GET", url="https://example.com/timeout")
+    assert request_default.timeout == 10.0
+
+    monkeypatch.setenv("PERMUTIVE_BATCH_TIMEOUT_SECONDS", "42.5")
+    request_env = BatchRequest(method="GET", url="https://example.com/timeout")
+    assert request_env.timeout == pytest.approx(42.5)
+
+
+def test_batch_request_timeout_env_validation(monkeypatch):
+    """Invalid timeout values raise informative errors."""
+
+    monkeypatch.setenv("PERMUTIVE_BATCH_TIMEOUT_SECONDS", "zero")
+
+    with pytest.raises(ValueError, match="PERMUTIVE_BATCH_TIMEOUT_SECONDS"):
+        BatchRequest(method="GET", url="https://example.com/timeout")
+
+
 def test_request_methods(monkeypatch):
     """Test the static and instance request methods."""
 

@@ -250,6 +250,23 @@ helpers. When the API responds with ``HTTP 429`` (rate limiting), the helper
 retries using the exponential backoff already built into the package before
 surfacing the error in the ``failures`` list.
 
+#### Configuring batch defaults
+
+Two environment variables allow you to tune the default behaviour without
+touching application code:
+
+- ``PERMUTIVE_BATCH_MAX_WORKERS`` controls the worker pool size used by the
+  shared batch runner when ``max_workers`` is omitted. Provide a positive
+  integer to cap concurrency or leave it unset to use Python's default
+  heuristic.
+- ``PERMUTIVE_BATCH_TIMEOUT_SECONDS`` controls the default timeout applied to
+  each ``PermutiveAPI._Utils.http.BatchRequest``. Set it to a positive
+  float (in seconds) to align the HTTP timeout with your infrastructure's
+  expectations.
+
+Invalid values raise ``ValueError`` during initialisation to surface mistakes
+early in the development cycle.
+
 Segmentation workflows follow the same pattern. For example, you can create
 multiple segments for a given import in one request batch while reporting
 progress back to an observability system:

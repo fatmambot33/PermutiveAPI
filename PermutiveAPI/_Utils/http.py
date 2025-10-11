@@ -14,13 +14,15 @@ This module provides:
 """
 
 from __future__ import annotations
+
 import json
 import logging
+import os
 import re
 import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import requests
@@ -109,6 +111,72 @@ MAX_RETRIES = 3
 BACKOFF_FACTOR = 2
 INITIAL_DELAY = 1
 
+BATCH_MAX_WORKERS_ENV_VAR = "PERMUTIVE_BATCH_MAX_WORKERS"
+BATCH_TIMEOUT_ENV_VAR = "PERMUTIVE_BATCH_TIMEOUT_SECONDS"
+DEFAULT_BATCH_TIMEOUT = 10.0
+
+
+def _normalise_env_value(name: str) -> Optional[str]:
+    """Return a stripped environment variable value or ``None`` if unset/empty."""
+
+    value = os.getenv(name)
+    if value is None:
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
+def _parse_positive_int(value: str, *, env_var: str) -> int:
+    """Return ``value`` parsed as a strictly positive integer."""
+
+    try:
+        parsed = int(value)
+    except ValueError as exc:  # pragma: no cover - defensive
+        raise ValueError(
+            f"Environment variable {env_var} must be a positive integer, got {value!r}."
+        ) from exc
+    if parsed <= 0:
+        raise ValueError(
+            f"Environment variable {env_var} must be a positive integer, got {value!r}."
+        )
+    return parsed
+
+
+def _parse_positive_float(value: str, *, env_var: str) -> float:
+    """Return ``value`` parsed as a strictly positive float."""
+
+    try:
+        parsed = float(value)
+    except ValueError as exc:  # pragma: no cover - defensive
+        raise ValueError(
+            f"Environment variable {env_var} must be a positive float, got {value!r}."
+        ) from exc
+    if parsed <= 0:
+        raise ValueError(
+            f"Environment variable {env_var} must be a positive float, got {value!r}."
+        )
+    return parsed
+
+
+def _default_batch_timeout() -> Optional[float]:
+    """Resolve the default timeout for :class:`BatchRequest` instances."""
+
+    env_timeout = _normalise_env_value(BATCH_TIMEOUT_ENV_VAR)
+    if env_timeout is None:
+        return DEFAULT_BATCH_TIMEOUT
+    return _parse_positive_float(env_timeout, env_var=BATCH_TIMEOUT_ENV_VAR)
+
+
+def _resolve_max_workers(max_workers: Optional[int]) -> Optional[int]:
+    """Return the executor worker count honouring environment overrides."""
+
+    if max_workers is not None:
+        return max_workers
+    env_workers = _normalise_env_value(BATCH_MAX_WORKERS_ENV_VAR)
+    if env_workers is None:
+        return None
+    return _parse_positive_int(env_workers, env_var=BATCH_MAX_WORKERS_ENV_VAR)
+
 
 @dataclass
 class RetryConfig:
@@ -151,7 +219,8 @@ class BatchRequest:
     headers : dict | None, optional
         Extra headers merged with :data:`DEFAULT_HEADERS`. Defaults to ``None``.
     timeout : float | None, optional
-        Requests timeout in seconds. Defaults to ``10.0``.
+        Requests timeout in seconds. Defaults to the value of
+        ``PERMUTIVE_BATCH_TIMEOUT_SECONDS`` when set, otherwise ``10.0``.
     retry : RetryConfig | None, optional
         Override retry configuration for the request. Defaults to ``None``.
     callback : Callable[[requests.Response], None] | None, optional
@@ -166,7 +235,7 @@ class BatchRequest:
     params: Optional[Dict[str, Any]] = None
     json: Optional[Dict[str, Any]] = None
     headers: Optional[Dict[str, str]] = None
-    timeout: Optional[float] = 10.0
+    timeout: Optional[float] = field(default_factory=_default_batch_timeout)
     retry: Optional[RetryConfig] = None
     callback: Optional[Callable[[Response], None]] = None
     error_callback: Optional[Callable[[Exception], None]] = None
@@ -525,7 +594,9 @@ def process_batch(
         API key appended to each request.
     max_workers : int | None
         Maximum number of worker threads. When ``None`` the executor applies
-        its default limit (``min(32, os.cpu_count() + 4)``).
+        its default limit (``min(32, os.cpu_count() + 4)``). Set the
+        ``PERMUTIVE_BATCH_MAX_WORKERS`` environment variable to override this
+        default globally.
     progress_callback : Callable[[Progress], None] | None, optional
         Invoked after each request completes with a
         :class:`~PermutiveAPI._Utils.http.Progress` snapshot containing the
@@ -547,8 +618,9 @@ def process_batch(
     errors: List[Tuple[BatchRequest, Exception]] = []
 
     start_time = time.perf_counter()
+    resolved_max_workers = _resolve_max_workers(max_workers)
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with ThreadPoolExecutor(max_workers=resolved_max_workers) as executor:
         future_to_request = {
             executor.submit(
                 request,
