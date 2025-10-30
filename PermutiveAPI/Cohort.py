@@ -581,7 +581,7 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
     def list(
         api_key: str,
         include_child_workspaces: bool = False,
-        include_query: bool = False,
+        include_details: bool = False,
     ) -> "CohortList":
         """Fetch all cohorts from the API.
 
@@ -591,7 +591,7 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             The API key for authentication.
         include_child_workspaces : bool, optional
             Whether to include cohorts from child workspaces (default: False).
-        include_query : bool, optional
+        include_details : bool, optional
             Whether to include the full query for each cohort (default: False).
 
         Returns
@@ -614,7 +614,7 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         if response is None:
             raise ValueError("Response is None")
         cohorts_list = CohortList.from_json(response.json())
-        if include_query:
+        if include_details:
             detailed_cohorts = CohortList()
             for cohort in cohorts_list:
                 if cohort.id is not None:

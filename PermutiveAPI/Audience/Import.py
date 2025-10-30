@@ -27,7 +27,7 @@ from PermutiveAPI._Utils.http import BatchRequest, Progress, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
 from . import _API_ENDPOINT
 from .Source import Source
-from .Segment import SegmentList
+from .Segment import SegmentList, Segment
 
 
 @dataclass
@@ -102,7 +102,7 @@ class Import(JSONSerializable[Dict[str, Any]]):
             self.updated_at = self.created_at
 
     @staticmethod
-    def get_by_id(id: str, api_key: str) -> "Import":
+    def get_by_id(id: str, api_key: str, include_details: bool = False) -> "Import":
         """Fetch a specific import by its ID.
 
         Parameters
@@ -127,10 +127,14 @@ class Import(JSONSerializable[Dict[str, Any]]):
         response = Import._request_helper.get(url=url, api_key=api_key)
         if not response:
             raise ValueError("Unable to get_import")
-        return Import.from_json(response.json())
+        import_ = Import.from_json(response.json())
+        if include_details:
+            segments = Segment.list(api_key=api_key, import_id=id)
+            import_.segments = segments
+        return import_
 
     @staticmethod
-    def list(api_key: str) -> "ImportList":
+    def list(api_key: str, include_details: bool = False) -> "ImportList":
         """Retrieve a list of all imports.
 
         Parameters
@@ -153,8 +157,11 @@ class Import(JSONSerializable[Dict[str, Any]]):
         response = Import._request_helper.get(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
-        imports = response.json()
-        return ImportList.from_json(imports["items"])
+        imports: ImportList = response.json()
+        if include_details:
+            for import_ in imports:
+                import_.segments = Segment.list(api_key=api_key, import_id=import_.id)
+        return imports
 
     @classmethod
     def batch_get_by_id(
