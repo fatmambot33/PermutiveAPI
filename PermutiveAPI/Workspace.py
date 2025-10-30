@@ -44,6 +44,8 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
     def __post_init__(self):
         """Initialise caches."""
         self._segment_cache: Dict[str, "SegmentList"] = {}
+        self._cohort_cache: Dict[bool, CohortList] = {}
+        self._import_cache: Dict[bool, "ImportList"] = {}
 
     @property
     def is_top_level(self) -> bool:
@@ -57,14 +59,49 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         return self.organisation_id == self.workspace_id
 
     def _get_or_refresh_cache(
-        self, cache_attr: str, refresh_func: Callable[[], Any], force_refresh: bool
+        self,
+        cache_attr: str,
+        refresh_func: Callable[[Any], Any],
+        force_refresh: bool,
+        cache_key: Optional[Any] = None,
     ) -> Any:
-        """Get a cached attribute or refresh it."""
-        if force_refresh or not hasattr(self, cache_attr):
-            refresh_func()
-        return getattr(self, cache_attr)
+        """Get a cached attribute or refresh it.
 
-    def _refresh_cohorts_cache(self) -> CohortList:
+        Parameters
+        ----------
+        cache_attr : str
+            Name of the attribute storing the cached data.
+        refresh_func : Callable[[Any], Any]
+            Function used to refresh the cache. It receives ``cache_key`` when
+            provided.
+        force_refresh : bool
+            Refresh the cache when ``True`` regardless of the current state.
+        cache_key : Optional[Any], optional
+            Key identifying the cache entry when the attribute is a mapping.
+
+        Returns
+        -------
+        Any
+            Cached value returned by ``refresh_func``.
+        """
+
+        if cache_key is None:
+            if force_refresh or not hasattr(self, cache_attr):
+                refreshed_value = (
+                    refresh_func(cache_key) if cache_key is not None else refresh_func()
+                )
+                setattr(self, cache_attr, refreshed_value)
+            return getattr(self, cache_attr)
+
+        cache: Dict[Any, Any]
+        if not hasattr(self, cache_attr):
+            setattr(self, cache_attr, {})
+        cache = getattr(self, cache_attr)
+        if force_refresh or cache_key not in cache:
+            cache[cache_key] = refresh_func(cache_key)
+        return cache[cache_key]
+
+    def _refresh_cohorts_cache(self, include_details: bool) -> CohortList:
         """Re-fetch cohorts from the API and update the cache.
 
         Returns
@@ -72,16 +109,24 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         CohortList
             Updated list of cohorts.
         """
-        self._cohort_cache = Cohort.list(
-            include_child_workspaces=True, api_key=self.api_key
+        cohorts = Cohort.list(
+            include_child_workspaces=True,
+            include_details=include_details,
+            api_key=self.api_key,
         )
-        return self._cohort_cache
+        self._cohort_cache[include_details] = cohorts
+        return cohorts
 
-    def cohorts(self, force_refresh: bool = False) -> CohortList:
+    def cohorts(
+        self, include_details: bool = False, force_refresh: bool = False
+    ) -> CohortList:
         """Retrieve a cached list of cohorts for the workspace.
 
         Parameters
         ----------
+        include_details : bool, optional
+            Retrieve the full cohort definitions when ``True``. Defaults to
+            ``False``.
         force_refresh : bool, optional
             Re-fetch the cohort list if ``True``. Defaults to ``False``.
 
@@ -91,10 +136,13 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Cached list of cohorts.
         """
         return self._get_or_refresh_cache(
-            "_cohort_cache", self._refresh_cohorts_cache, force_refresh
+            "_cohort_cache",
+            self._refresh_cohorts_cache,
+            force_refresh,
+            include_details,
         )
 
-    def _refresh_imports_cache(self) -> "ImportList":
+    def _refresh_imports_cache(self, include_details: bool) -> "ImportList":
         """Re-fetch imports from the API and update the cache.
 
         Returns
@@ -102,14 +150,20 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         ImportList
             Updated list of imports.
         """
-        self._import_cache = Import.list(api_key=self.api_key)
-        return self._import_cache
+        imports = Import.list(api_key=self.api_key, include_details=include_details)
+        self._import_cache[include_details] = imports
+        return imports
 
-    def imports(self, force_refresh: bool = False) -> "ImportList":
+    def imports(
+        self, include_details: bool = False, force_refresh: bool = False
+    ) -> "ImportList":
         """Retrieve a cached list of imports for the workspace.
 
         Parameters
         ----------
+        include_details : bool, optional
+            Retrieve the full import definitions when ``True``. Defaults to
+            ``False``.
         force_refresh : bool, optional
             Re-fetch the import list if ``True``. Defaults to ``False``.
 
@@ -119,7 +173,10 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             Cached list of imports.
         """
         return self._get_or_refresh_cache(
-            "_import_cache", self._refresh_imports_cache, force_refresh
+            "_import_cache",
+            self._refresh_imports_cache,
+            force_refresh,
+            include_details,
         )
 
     def _refresh_segments_cache(self, import_id: str) -> None:
