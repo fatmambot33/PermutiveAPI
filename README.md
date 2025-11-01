@@ -248,7 +248,9 @@ latency projections. The helpers delegate to
 from the shared retry/backoff configuration used by the underlying request
 helpers. When the API responds with ``HTTP 429`` (rate limiting), the helper
 retries using the exponential backoff already built into the package before
-surfacing the error in the ``failures`` list.
+surfacing the error in the ``failures`` list. The segmentation helper,
+``Segmentation.batch_send``, also consumes the same callback so you can track
+progress consistently across segmentation workloads.
 
 #### Configuring batch defaults
 
@@ -313,6 +315,44 @@ segment_responses, segment_failures = Segment.batch_create(
 if segment_failures:
     for failed_request, error in segment_failures:
         print("Segment creation retry candidate:", failed_request.url, error)
+```
+
+You can also evaluate multiple users in parallel while reporting progress back
+to an observability system:
+
+```python
+from PermutiveAPI import Event, Segmentation
+
+
+events = [
+    Event(
+        name="SlotViewable",
+        time="2025-07-01T15:39:11.594Z",
+        session_id="f19199e4-1654-4869-b740-703fd5bafb6f",
+        view_id="d30ccfc5-c621-4ac4-a282-9a30ac864c8a",
+        properties={"campaign_id": "3747123491"},
+    )
+]
+
+requests = [
+    Segmentation(user_id="user-1", events=events),
+    Segmentation(user_id="user-2", events=events),
+]
+
+segmentation_responses, segmentation_failures = Segmentation.batch_send(
+    requests,
+    api_key="your-api-key",
+    max_workers=4,
+    progress_callback=on_progress,
+)
+
+if segmentation_failures:
+    for failed_request, error in segmentation_failures:
+        print(
+            "Segmentation retry candidate:",
+            failed_request.url,
+            error,
+        )
 ```
 
 ### Error Handling
