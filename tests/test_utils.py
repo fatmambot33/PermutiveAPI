@@ -21,6 +21,8 @@ from PermutiveAPI._Utils.http import (
     PermutiveRateLimitError,
     PermutiveResourceNotFoundError,
     PermutiveServerError,
+    RetryConfig,
+    _with_retry,
     process_batch,
 )
 from requests.exceptions import RequestException
@@ -69,6 +71,61 @@ def _make_response(
     resp.request = req
     resp.headers = CaseInsensitiveDict(headers or {})
     return resp
+
+
+def _noop_sleep(_: float) -> None:
+    """Skip sleeping during retry tests.
+
+    This helper ensures retry logic executes without real delays.
+    """
+
+
+def test_with_retry_propagates_rate_limit(monkeypatch):
+    """_with_retry should surface rate limit errors as custom exceptions."""
+
+    url = "https://api.com/resource"
+    responses = [
+        _make_response(url, 429, headers={"Retry-After": "0"}),
+        _make_response(url, 429, headers={"Retry-After": "0"}),
+        _make_response(url, 429, headers={"Retry-After": "0"}),
+    ]
+
+    def method(_: str, **__: Any) -> Response:
+        return responses.pop(0)
+
+    monkeypatch.setattr(http.time, "sleep", _noop_sleep)
+
+    with pytest.raises(PermutiveRateLimitError):
+        _with_retry(
+            method,
+            url,
+            "secret",
+            retry=RetryConfig(max_retries=3, backoff_factor=1.0, initial_delay=0.0),
+        )
+
+
+def test_with_retry_propagates_server_errors(monkeypatch):
+    """_with_retry should surface server errors as custom exceptions."""
+
+    url = "https://api.com/resource"
+    responses = [
+        _make_response(url, 503),
+        _make_response(url, 502),
+        _make_response(url, 500),
+    ]
+
+    def method(_: str, **__: Any) -> Response:
+        return responses.pop(0)
+
+    monkeypatch.setattr(http.time, "sleep", _noop_sleep)
+
+    with pytest.raises(PermutiveServerError):
+        _with_retry(
+            method,
+            url,
+            "secret",
+            retry=RetryConfig(max_retries=3, backoff_factor=1.0, initial_delay=0.0),
+        )
 
 
 def test_redact_sensitive_data():
@@ -476,12 +533,15 @@ def test_with_retry_respects_env_defaults(monkeypatch):
         calls["n"] += 1
         resp = Response()
         resp.status_code = 503
+        req = PreparedRequest()
+        req.prepare_url(url, None)
+        resp.request = req
         return resp
 
     monkeypatch.setattr(time, "sleep", lambda s: None)
     monkeypatch.setenv("PERMUTIVE_RETRY_MAX_RETRIES", "2")
 
-    with pytest.raises(Exception, match="Max retries reached"):
+    with pytest.raises(PermutiveServerError):
         http._with_retry(method, "http://example.com", "api-key")
 
     assert calls["n"] == 2
@@ -619,11 +679,14 @@ def test_with_retry_max_retries_exceeded(monkeypatch):
         calls["n"] += 1
         resp = Response()
         resp.status_code = 503  # Service Unavailable
+        req = PreparedRequest()
+        req.prepare_url(url, None)
+        resp.request = req
         return resp
 
     monkeypatch.setattr(time, "sleep", lambda s: None)
 
-    with pytest.raises(Exception, match="Max retries reached"):
+    with pytest.raises(PermutiveServerError):
         http._with_retry(method, "http://a", "k")
 
     assert calls["n"] == http.RetryConfig().max_retries

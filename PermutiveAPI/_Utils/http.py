@@ -509,8 +509,10 @@ def _with_retry(
     attempt = 0
     delay = resolved_retry.initial_delay
     response: Optional[Response] = None
+    last_exception: Optional[RequestException] = None
 
     while attempt < resolved_retry.max_retries:
+        response = None
         try:
             merged_headers = headers if headers is not None else DEFAULT_HEADERS
             response = method(url, headers=merged_headers, **kwargs)
@@ -536,6 +538,7 @@ def _with_retry(
                 )
 
         except RequestException as e:
+            last_exception = e
             if attempt >= resolved_retry.max_retries - 1:
                 redacted_error = redact_message(str(e))
                 logging.error(
@@ -543,6 +546,11 @@ def _with_retry(
                     attempt + 1,
                     redacted_error,
                 )
+                if response is not None:
+                    try:
+                        raise_for_status(RequestException(redacted_error), response)
+                    except PermutiveAPIError as exc:  # pragma: no cover - defensive
+                        raise exc from e
                 raise PermutiveAPIError(
                     f"Request failed after {attempt+1} attempts: {redacted_error}"
                 ) from e
@@ -551,7 +559,27 @@ def _with_retry(
 
         attempt += 1
 
-    raise RequestException("Max retries reached")
+    final_exception: RequestException
+    if last_exception is not None:
+        final_exception = last_exception
+    else:
+        final_exception = RequestException("Max retries reached")
+
+    redacted_message = redact_message(str(final_exception))
+    if response is not None:
+        try:
+            raise_for_status(RequestException(redacted_message), response)
+        except PermutiveAPIError as exc:  # pragma: no cover - defensive
+            raise exc from final_exception
+
+    logging.error(
+        "Request failed after %s attempts: %s",
+        resolved_retry.max_retries,
+        redacted_message,
+    )
+    raise PermutiveAPIError(
+        f"Request failed after {resolved_retry.max_retries} attempts: {redacted_message}"
+    ) from final_exception
 
 
 def process_batch(
@@ -763,8 +791,10 @@ def raise_for_status(e: Exception, response: Optional[Response]) -> None:
         if status in SUCCESS_RANGE:
             return  # pragma: no cover
         redacted_url = None
-        if hasattr(response, "request") and response.request.url:
-            redacted_url = redact_url(response.request.url)
+        request_obj = getattr(response, "request", None)
+        request_url = getattr(request_obj, "url", None)
+        if request_url:
+            redacted_url = redact_url(request_url)
 
         if status == 400:
             msg = redact_message(_extract_error_message(response))
