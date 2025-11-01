@@ -157,7 +157,19 @@ class Import(JSONSerializable[Dict[str, Any]]):
         response = Import._request_helper.get(api_key=api_key, url=url)
         if response is None:
             raise ValueError("Response is None")
-        imports: ImportList = response.json()
+        payload = response.json()
+        items: Union[dict, List[dict]]
+        if isinstance(payload, dict):
+            if "items" not in payload:
+                raise ValueError("Response JSON missing 'items' collection")
+            items = payload["items"]
+        else:
+            items = payload
+
+        try:
+            imports = ImportList.from_json(items)
+        except TypeError as exc:  # pragma: no cover - defensive branch
+            raise ValueError("Response JSON has invalid format for imports") from exc
         if include_details:
             for import_ in imports:
                 import_.segments = Segment.list(api_key=api_key, import_id=import_.id)

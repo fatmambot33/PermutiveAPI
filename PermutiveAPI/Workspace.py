@@ -61,7 +61,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
     def _get_or_refresh_cache(
         self,
         cache_attr: str,
-        refresh_func: Callable[[Any], Any],
+        refresh_func: Callable[..., Any],
         force_refresh: bool,
         cache_key: Optional[Any] = None,
     ) -> Any:
@@ -71,7 +71,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         ----------
         cache_attr : str
             Name of the attribute storing the cached data.
-        refresh_func : Callable[[Any], Any]
+        refresh_func : Callable[..., Any]
             Function used to refresh the cache. It receives ``cache_key`` when
             provided.
         force_refresh : bool
@@ -84,7 +84,6 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         Any
             Cached value returned by ``refresh_func``.
         """
-
         if cache_key is None:
             if force_refresh or not hasattr(self, cache_attr):
                 refreshed_value = (

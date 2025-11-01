@@ -135,7 +135,9 @@ def test_workspace_refresh(monkeypatch):
     monkeypatch.setattr(
         Import,
         "list",
-        lambda api_key="", include_details=False: ImportList.from_json(import_data1),  # noqa: ARG005
+        lambda api_key="", include_details=False: ImportList.from_json(
+            import_data1
+        ),  # noqa: ARG005
     )
     assert ws.cohorts()[0].id == "1"
     assert ws.imports()[0].id == "i1"
@@ -151,7 +153,9 @@ def test_workspace_refresh(monkeypatch):
     monkeypatch.setattr(
         Import,
         "list",
-        lambda api_key="", include_details=False: ImportList.from_json(import_data2),  # noqa: ARG005
+        lambda api_key="", include_details=False: ImportList.from_json(
+            import_data2
+        ),  # noqa: ARG005
     )
     assert ws.cohorts()[0].id == "1"
     assert ws.imports()[0].id == "i1"
