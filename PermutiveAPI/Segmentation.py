@@ -59,7 +59,7 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
 
     Parameters
     ----------
-    events : list[SegmentationEvent]
+    events : list[Event]
         Collection of events that describe the interaction history.
     user_id : str
         The user identifier to evaluate against configured segments.
@@ -80,14 +80,14 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
 
     Examples
     --------
-    >>> event = SegmentationEvent(
+    >>> event = Event(
     ...     name="SlotViewable",
     ...     time="2025-07-01T15:39:11.594Z",
     ...     session_id="f19199e4-1654-4869-b740-703fd5bafb6f",
     ...     view_id="d30ccfc5-c621-4ac4-a282-9a30ac864c8a",
     ...     properties={"campaign_id": "3747123491"},
     ... )
-    >>> request = SegmentationRequest(user_id="user-123", events=[event])
+    >>> request = Segmentation(user_id="user-123", events=[event])
     >>> request.send(api_key="permutive-api-key")  # doctest: +SKIP
     {"segments": []}
     """
