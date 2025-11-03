@@ -13,6 +13,7 @@ PermutiveAPI is a Python module to interact with the Permutive API. It provides 
   - [Managing Segments](#managing-segments)
 - [Managing Imports](#managing-imports)
 - [Managing Users](#managing-users)
+- [Evaluating Segmentation](#evaluating-segmentation)
 - [Working with pandas DataFrames](#working-with-pandas-dataframes)
 - [Batch Helpers and Progress Callbacks](#batch-helpers-and-progress-callbacks)
 - [Error Handling](#error-handling)
@@ -170,6 +171,45 @@ except Exception as e:
     print(f"Error identifying user: {e}")
 
 ```
+
+### Evaluating Segmentation
+
+The segmentation helpers expose the low-level CCS segmentation endpoint so you
+can evaluate arbitrary event streams against your configured audiences. Start by
+describing each event with the `Event` dataclass and then submit the request with
+the `Segmentation` helper.
+
+```python
+from PermutiveAPI import Event, Segmentation
+
+
+event = Event(
+    name="SlotViewable",
+    time="2025-07-01T15:39:11.594Z",
+    session_id="f19199e4-1654-4869-b740-703fd5bafb6f",
+    view_id="d30ccfc5-c621-4ac4-a282-9a30ac864c8a",
+    properties={"campaign_id": "3747123491"},
+)
+
+request = Segmentation(user_id="user-123", events=[event])
+
+# Submit the request to retrieve segment membership
+response = request.send(api_key="your-api-key")
+print(response["segments"])  # [{"id": "segment-id", "name": "Segment Name"}, ...]
+```
+
+Two optional boolean flags allow you to tweak the response:
+
+- `activations` returns activation matches alongside segment membership.
+- `synchronous_validation` forces strict payload validation when you need
+  immediate feedback about malformed data.
+
+Both parameters can be provided when initialising the instance or overridden at
+call time via `request.send(..., activations=True)`. For high-volume workloads,
+use `Segmentation.batch_send` to process multiple requests concurrently. The
+helper integrates with the shared batch runner described in the next section so
+you can surface throughput metrics via `progress_callback` while respecting rate
+limits.
 
 ### Working with pandas DataFrames
 
