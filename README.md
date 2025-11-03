@@ -186,8 +186,6 @@ from PermutiveAPI import Event, Segmentation
 event = Event(
     name="SlotViewable",
     time="2025-07-01T15:39:11.594Z",
-    session_id="f19199e4-1654-4869-b740-703fd5bafb6f",
-    view_id="d30ccfc5-c621-4ac4-a282-9a30ac864c8a",
     properties={"campaign_id": "3747123491"},
 )
 
@@ -198,18 +196,41 @@ response = request.send(api_key="your-api-key")
 print(response["segments"])  # [{"id": "segment-id", "name": "Segment Name"}, ...]
 ```
 
-Two optional boolean flags allow you to tweak the response:
+The segmentation endpoint accepts two optional query parameters that you can
+control directly from the helper:
 
-- `activations` returns activation matches alongside segment membership.
-- `synchronous_validation` forces strict payload validation when you need
-  immediate feedback about malformed data.
+| Parameter | Default | What it does |
+|-----------|---------|--------------|
+| `activations` | `False` | Include any activated cohorts in the response payload. |
+| `synchronous-validation` | `False` | Validate events against their schemas before segmentation, which is useful for debugging but adds latency. |
 
-Both parameters can be provided when initialising the instance or overridden at
-call time via `request.send(..., activations=True)`. For high-volume workloads,
-use `Segmentation.batch_send` to process multiple requests concurrently. The
-helper integrates with the shared batch runner described in the next section so
-you can surface throughput metrics via `progress_callback` while respecting rate
-limits.
+Set them when constructing the request or override them per call:
+
+```python
+# Opt in for activations and synchronous validation on every request
+request = Segmentation(
+    user_id="user-123",
+    events=[event],
+    activations=True,
+    synchronous_validation=True,
+)
+
+# Or override when sending if you only need them occasionally
+response = request.send(
+    api_key="your-api-key",
+    activations=True,
+    synchronous_validation=True,
+)
+```
+
+`Event.session_id` and `Event.view_id` are optional—include them only when you
+need to tie events together across sessions or page views. When present, they
+are forwarded as part of the event payload.
+
+For high-volume workloads, use `Segmentation.batch_send` to process multiple
+requests concurrently. The helper integrates with the shared batch runner
+described in the next section so you can surface throughput metrics via
+`progress_callback` while respecting rate limits.
 
 ### Working with pandas DataFrames
 

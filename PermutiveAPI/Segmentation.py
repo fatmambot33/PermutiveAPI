@@ -31,10 +31,10 @@ class Event(JSONSerializable[Dict[str, Any]]):
         Event name to evaluate.
     time : str
         ISO-8601 timestamp describing when the event occurred.
-    session_id : str
-        Session identifier associated with the event.
-    view_id : str
-        View identifier correlating events within the same page view.
+    session_id : str | None, optional
+        Session identifier associated with the event (default: ``None``).
+    view_id : str | None, optional
+        View identifier correlating events within the same page view (default: ``None``).
     properties : dict[str, Any], optional
         Arbitrary event properties forwarded to Permutive (default: ``{}``).
 
@@ -48,8 +48,8 @@ class Event(JSONSerializable[Dict[str, Any]]):
 
     name: str
     time: str
-    session_id: str
-    view_id: str
+    session_id: Optional[str] = None
+    view_id: Optional[str] = None
     properties: Dict[str, Any] = field(default_factory=dict)
 
 
