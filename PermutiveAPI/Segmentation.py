@@ -107,8 +107,6 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         self,
         api_key: str,
         *,
-        activations: Optional[bool] = None,
-        synchronous_validation: Optional[bool] = None,
         timeout: Optional[float] = 10.0,
     ) -> Dict[str, Any]:
         """Submit the request to the segmentation endpoint.
@@ -117,12 +115,6 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         ----------
         api_key : str
             API key used to authenticate with Permutive.
-        activations : bool | None, optional
-            Override for the activations query parameter (default: ``None`` -> use
-            ``self.activations``).
-        synchronous_validation : bool | None, optional
-            Override for the synchronous validation flag (default: ``None`` -> use
-            ``self.synchronous_validation``).
         timeout : float | None, optional
             Timeout in seconds for the HTTP request (default: ``10.0``).
 
@@ -136,14 +128,10 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         PermutiveAPIError
             Propagated from the underlying HTTP helper when the API reports an error.
         """
-        params = self._build_params(
-            activations if activations is not None else self.activations,
-            (
-                synchronous_validation
-                if synchronous_validation is not None
-                else self.synchronous_validation
-            ),
-        )
+        params = {
+            "activations": str(self.activations).lower(),
+            "synchronous-validation": str(self.synchronous_validation).lower(),
+        }
         response = self._request_helper.request(
             method="POST",
             api_key=api_key,
@@ -162,8 +150,6 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         api_key: str,
         max_workers: Optional[int] = None,
         progress_callback: Optional[Callable[[Progress], None]] = None,
-        activations: Optional[bool] = None,
-        synchronous_validation: Optional[bool] = None,
         timeout: Optional[float] = 10.0,
     ) -> Tuple[List[Dict[str, Any]], List[Tuple[BatchRequest, Exception]]]:
         """Submit multiple segmentation requests concurrently.
@@ -182,12 +168,6 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
             :class:`~PermutiveAPI._Utils.http.Progress` snapshot describing the
             batch throughput and latency (including the estimated seconds per
             1,000 requests).
-        activations : bool | None, optional
-            Override for the activations query parameter applied to every
-            request (default: ``None`` to use each instance's value).
-        synchronous_validation : bool | None, optional
-            Override for synchronous validation applied to every request
-            (default: ``None`` to use each instance's value).
         timeout : float | None, optional
             Timeout shared across the dispatched requests (default: ``10.0``).
 
@@ -244,16 +224,11 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         """
         results: List[Dict[str, Any]] = []
         batch_requests: List[BatchRequest] = []
-
+        params = {
+            "activations": str(cls.activations).lower(),
+            "synchronous-validation": str(cls.synchronous_validation).lower(),
+        }
         for request in requests:
-            params = cls._build_params(
-                activations if activations is not None else request.activations,
-                (
-                    synchronous_validation
-                    if synchronous_validation is not None
-                    else request.synchronous_validation
-                ),
-            )
             payload = request.to_json()
 
             def _make_callback(target: "Segmentation") -> Callable[[Response], None]:
@@ -280,13 +255,3 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
             progress_callback=progress_callback,
         )
         return results, errors
-
-    @staticmethod
-    def _build_params(
-        activations: bool, synchronous_validation: bool
-    ) -> Dict[str, str]:
-        """Return query parameters for the segmentation endpoint."""
-        return {
-            "activations": str(activations).lower(),
-            "synchronous-validation": str(synchronous_validation).lower(),
-        }
