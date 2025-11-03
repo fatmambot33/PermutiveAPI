@@ -389,9 +389,9 @@ events = [
     Event(
         name="SlotViewable",
         time="2025-07-01T15:39:11.594Z",
+        properties={"campaign_id": "3747123491"},
         session_id="f19199e4-1654-4869-b740-703fd5bafb6f",
         view_id="d30ccfc5-c621-4ac4-a282-9a30ac864c8a",
-        properties={"campaign_id": "3747123491"},
     )
 ]
 

@@ -31,12 +31,12 @@ class Event(JSONSerializable[Dict[str, Any]]):
         Event name to evaluate.
     time : str
         ISO-8601 timestamp describing when the event occurred.
+    properties : dict[str, Any], optional
+        Arbitrary event properties forwarded to Permutive (default: ``{}``).
     session_id : str | None, optional
         Session identifier associated with the event (default: ``None``).
     view_id : str | None, optional
         View identifier correlating events within the same page view (default: ``None``).
-    properties : dict[str, Any], optional
-        Arbitrary event properties forwarded to Permutive (default: ``{}``).
 
     Methods
     -------
@@ -48,9 +48,9 @@ class Event(JSONSerializable[Dict[str, Any]]):
 
     name: str
     time: str
+    properties: Dict[str, Any] = field(default_factory=dict)
     session_id: Optional[str] = None
     view_id: Optional[str] = None
-    properties: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -83,9 +83,9 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
     >>> event = Event(
     ...     name="SlotViewable",
     ...     time="2025-07-01T15:39:11.594Z",
+    ...     properties={"campaign_id": "3747123491"},
     ...     session_id="f19199e4-1654-4869-b740-703fd5bafb6f",
     ...     view_id="d30ccfc5-c621-4ac4-a282-9a30ac864c8a",
-    ...     properties={"campaign_id": "3747123491"},
     ... )
     >>> request = Segmentation(user_id="user-123", events=[event])
     >>> request.send(api_key="permutive-api-key")  # doctest: +SKIP
