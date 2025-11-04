@@ -72,10 +72,9 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
     -------
     to_json()
         Convert the request into the JSON payload expected by the API.
-    send(api_key, activations=None, synchronous_validation=None, timeout=10.0)
+    send(api_key, timeout=10.0)
         Dispatch the request to the segmentation endpoint and return the API response.
-    batch_send(requests, api_key, max_workers=None, progress_callback=None, activations=None,
-               synchronous_validation=None, timeout=10.0)
+    batch_send(requests, api_key, max_workers=None, progress_callback=None, timeout=10.0)
         Dispatch multiple segmentation requests concurrently using the shared batch runner.
 
     Examples
@@ -216,8 +215,6 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         >>> _responses, _failures = Segmentation.batch_send(
         ...     requests,
         ...     api_key="test-key",
-        ...     activations=True,
-        ...     synchronous_validation=True,
         ...     max_workers=4,
         ...     progress_callback=on_progress,
         ... )  # doctest: +SKIP
