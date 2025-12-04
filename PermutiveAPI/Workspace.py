@@ -34,6 +34,8 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         Retrieve a cached list of imports for the workspace.
     segments()
         Retrieve a cached list of segments for a given import.
+    from_json()
+        Deserialize a workspace from a JSON representation.
     """
 
     name: str

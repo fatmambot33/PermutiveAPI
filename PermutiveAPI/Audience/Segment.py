@@ -73,6 +73,10 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         Retrieve a segment by its ID.
     list(import_id, api_key)
         Retrieve a list of segments for a given import ID.
+    to_json()
+        Convert the segment into a JSON-serialisable dictionary.
+    from_json(data)
+        Create a segment from a JSON dictionary.
     """
 
     code: str

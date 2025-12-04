@@ -19,6 +19,13 @@ class Alias(JSONSerializable[Dict[str, Any]]):
         The tag of the alias.
     priority : int
         The priority of the alias.
+
+    Methods
+    -------
+    to_json()
+        Convert the alias into a JSON-serialisable dictionary.
+    from_json(data)
+        Create an alias from a JSON dictionary.
     """
 
     id: str

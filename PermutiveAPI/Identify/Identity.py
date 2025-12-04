@@ -33,6 +33,10 @@ class Identity(JSONSerializable[Dict[str, Any]]):
         Identify a user in Permutive.
     batch_identify(identities, api_key, max_workers=None, progress_callback=None)
         Identify multiple users concurrently via the shared batch runner.
+    to_json()
+        Convert the identity into a JSON-serialisable dictionary.
+    from_json(data)
+        Create an identity from a JSON dictionary.
     """
 
     _request_helper = http
