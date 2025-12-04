@@ -76,13 +76,13 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
     delete(api_key)
         Delete a cohort from Permutive.
     batch_create(cohorts, api_key, max_workers=None, progress_callback=None)
-        Create multiple cohorts concurrently using the batch runner.
+        Create multiple cohorts concurrently.
     batch_update(cohorts, api_key, max_workers=None, progress_callback=None)
-        Update multiple cohorts concurrently using the batch runner.
+        Update multiple cohorts concurrently.
     batch_delete(cohorts, api_key, max_workers=None, progress_callback=None)
-        Delete multiple cohorts concurrently using the batch runner.
+        Delete multiple cohorts concurrently.
     get_by_id(id, api_key)
-        Fetch a specific cohort from the API using its ID.
+        Fetch a cohort by its ID.
     get_by_name(name, api_key)
         Retrieve a cohort by its name.
     get_by_code(code, api_key)
@@ -632,11 +632,11 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
     Methods
     -------
     from_json(data)
-        Deserialize a list of cohorts from various JSON representations.
+        Deserialize a list of cohorts from a JSON representation.
     id_dictionary()
         Return a dictionary of cohorts indexed by their IDs.
     code_dictionary()
-        Return a dictionary of cohorts indexed by their code.
+        Return a dictionary of cohorts indexed by their codes.
     name_dictionary()
         Return a dictionary of cohorts indexed by their names.
     tag_dictionary()
