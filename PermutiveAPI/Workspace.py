@@ -27,7 +27,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
     Methods
     -------
     is_top_level()
-        Determine if the workspace is the top-level workspace.
+        Determine if the workspace is top-level.
     cohorts()
         Retrieve a cached list of cohorts for the workspace.
     imports()
@@ -210,7 +210,7 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
     Methods
     -------
     from_json()
-        Deserialize a list of workspaces from various JSON representations.
+        Deserialize a list of workspaces from a JSON representation.
     id_dictionary()
         Return a dictionary of workspaces indexed by their IDs.
     name_dictionary()

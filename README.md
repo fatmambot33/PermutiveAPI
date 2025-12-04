@@ -81,20 +81,17 @@ workspace = Workspace(
     api_key="your-api-key",
 )
 
-# List all cohorts in a workspace (includes child workspaces)
+# List cohorts in the workspace (including child workspaces)
 all_cohorts = workspace.cohorts()
-for cohort in all_cohorts:
-    print(f"Cohort ID: {cohort.id}, Name: {cohort.name}")
+print(f"Found {len(all_cohorts)} cohorts.")
 
-# List all imports in a workspace
+# List imports in the workspace
 all_imports = workspace.imports()
-for imp in all_imports:
-    print(f"Import ID: {imp.id}, Name: {imp.name}")
+print(f"Found {len(all_imports)} imports.")
 
 # List segments for a specific import
 segments_in_import = workspace.segments(import_id="your-import-id")
-for segment in segments_in_import:
-    print(f"Segment ID: {segment.id}, Name: {segment.name}")
+print(f"Found {len(segments_in_import)} segments.")
 ```
 
 ### Managing Cohorts
@@ -275,12 +272,12 @@ from PermutiveAPI._Utils.http import Progress
 
 
 def on_progress(progress: Progress) -> None:
+    """Render a concise progress snapshot."""
     avg = progress.average_per_thousand_seconds
     avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
     print(
-        f"{progress.completed}/{progress.total} "
-        f"(errors: {progress.errors}, avg/1000: {avg_display}): "
-        f"{progress.batch_request.method} {progress.batch_request.url}"
+        f"{progress.completed}/{progress.total} completed; "
+        f"errors: {progress.errors}, avg/1k: {avg_display}"
     )
 
 
@@ -297,8 +294,7 @@ responses, failures = Cohort.batch_create(
 )
 
 if failures:
-    for failed_request, error in failures:
-        print("Retry or inspect:", failed_request.url, error)
+    print(f"Encountered {len(failures)} failures.")
 ```
 
 The same callback shape is shared across helpers such as
@@ -374,8 +370,7 @@ segment_responses, segment_failures = Segment.batch_create(
 )
 
 if segment_failures:
-    for failed_request, error in segment_failures:
-        print("Segment creation retry candidate:", failed_request.url, error)
+    print(f"Encountered {len(segment_failures)} failures during segment creation.")
 ```
 
 You can also evaluate multiple users in parallel while reporting progress back
@@ -408,12 +403,7 @@ segmentation_responses, segmentation_failures = Segmentation.batch_send(
 )
 
 if segmentation_failures:
-    for failed_request, error in segmentation_failures:
-        print(
-            "Segmentation retry candidate:",
-            failed_request.url,
-            error,
-        )
+    print(f"Encountered {len(segmentation_failures)} failures during segmentation.")
 ```
 
 ### Error Handling
@@ -440,14 +430,13 @@ except PermutiveBadRequestError as e:
 except PermutiveAPIError as e:
     print("Unhandled API error:", e)
 ```
-```
 
 ## Development
 
-To set up a development environment, install the required dependencies:
+To set up a development environment, install the development dependencies:
 
 ```sh
-pip install -r requirements-dev.txt
+pip install ".[dev]"
 ```
 
 ### Running Tests
