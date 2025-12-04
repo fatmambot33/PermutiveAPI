@@ -67,7 +67,8 @@ class Import(JSONSerializable[Dict[str, Any]]):
         Retrieve a list of all imports.
     batch_get_by_id(ids, api_key, max_workers=None, progress_callback=None)
         Fetch multiple imports concurrently using the shared batch runner.
-
+    from_json(data)
+        Deserialize an import from a JSON representation.
     """
 
     _request_helper = http

@@ -110,3 +110,48 @@ def test_segment_list_pagination_is_sequential(monkeypatch):
     assert isinstance(segments, SegmentList)
     assert [segment.id for segment in segments] == ["1", "2"]
     assert seen_tokens == [None, "cursor-2"]
+
+
+def test_segmentation_send_forwards_query_params(monkeypatch):
+    """Ensure ``send`` forwards query parameters to the helper."""
+    mock_request = Mock()
+    monkeypatch.setattr(Segmentation, "_request_helper", mock_request)
+
+    request = Segmentation(
+        user_id="user-123",
+        events=[],
+        activations=True,
+        synchronous_validation=True,
+    )
+    request.send("test-key")
+
+    mock_request.request.assert_called_once()
+    _args, kwargs = mock_request.request.call_args
+    assert kwargs["params"] == {
+        "activations": "true",
+        "synchronous-validation": "true",
+    }
+
+
+def test_segmentation_batch_send_builds_requests(monkeypatch):
+    """Ensure ``batch_send`` builds the expected ``BatchRequest`` payload."""
+    mock_process_batch = Mock(return_value=([], []))
+    monkeypatch.setattr(
+        "PermutiveAPI.Segmentation.process_batch",
+        mock_process_batch,
+    )
+
+    requests = [
+        Segmentation(user_id="user-1", events=[]),
+        Segmentation(user_id="user-2", events=[], activations=True),
+    ]
+
+    Segmentation.batch_send(requests, api_key="test-key", timeout=5.0)
+
+    mock_process_batch.assert_called_once()
+    batch_requests = mock_process_batch.call_args[0][0]
+    assert len(batch_requests) == 2
+    assert batch_requests[0].timeout == 5.0
+    assert batch_requests[0].params["activations"] == "false"
+    assert batch_requests[1].json["user_id"] == "user-2"
+    assert batch_requests[1].params["activations"] == "true"
