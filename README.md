@@ -1,4 +1,7 @@
 # PermutiveAPI
+[![PyPI version](https://img.shields.io/pypi/v/openai-sdk-helpers.svg)](https://pypi.org/project/openai-sdk-helpers/)
+[![Python versions](https://img.shields.io/pypi/pyversions/openai-sdk-helpers.svg)](https://pypi.org/project/openai-sdk-helpers/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 PermutiveAPI is a Python module to interact with the Permutive API. It provides a set of classes and methods to manage users, imports, cohorts, and workspaces within the Permutive ecosystem.
 
