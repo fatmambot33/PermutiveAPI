@@ -122,8 +122,8 @@ RETRY_INITIAL_DELAY_ENV_VAR = "PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS"
 # Compile regex patterns once for performance optimization
 _REDACTION_PATTERNS = {
     key: (
-        re.compile(rf"({key})=([^\s&]+)", flags=re.IGNORECASE),
-        re.compile(rf'("{key}"\s*:\s*")[^"]+(\")', flags=re.IGNORECASE),
+        re.compile(rf"({re.escape(key)})=([^\s&]+)", flags=re.IGNORECASE),
+        re.compile(rf'("{re.escape(key)}"\s*:\s*")[^"]+(\")', flags=re.IGNORECASE),
     )
     for key in SENSITIVE_QUERY_PARAMS
 }
