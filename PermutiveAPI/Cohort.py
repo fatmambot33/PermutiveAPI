@@ -689,19 +689,22 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
 
     def _refresh_cache(self) -> None:
         """Refresh all caches based on the current state of the list."""
-        self._id_dictionary_cache = {cohort.id: cohort for cohort in self if cohort.id}
-        self._code_dictionary_cache = {
-            str(cohort.code): cohort for cohort in self if cohort.code
-        }
-        self._name_dictionary_cache = {
-            cohort.name: cohort for cohort in self if cohort.name
-        }
-
+        # Initialize all caches
+        self._id_dictionary_cache = {}
+        self._code_dictionary_cache = {}
+        self._name_dictionary_cache = {}
         self._tag_dictionary_cache = defaultdict(list)
         self._workspace_dictionary_cache = defaultdict(list)
         self._segment_type_dictionary_cache = defaultdict(list)
 
+        # Single pass through the list to populate all caches
         for cohort in self:
+            if cohort.id:
+                self._id_dictionary_cache[cohort.id] = cohort
+            if cohort.code:
+                self._code_dictionary_cache[str(cohort.code)] = cohort
+            if cohort.name:
+                self._name_dictionary_cache[cohort.name] = cohort
             if cohort.tags:
                 for tag in cohort.tags:
                     self._tag_dictionary_cache[tag].append(cohort)

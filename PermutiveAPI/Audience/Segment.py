@@ -619,15 +619,19 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
 
     def _refresh_cache(self) -> None:
         """Rebuild all caches based on the current state of the list."""
-        self._id_dictionary_cache = {
-            segment.id: segment for segment in self if segment.id
-        }
-        self._name_dictionary_cache = {
-            segment.name: segment for segment in self if segment.name
-        }
-        self._code_dictionary_cache = {
-            segment.code: segment for segment in self if segment.code
-        }
+        # Initialize all caches
+        self._id_dictionary_cache = {}
+        self._name_dictionary_cache = {}
+        self._code_dictionary_cache = {}
+
+        # Single pass through the list to populate all caches
+        for segment in self:
+            if segment.id:
+                self._id_dictionary_cache[segment.id] = segment
+            if segment.name:
+                self._name_dictionary_cache[segment.name] = segment
+            if segment.code:
+                self._code_dictionary_cache[segment.code] = segment
 
     @property
     def id_dictionary(self) -> Dict[str, Segment]:

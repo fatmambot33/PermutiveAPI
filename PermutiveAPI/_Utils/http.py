@@ -119,6 +119,15 @@ RETRY_MAX_RETRIES_ENV_VAR = "PERMUTIVE_RETRY_MAX_RETRIES"
 RETRY_BACKOFF_FACTOR_ENV_VAR = "PERMUTIVE_RETRY_BACKOFF_FACTOR"
 RETRY_INITIAL_DELAY_ENV_VAR = "PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS"
 
+# Compile regex patterns once for performance optimization
+_REDACTION_PATTERNS = {
+    key: (
+        re.compile(rf"({key})=([^\s&]+)", flags=re.IGNORECASE),
+        re.compile(rf'("{key}"\s*:\s*")[^"]+(\")', flags=re.IGNORECASE),
+    )
+    for key in SENSITIVE_QUERY_PARAMS
+}
+
 
 def _normalise_env_value(name: str) -> Optional[str]:
     """Return a stripped environment variable value or ``None`` if unset/empty."""
@@ -698,15 +707,9 @@ def redact_message(message: str) -> str:
         The message with sensitive tokens redacted.
     """
     for key in SENSITIVE_QUERY_PARAMS:
-        message = re.sub(
-            rf"({key})=([^\s&]+)", rf"\1=[REDACTED]", message, flags=re.IGNORECASE
-        )
-        message = re.sub(
-            rf'("{key}"\s*:\s*")[^"]+(\")',
-            rf"\1[REDACTED]\2",
-            message,
-            flags=re.IGNORECASE,
-        )
+        param_pattern, json_pattern = _REDACTION_PATTERNS[key]
+        message = param_pattern.sub(rf"\1=[REDACTED]", message)
+        message = json_pattern.sub(rf"\1[REDACTED]\2", message)
     return message
 
 
@@ -747,15 +750,9 @@ def _redact_sensitive_data(message: str, response: Response) -> str:
                     if secret:
                         message = message.replace(secret, "[REDACTED]")
     for key in SENSITIVE_QUERY_PARAMS:
-        message = re.sub(
-            rf"({key})=([^\s&]+)", rf"\1=[REDACTED]", message, flags=re.IGNORECASE
-        )
-        message = re.sub(
-            rf'("{key}"\s*:\s*")[^"]+(\")',
-            rf"\1[REDACTED]\2",
-            message,
-            flags=re.IGNORECASE,
-        )
+        param_pattern, json_pattern = _REDACTION_PATTERNS[key]
+        message = param_pattern.sub(rf"\1=[REDACTED]", message)
+        message = json_pattern.sub(rf"\1[REDACTED]\2", message)
     return message
 
 
@@ -806,7 +803,7 @@ def raise_for_status(e: Exception, response: Optional[Response]) -> None:
                 full_msg, status=status, url=redacted_url, response=response
             ) from e
 
-        if status == 401 or status == 403:
+        if status in (401, 403):
             raise PermutiveAuthenticationError(
                 f"{status}: Invalid API key or insufficient permissions.",
                 status=status,
