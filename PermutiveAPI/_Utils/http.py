@@ -455,13 +455,13 @@ def request(
         "PATCH": requests.patch,
         "DELETE": requests.delete,
     }
-    m = session_method_map.get(method.upper())
-    if m is None:
+    request_method = session_method_map.get(method.upper())
+    if request_method is None:
         raise ValueError(f"Unsupported HTTP method: {method}")
 
-    hdrs = dict(DEFAULT_HEADERS)
+    merged_headers = dict(DEFAULT_HEADERS)
     if headers:
-        hdrs.update(headers)
+        merged_headers.update(headers)
 
     kwargs: Dict[str, Any] = {}
     if params:
@@ -471,7 +471,9 @@ def request(
     if timeout is not None:
         kwargs["timeout"] = timeout
 
-    return _with_retry(m, url, api_key, headers=hdrs, retry=retry, **kwargs)
+    return _with_retry(
+        request_method, url, api_key, headers=merged_headers, retry=retry, **kwargs
+    )
 
 
 def to_payload(
@@ -546,10 +548,10 @@ def _with_retry(
                     RequestException(f"HTTP {response.status_code}"), response
                 )
 
-        except RequestException as e:
-            last_exception = e
+        except RequestException as exc:
+            last_exception = exc
             if attempt >= resolved_retry.max_retries - 1:
-                redacted_error = redact_message(str(e))
+                redacted_error = redact_message(str(exc))
                 logging.error(
                     "Request failed after %s attempts: %s",
                     attempt + 1,
@@ -558,11 +560,13 @@ def _with_retry(
                 if response is not None:
                     try:
                         raise_for_status(RequestException(redacted_error), response)
-                    except PermutiveAPIError as exc:  # pragma: no cover - defensive
-                        raise exc from e
+                    except (
+                        PermutiveAPIError
+                    ) as api_error:  # pragma: no cover - defensive
+                        raise api_error from exc
                 raise PermutiveAPIError(
                     f"Request failed after {attempt+1} attempts: {redacted_error}"
-                ) from e
+                ) from exc
             time.sleep(delay)
             delay *= resolved_retry.backoff_factor
 
@@ -578,8 +582,8 @@ def _with_retry(
     if response is not None:
         try:
             raise_for_status(RequestException(redacted_message), response)
-        except PermutiveAPIError as exc:  # pragma: no cover - defensive
-            raise exc from final_exception
+        except PermutiveAPIError as api_error:  # pragma: no cover - defensive
+            raise api_error from final_exception
 
     logging.error(
         "Request failed after %s attempts: %s",

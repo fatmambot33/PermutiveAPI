@@ -157,16 +157,15 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         )
         if response is None:
             raise ValueError("Response is None")
+
         cohort = Cohort.from_json(response.json())
-        if isinstance(cohort, Cohort):
-            self.id = cohort.id
-            self.code = cohort.code
-            self.created_at = cohort.created_at
-            self.last_updated_at = cohort.last_updated_at
-            self.workspace_id = cohort.workspace_id
-            self.request_id = cohort.request_id
-        else:
-            raise ValueError("Unable to create cohort")
+        # Update instance with response data
+        self.id = cohort.id
+        self.code = cohort.code
+        self.created_at = cohort.created_at
+        self.last_updated_at = cohort.last_updated_at
+        self.workspace_id = cohort.workspace_id
+        self.request_id = cohort.request_id
 
     def update(self, api_key: str) -> None:
         """Update an existing cohort in Permutive.
@@ -299,8 +298,13 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             def _make_callback(target: "Cohort") -> Callable[[Response], None]:
                 def _callback(response: Response) -> None:
                     created = cls.from_json(response.json())
-                    if isinstance(created, cls):
-                        target.__dict__.update(created.__dict__)
+                    # Update target instance with response data
+                    target.id = created.id
+                    target.code = created.code
+                    target.created_at = created.created_at
+                    target.last_updated_at = created.last_updated_at
+                    target.workspace_id = created.workspace_id
+                    target.request_id = created.request_id
 
                 return _callback
 
@@ -399,8 +403,9 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             def _make_callback(target: "Cohort") -> Callable[[Response], None]:
                 def _callback(response: Response) -> None:
                     updated = cls.from_json(response.json())
-                    if isinstance(updated, cls):
-                        target.__dict__.update(updated.__dict__)
+                    # Update target instance with response data
+                    target.last_updated_at = updated.last_updated_at
+                    target.request_id = updated.request_id
 
                 return _callback
 
