@@ -12,6 +12,7 @@ from PermutiveAPI.Identify.Identity import Identity
 from PermutiveAPI.Identify.Alias import Alias
 from PermutiveAPI.Cohort import Cohort, CohortList
 from PermutiveAPI.Workspace import Workspace, WorkspaceList
+from PermutiveAPI.Segmentation import Event, Segmentation
 from PermutiveAPI._Utils.http import (
     PermutiveAPIError,
     PermutiveAuthenticationError,
@@ -34,6 +35,8 @@ __all__ = [
     "WorkspaceList",
     "Identity",
     "Alias",
+    "Event",
+    "Segmentation",
     "PermutiveAPIError",
     "PermutiveAuthenticationError",
     "PermutiveBadRequestError",
