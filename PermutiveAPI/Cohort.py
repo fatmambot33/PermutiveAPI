@@ -157,16 +157,15 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         )
         if response is None:
             raise ValueError("Response is None")
+
         cohort = Cohort.from_json(response.json())
-        if isinstance(cohort, Cohort):
-            self.id = cohort.id
-            self.code = cohort.code
-            self.created_at = cohort.created_at
-            self.last_updated_at = cohort.last_updated_at
-            self.workspace_id = cohort.workspace_id
-            self.request_id = cohort.request_id
-        else:
-            raise ValueError("Unable to create cohort")
+        # Update instance with response data
+        self.id = cohort.id
+        self.code = cohort.code
+        self.created_at = cohort.created_at
+        self.last_updated_at = cohort.last_updated_at
+        self.workspace_id = cohort.workspace_id
+        self.request_id = cohort.request_id
 
     def update(self, api_key: str) -> None:
         """Update an existing cohort in Permutive.
@@ -299,8 +298,13 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             def _make_callback(target: "Cohort") -> Callable[[Response], None]:
                 def _callback(response: Response) -> None:
                     created = cls.from_json(response.json())
-                    if isinstance(created, cls):
-                        target.__dict__.update(created.__dict__)
+                    # Update target instance with response data
+                    target.id = created.id
+                    target.code = created.code
+                    target.created_at = created.created_at
+                    target.last_updated_at = created.last_updated_at
+                    target.workspace_id = created.workspace_id
+                    target.request_id = created.request_id
 
                 return _callback
 
@@ -399,8 +403,9 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             def _make_callback(target: "Cohort") -> Callable[[Response], None]:
                 def _callback(response: Response) -> None:
                     updated = cls.from_json(response.json())
-                    if isinstance(updated, cls):
-                        target.__dict__.update(updated.__dict__)
+                    # Update target instance with response data
+                    target.last_updated_at = updated.last_updated_at
+                    target.request_id = updated.request_id
 
                 return _callback
 
@@ -689,19 +694,22 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
 
     def _refresh_cache(self) -> None:
         """Refresh all caches based on the current state of the list."""
-        self._id_dictionary_cache = {cohort.id: cohort for cohort in self if cohort.id}
-        self._code_dictionary_cache = {
-            str(cohort.code): cohort for cohort in self if cohort.code
-        }
-        self._name_dictionary_cache = {
-            cohort.name: cohort for cohort in self if cohort.name
-        }
-
+        # Initialize all caches
+        self._id_dictionary_cache = {}
+        self._code_dictionary_cache = {}
+        self._name_dictionary_cache = {}
         self._tag_dictionary_cache = defaultdict(list)
         self._workspace_dictionary_cache = defaultdict(list)
         self._segment_type_dictionary_cache = defaultdict(list)
 
+        # Single pass through the list to populate all caches
         for cohort in self:
+            if cohort.id:
+                self._id_dictionary_cache[cohort.id] = cohort
+            if cohort.code:
+                self._code_dictionary_cache[str(cohort.code)] = cohort
+            if cohort.name:
+                self._name_dictionary_cache[cohort.name] = cohort
             if cohort.tags:
                 for tag in cohort.tags:
                     self._tag_dictionary_cache[tag].append(cohort)

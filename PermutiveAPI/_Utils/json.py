@@ -164,7 +164,7 @@ def json_default(value: Any):
         return value.value
     elif isinstance(value, (float, Decimal)):
         return float(value)
-    elif isinstance(value, (int)):
+    elif isinstance(value, int):
         return int(value)
     elif isinstance(value, uuid.UUID):
         return str(value)

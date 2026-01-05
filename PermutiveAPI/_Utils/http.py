@@ -119,6 +119,15 @@ RETRY_MAX_RETRIES_ENV_VAR = "PERMUTIVE_RETRY_MAX_RETRIES"
 RETRY_BACKOFF_FACTOR_ENV_VAR = "PERMUTIVE_RETRY_BACKOFF_FACTOR"
 RETRY_INITIAL_DELAY_ENV_VAR = "PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS"
 
+# Compile regex patterns once for performance optimization
+_REDACTION_PATTERNS = {
+    key: (
+        re.compile(rf"({re.escape(key)})=([^\s&]+)", flags=re.IGNORECASE),
+        re.compile(rf'("{re.escape(key)}"\s*:\s*")[^"]+(\")', flags=re.IGNORECASE),
+    )
+    for key in SENSITIVE_QUERY_PARAMS
+}
+
 
 def _normalise_env_value(name: str) -> Optional[str]:
     """Return a stripped environment variable value or ``None`` if unset/empty."""
@@ -446,13 +455,13 @@ def request(
         "PATCH": requests.patch,
         "DELETE": requests.delete,
     }
-    m = session_method_map.get(method.upper())
-    if m is None:
+    request_method = session_method_map.get(method.upper())
+    if request_method is None:
         raise ValueError(f"Unsupported HTTP method: {method}")
 
-    hdrs = dict(DEFAULT_HEADERS)
+    merged_headers = dict(DEFAULT_HEADERS)
     if headers:
-        hdrs.update(headers)
+        merged_headers.update(headers)
 
     kwargs: Dict[str, Any] = {}
     if params:
@@ -462,7 +471,9 @@ def request(
     if timeout is not None:
         kwargs["timeout"] = timeout
 
-    return _with_retry(m, url, api_key, headers=hdrs, retry=retry, **kwargs)
+    return _with_retry(
+        request_method, url, api_key, headers=merged_headers, retry=retry, **kwargs
+    )
 
 
 def to_payload(
@@ -537,10 +548,10 @@ def _with_retry(
                     RequestException(f"HTTP {response.status_code}"), response
                 )
 
-        except RequestException as e:
-            last_exception = e
+        except RequestException as exc:
+            last_exception = exc
             if attempt >= resolved_retry.max_retries - 1:
-                redacted_error = redact_message(str(e))
+                redacted_error = redact_message(str(exc))
                 logging.error(
                     "Request failed after %s attempts: %s",
                     attempt + 1,
@@ -549,11 +560,13 @@ def _with_retry(
                 if response is not None:
                     try:
                         raise_for_status(RequestException(redacted_error), response)
-                    except PermutiveAPIError as exc:  # pragma: no cover - defensive
-                        raise exc from e
+                    except (
+                        PermutiveAPIError
+                    ) as api_error:  # pragma: no cover - defensive
+                        raise api_error from exc
                 raise PermutiveAPIError(
                     f"Request failed after {attempt+1} attempts: {redacted_error}"
-                ) from e
+                ) from exc
             time.sleep(delay)
             delay *= resolved_retry.backoff_factor
 
@@ -569,8 +582,8 @@ def _with_retry(
     if response is not None:
         try:
             raise_for_status(RequestException(redacted_message), response)
-        except PermutiveAPIError as exc:  # pragma: no cover - defensive
-            raise exc from final_exception
+        except PermutiveAPIError as api_error:  # pragma: no cover - defensive
+            raise api_error from final_exception
 
     logging.error(
         "Request failed after %s attempts: %s",
@@ -698,15 +711,9 @@ def redact_message(message: str) -> str:
         The message with sensitive tokens redacted.
     """
     for key in SENSITIVE_QUERY_PARAMS:
-        message = re.sub(
-            rf"({key})=([^\s&]+)", rf"\1=[REDACTED]", message, flags=re.IGNORECASE
-        )
-        message = re.sub(
-            rf'("{key}"\s*:\s*")[^"]+(\")',
-            rf"\1[REDACTED]\2",
-            message,
-            flags=re.IGNORECASE,
-        )
+        param_pattern, json_pattern = _REDACTION_PATTERNS[key]
+        message = param_pattern.sub(rf"\1=[REDACTED]", message)
+        message = json_pattern.sub(rf"\1[REDACTED]\2", message)
     return message
 
 
@@ -747,15 +754,9 @@ def _redact_sensitive_data(message: str, response: Response) -> str:
                     if secret:
                         message = message.replace(secret, "[REDACTED]")
     for key in SENSITIVE_QUERY_PARAMS:
-        message = re.sub(
-            rf"({key})=([^\s&]+)", rf"\1=[REDACTED]", message, flags=re.IGNORECASE
-        )
-        message = re.sub(
-            rf'("{key}"\s*:\s*")[^"]+(\")',
-            rf"\1[REDACTED]\2",
-            message,
-            flags=re.IGNORECASE,
-        )
+        param_pattern, json_pattern = _REDACTION_PATTERNS[key]
+        message = param_pattern.sub(rf"\1=[REDACTED]", message)
+        message = json_pattern.sub(rf"\1[REDACTED]\2", message)
     return message
 
 
@@ -806,7 +807,7 @@ def raise_for_status(e: Exception, response: Optional[Response]) -> None:
                 full_msg, status=status, url=redacted_url, response=response
             ) from e
 
-        if status == 401 or status == 403:
+        if status in (401, 403):
             raise PermutiveAuthenticationError(
                 f"{status}: Invalid API key or insufficient permissions.",
                 status=status,

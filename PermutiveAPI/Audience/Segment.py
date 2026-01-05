@@ -128,8 +128,15 @@ class Segment(JSONSerializable[Dict[str, Any]]):
             raise ValueError("Unable to create_segment")
 
         new_segment = Segment.from_json(response.json())
-        if isinstance(new_segment, Segment):
-            self.__dict__.update(new_segment.__dict__)
+        # Update instance with response data
+        self.id = new_segment.id
+        self.code = new_segment.code
+        self.name = new_segment.name
+        self.description = new_segment.description
+        self.cpm = new_segment.cpm
+        self.categories = new_segment.categories
+        self.created_at = new_segment.created_at
+        self.updated_at = new_segment.updated_at
 
     def update(self, api_key: str) -> None:
         """Update the segment using the provided API key.
@@ -155,8 +162,12 @@ class Segment(JSONSerializable[Dict[str, Any]]):
             raise ValueError("Unable to update_segment")
 
         updated_segment = Segment.from_json(response.json())
-        if isinstance(updated_segment, Segment):
-            self.__dict__.update(updated_segment.__dict__)
+        # Update instance with response data
+        self.name = updated_segment.name
+        self.description = updated_segment.description
+        self.cpm = updated_segment.cpm
+        self.categories = updated_segment.categories
+        self.updated_at = updated_segment.updated_at
 
     def delete(self, api_key: str) -> None:
         """Delete a segment using the provided API key.
@@ -253,8 +264,15 @@ class Segment(JSONSerializable[Dict[str, Any]]):
             def _make_callback(target: "Segment") -> Callable[[Response], None]:
                 def _callback(response: Response) -> None:
                     created = cls.from_json(response.json())
-                    if isinstance(created, cls):
-                        target.__dict__.update(created.__dict__)
+                    # Update target instance with response data
+                    target.id = created.id
+                    target.code = created.code
+                    target.name = created.name
+                    target.description = created.description
+                    target.cpm = created.cpm
+                    target.categories = created.categories
+                    target.created_at = created.created_at
+                    target.updated_at = created.updated_at
 
                 return _callback
 
@@ -353,8 +371,12 @@ class Segment(JSONSerializable[Dict[str, Any]]):
             def _make_callback(target: "Segment") -> Callable[[Response], None]:
                 def _callback(response: Response) -> None:
                     updated = cls.from_json(response.json())
-                    if isinstance(updated, cls):
-                        target.__dict__.update(updated.__dict__)
+                    # Update target instance with response data
+                    target.name = updated.name
+                    target.description = updated.description
+                    target.cpm = updated.cpm
+                    target.categories = updated.categories
+                    target.updated_at = updated.updated_at
 
                 return _callback
 
@@ -619,15 +641,19 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
 
     def _refresh_cache(self) -> None:
         """Rebuild all caches based on the current state of the list."""
-        self._id_dictionary_cache = {
-            segment.id: segment for segment in self if segment.id
-        }
-        self._name_dictionary_cache = {
-            segment.name: segment for segment in self if segment.name
-        }
-        self._code_dictionary_cache = {
-            segment.code: segment for segment in self if segment.code
-        }
+        # Initialize all caches
+        self._id_dictionary_cache = {}
+        self._name_dictionary_cache = {}
+        self._code_dictionary_cache = {}
+
+        # Single pass through the list to populate all caches
+        for segment in self:
+            if segment.id:
+                self._id_dictionary_cache[segment.id] = segment
+            if segment.name:
+                self._name_dictionary_cache[segment.name] = segment
+            if segment.code:
+                self._code_dictionary_cache[segment.code] = segment
 
     @property
     def id_dictionary(self) -> Dict[str, Segment]:

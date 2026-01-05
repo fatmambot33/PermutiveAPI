@@ -221,12 +221,13 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         """
         results: List[Dict[str, Any]] = []
         batch_requests: List[BatchRequest] = []
-        params = {
-            "activations": str(cls.activations).lower(),
-            "synchronous-validation": str(cls.synchronous_validation).lower(),
-        }
+
         for request in requests:
             payload = request.to_json()
+            params = {
+                "activations": str(request.activations).lower(),
+                "synchronous-validation": str(request.synchronous_validation).lower(),
+            }
 
             def _make_callback(target: "Segmentation") -> Callable[[Response], None]:
                 def _callback(response: Response) -> None:
