@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 [project]
 name = "PermutiveAPI"
-version = "v5.4.4"
+version = "v5.4.5"
 description = "A Python wrapper for the Permutive API."
 readme = "README.md"
 authors = [{ name = "fatmambo33", email = "fatmambo33@gmail.com" }]

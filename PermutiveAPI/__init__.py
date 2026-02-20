@@ -23,7 +23,6 @@ from PermutiveAPI._Utils.http import (
     PermutiveServerError,
 )
 
-
 __all__ = [
     "Cohort",
     "CohortList",
