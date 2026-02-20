@@ -17,6 +17,7 @@ PermutiveAPI is a Python module to interact with the Permutive API. It provides 
 - [Managing Imports](#managing-imports)
 - [Managing Users](#managing-users)
 - [Evaluating Segmentation](#evaluating-segmentation)
+- [Evaluating Context Segmentation](#evaluating-context-segmentation)
 - [Working with pandas DataFrames](#working-with-pandas-dataframes)
 - [Batch Helpers and Progress Callbacks](#batch-helpers-and-progress-callbacks)
 - [Error Handling](#error-handling)
@@ -68,6 +69,7 @@ from PermutiveAPI import (
     Segment,
     Source,
     Workspace,
+    ContextSegment,
 )
 ```
 
@@ -231,6 +233,36 @@ For high-volume workloads, use `Segmentation.batch_send` to process multiple
 requests concurrently. The helper integrates with the shared batch runner
 described in the next section so you can surface throughput metrics via
 `progress_callback` while respecting rate limits.
+
+
+### Evaluating Context Segmentation
+
+Use the `ContextSegment` helper to call the Context API endpoint
+(`https://api.permutive.com/ctx/v1/segment`) with a page URL and page
+properties payload.
+
+```python
+from PermutiveAPI import ContextSegment
+
+request = ContextSegment(
+    url="https://example.com/article/sports-news",
+    page_properties={
+        "client": {
+            "url": "https://example.com/article/sports-news",
+            "domain": "example.com",
+            "referrer": "https://example.com",
+            "type": "web",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "title": "Latest Sports News",
+        },
+        "category": "sports",
+        "tags": ["football", "premier-league"],
+    },
+)
+
+response = request.send(api_key="your-api-key")
+print(response["segments"])
+```
 
 ### Working with pandas DataFrames
 
