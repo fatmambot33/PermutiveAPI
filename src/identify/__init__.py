@@ -5,4 +5,5 @@ _API_ENDPOINT = f"https://api.permutive.com/{_API_VERSION}/identify"
 
 from .alias import Alias
 from .identify import Identity
-__all__=["Alias","Identity"]
+
+__all__ = ["Alias", "Identity"]
