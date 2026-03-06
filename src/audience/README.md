@@ -4,9 +4,9 @@ This package contains modules for managing audience-related resources in the Per
 
 ## Modules
 
--   **`Import.py`**: Provides the `Import` and `ImportList` classes for managing data imports. Imports are used to bring external data into Permutive.
--   **`Segment.py`**: Provides the `Segment` and `SegmentList` classes for managing audience segments. Segments are often created based on data from an `Import`.
--   **`Source.py`**: Provides the `Source` class, which represents the source of an `Import` (e.g., a specific file or data stream).
+-   **`import.py`**: Provides the `Import` and `ImportList` classes for managing data imports. Imports are used to bring external data into Permutive.
+-   **`segment.py`**: Provides the `Segment` and `SegmentList` classes for managing audience segments. Segments are often created based on data from an `Import`.
+-   **`source.py`**: Provides the `Source` class, which represents the source of an `Import` (e.g., a specific file or data stream).
 
 ## Usage Example
 
