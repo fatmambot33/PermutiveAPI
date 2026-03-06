@@ -5,12 +5,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from PermutiveAPI.Segmentation import Event, Segmentation
 from PermutiveAPI.Audience.Segment import Segment, SegmentList
+from PermutiveAPI.Identify.Alias import Alias
+from PermutiveAPI.Segmentation import Event, Segmentation
 
 
-def test_segmentation_to_json():
-    """Verify that the to_json method produces the correct payload."""
+def test_segmentation_to_json_with_user_id():
+    """Verify that user_id payload serialization matches API expectations."""
     event = Event(
         name="SlotViewable",
         time="2025-07-01T15:39:11.594Z",
@@ -34,6 +35,53 @@ def test_segmentation_to_json():
     }
 
     assert request.to_json() == expected_payload
+
+
+def test_segmentation_to_json_with_single_alias():
+    """Verify that a single alias is serialized in segmentation payloads."""
+    event = Event(name="SlotViewable", time="2025-07-01T15:39:11.594Z")
+
+    request = Segmentation(
+        alias=Alias(id="user@example.com", tag="email", priority=1),
+        events=[event],
+    )
+
+    assert request.to_json()["alias"] == {
+        "id": "user@example.com",
+        "tag": "email",
+        "priority": 1,
+    }
+
+
+def test_segmentation_to_json_with_prioritized_aliases():
+    """Verify that prioritized aliases are serialized in segmentation payloads."""
+    event = Event(name="SlotViewable", time="2025-07-01T15:39:11.594Z")
+
+    request = Segmentation(
+        aliases=[Alias(id="crm-123", tag="crm", priority=1)],
+        events=[event],
+    )
+
+    assert request.to_json()["aliases"] == [
+        {"id": "crm-123", "tag": "crm", "priority": 1}
+    ]
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"events": [Event(name="SlotViewable", time="2025-07-01T15:39:11.594Z")]},
+        {
+            "user_id": "user-123",
+            "alias": Alias(id="user@example.com", tag="email", priority=1),
+            "events": [Event(name="SlotViewable", time="2025-07-01T15:39:11.594Z")],
+        },
+    ],
+)
+def test_segmentation_requires_exactly_one_identifier(kwargs):
+    """Ensure segmentation requests enforce one identification strategy."""
+    with pytest.raises(ValueError, match="Provide exactly one"):
+        Segmentation(**kwargs)
 
 
 def test_segment_list_to_pd_dataframe():
