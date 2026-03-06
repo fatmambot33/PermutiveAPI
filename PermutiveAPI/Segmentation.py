@@ -12,13 +12,14 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from requests import Response
 
+from PermutiveAPI.Identify.Alias import Alias
 from PermutiveAPI._Utils import http
 from PermutiveAPI._Utils.http import BatchRequest, Progress, process_batch
 from PermutiveAPI._Utils.json import JSONSerializable
 
 _API_VERSION = "v1"
 _API_ENDPOINT = f"https://api.permutive.app/ccs/{_API_VERSION}/segmentation"
-_API_PAYLOAD = ["events", "user_id"]
+_API_PAYLOAD = ["events", "user_id", "alias", "aliases"]
 
 
 @dataclass
@@ -61,8 +62,12 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
     ----------
     events : list[Event]
         Collection of events that describe the interaction history.
-    user_id : str
-        The user identifier to evaluate against configured segments.
+    user_id : str | None, optional
+        The Permutive user identifier to evaluate (default: ``None``).
+    alias : Alias | None, optional
+        A single alias used to identify the user (default: ``None``).
+    aliases : list[Alias] | None, optional
+        A prioritised list of aliases used to identify the user (default: ``None``).
     activations : bool, optional
         Whether to request activation results in the response (default: ``False``).
     synchronous_validation : bool, optional
@@ -76,27 +81,35 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         Dispatch the request to the segmentation endpoint and return the API response.
     batch_send(requests, api_key, max_workers=None, progress_callback=None, timeout=10.0)
         Dispatch multiple segmentation requests concurrently using the shared batch runner.
-
-    Examples
-    --------
-    >>> event = Event(
-    ...     name="SlotViewable",
-    ...     time="2025-07-01T15:39:11.594Z",
-    ...     properties={"campaign_id": "3747123491"},
-    ...     session_id="f19199e4-1654-4869-b740-703fd5bafb6f",
-    ...     view_id="d30ccfc5-c621-4ac4-a282-9a30ac864c8a",
-    ... )
-    >>> request = Segmentation(user_id="user-123", events=[event])
-    >>> request.send(api_key="permutive-api-key")  # doctest: +SKIP
-    {"segments": []}
     """
 
     _request_helper = http
 
     events: List[Event]
-    user_id: str
+    user_id: Optional[str] = None
+    alias: Optional[Alias] = None
+    aliases: Optional[List[Alias]] = None
     activations: bool = False
     synchronous_validation: bool = False
+
+    def __post_init__(self) -> None:
+        """Validate that exactly one user-identification field is provided.
+
+        Raises
+        ------
+        ValueError
+            Raised when none or more than one identifier fields are set.
+        """
+        provided_identifiers = [
+            self.user_id is not None,
+            self.alias is not None,
+            self.aliases is not None,
+        ]
+
+        if sum(provided_identifiers) != 1:
+            raise ValueError(
+                "Provide exactly one of user_id, alias, or aliases for segmentation."
+            )
 
     def to_json(self) -> Dict[str, Any]:
         """Return the JSON payload accepted by the segmentation API."""
@@ -177,47 +190,6 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         list[tuple[BatchRequest, Exception]]
             Requests that raised exceptions alongside their originating
             descriptors.
-
-        Notes
-        -----
-        This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
-
-        Examples
-        --------
-        >>> events = [
-        ...     Event(
-        ...         name="SlotViewable",
-        ...         time="2025-07-01T15:39:11.594Z",
-        ...         session_id="session-1",
-        ...         view_id="view-1",
-        ...         properties={"campaign_id": "3747123491"},
-        ...     )
-        ... ]
-        >>> requests = [
-        ...     Segmentation(user_id="user-1", events=events),
-        ...     Segmentation(user_id="user-2", events=events),
-        ... ]
-        >>> responses, failures = Segmentation.batch_send(
-        ...     requests,
-        ...     api_key="test-key",
-        ... )  # doctest: +SKIP
-        >>> len(responses)  # doctest: +SKIP
-        2
-        >>> failures  # doctest: +SKIP
-        []
-        >>> def on_progress(progress):
-        ...     avg = progress.average_per_thousand_seconds
-        ...     avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
-        ...     print(
-        ...         f"{progress.completed}/{progress.total} (errors: {progress.errors}) "
-        ...         f"avg/1000: {avg_display}"
-        ...     )
-        >>> _responses, _failures = Segmentation.batch_send(
-        ...     requests,
-        ...     api_key="test-key",
-        ...     max_workers=4,
-        ...     progress_callback=on_progress,
-        ... )  # doctest: +SKIP
         """
         results: List[Dict[str, Any]] = []
         batch_requests: List[BatchRequest] = []

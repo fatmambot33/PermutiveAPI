@@ -182,7 +182,7 @@ describing each event with the `Event` dataclass and then submit the request wit
 the `Segmentation` helper.
 
 ```python
-from PermutiveAPI import Event, Segmentation
+from PermutiveAPI import Alias, Event, Segmentation
 
 
 event = Event(
@@ -191,7 +191,10 @@ event = Event(
     properties={"campaign_id": "3747123491"},
 )
 
-request = Segmentation(user_id="user-123", events=[event])
+request = Segmentation(
+    alias=Alias(id="user@example.com", tag="email", priority=1),
+    events=[event],
+)
 
 # Submit the request to retrieve segment membership
 response = request.send(api_key="your-api-key")
@@ -412,7 +415,7 @@ You can also evaluate multiple users in parallel while reporting progress back
 to an observability system:
 
 ```python
-from PermutiveAPI import Event, Segmentation
+from PermutiveAPI import Alias, Event, Segmentation
 
 
 events = [
