@@ -21,9 +21,9 @@ from typing import (
 from requests import Response
 import pandas as pd
 
-from PermutiveAPI._Utils import http
-from PermutiveAPI._Utils.http import BatchRequest, Progress, process_batch
-from PermutiveAPI._Utils.json import JSONSerializable, load_json_list
+from .utils import http
+from .utils.http import BatchRequest, Progress, process_batch
+from .utils.json import JSONSerializable, load_json_list
 
 _API_VERSION = "v2"
 _API_ENDPOINT = f"https://api.permutive.app/cohorts-api/{_API_VERSION}/cohorts/"

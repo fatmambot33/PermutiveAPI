@@ -4,8 +4,8 @@ from typing import Callable, Dict, List, Optional, Type, Union, Any
 from dataclasses import dataclass
 from pathlib import Path
 from .utils.json import JSONSerializable, load_json_list
-from PermutiveAPI.Audience.Import import Import, ImportList
-from PermutiveAPI.Audience.Segment import Segment, SegmentList
+from .audience.imports import Import, ImportList
+from .audience.segment import Segment, SegmentList
 from .cohort import Cohort, CohortList
 
 
