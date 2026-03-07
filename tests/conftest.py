@@ -9,8 +9,8 @@ from typing import List
 
 import pytest
 
-# Ensure the package root is on the Python path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+# Ensure the src directory is on the Python path for src layout
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def fake_thread_pool(monkeypatch: pytest.MonkeyPatch) -> List[object]:
             return False
 
     monkeypatch.setattr(
-        "PermutiveAPI._Utils.http.ThreadPoolExecutor", FakeThreadPoolExecutor
+        "PermutiveAPI.utils.http.ThreadPoolExecutor", FakeThreadPoolExecutor
     )
 
     return created_executors

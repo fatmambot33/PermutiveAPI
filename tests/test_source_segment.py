@@ -2,9 +2,9 @@ import json
 import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime, timezone
-from PermutiveAPI.Audience.Source import Source
-from PermutiveAPI.Audience.Segment import Segment, SegmentList
-from PermutiveAPI.Audience import _API_ENDPOINT
+from PermutiveAPI.audience.source import Source
+from PermutiveAPI.audience.segment import Segment, SegmentList
+from PermutiveAPI.audience import _API_ENDPOINT
 
 
 def test_source_serialization():

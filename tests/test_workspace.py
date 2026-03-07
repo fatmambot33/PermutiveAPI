@@ -1,9 +1,9 @@
 import json
 import pytest
-from PermutiveAPI.Workspace import Workspace, WorkspaceList
-from PermutiveAPI.Cohort import Cohort, CohortList
-from PermutiveAPI.Audience.Import import Import, ImportList
-from PermutiveAPI.Audience.Segment import Segment, SegmentList
+from PermutiveAPI.workspace import Workspace, WorkspaceList
+from PermutiveAPI.cohort import Cohort, CohortList
+from PermutiveAPI.audience.imports import Import, ImportList
+from PermutiveAPI.audience.segment import Segment, SegmentList
 
 
 def test_workspace_serialization_and_properties():

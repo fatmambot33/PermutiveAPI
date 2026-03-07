@@ -4,8 +4,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from PermutiveAPI.Audience.Import import Import, ImportList
-from PermutiveAPI.Audience.Source import Source
+from PermutiveAPI.audience.imports import Import, ImportList
+from PermutiveAPI.audience.source import Source
 
 
 def test_import_list_from_json_and_caches(tmp_path):

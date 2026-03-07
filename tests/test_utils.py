@@ -13,7 +13,7 @@ import time
 from typing import Any, Callable, Dict, List, Tuple
 
 import pytest
-from PermutiveAPI._Utils.http import (
+from PermutiveAPI.utils.http import (
     BatchRequest,
     PermutiveAPIError,
     PermutiveAuthenticationError,
@@ -29,13 +29,13 @@ from requests.exceptions import RequestException
 from requests.models import PreparedRequest, Response
 from requests.structures import CaseInsensitiveDict
 
-from PermutiveAPI._Utils import http
-from PermutiveAPI._Utils.json import (
+from PermutiveAPI.utils import http
+from PermutiveAPI.utils.json import (
     JSONSerializable,
     json_default,
 )
-from PermutiveAPI._Utils.file import check_filepath, split_filepath
-from PermutiveAPI._Utils.list import (
+from PermutiveAPI.utils.file import check_filepath, split_filepath
+from PermutiveAPI.utils.list import (
     chunk_list,
     convert_list,
     compare_list,

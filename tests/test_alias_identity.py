@@ -3,8 +3,8 @@ from requests.exceptions import RequestException
 from typing import cast, Dict, Any
 from unittest.mock import Mock, patch
 
-from PermutiveAPI.Identify.Alias import Alias
-from PermutiveAPI.Identify.Identity import Identity
+from PermutiveAPI.identify.alias import Alias
+from PermutiveAPI.identify.identify import Identity
 
 
 def test_alias_serialization():
@@ -49,7 +49,7 @@ def test_identify_propagates_exception(monkeypatch):
     def fake_post(api_key: str, url: str, data: dict):  # pragma: no cover - test stub
         raise RequestException("boom")
 
-    monkeypatch.setattr("PermutiveAPI.Identify.Identity.http.post", fake_post)
+    monkeypatch.setattr("PermutiveAPI.identify.identify.http.post", fake_post)
 
     with pytest.raises(RequestException):
         identity.identify("api-key")

@@ -5,9 +5,9 @@ from unittest.mock import Mock
 
 import pytest
 
-from PermutiveAPI.Audience.Segment import Segment, SegmentList
-from PermutiveAPI.Identify.Alias import Alias
-from PermutiveAPI.Segmentation import Event, Segmentation
+from PermutiveAPI.audience.segment import Segment, SegmentList
+from PermutiveAPI.identify.alias import Alias
+from PermutiveAPI.segmentation import Event, Segmentation
 
 
 def test_segmentation_to_json_with_user_id():

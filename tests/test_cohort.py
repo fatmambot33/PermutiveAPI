@@ -3,9 +3,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from PermutiveAPI._Utils import http
-from PermutiveAPI._Utils.http import PermutiveAPIError
-from PermutiveAPI.Cohort import Cohort, CohortList, _API_ENDPOINT
+from PermutiveAPI.utils import http
+from PermutiveAPI.utils.http import PermutiveAPIError
+from PermutiveAPI.cohort import Cohort, CohortList, _API_ENDPOINT
 
 
 def test_cohort_serialization():

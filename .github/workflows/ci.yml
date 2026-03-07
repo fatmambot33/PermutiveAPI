@@ -36,7 +36,7 @@ jobs:
 
     - name: Run static type analysis
       run: |
-        pyright PermutiveAPI
+        pyright .
 
     - name: Run tests with coverage
       run: |

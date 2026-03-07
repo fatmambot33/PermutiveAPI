@@ -3,7 +3,7 @@
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-from PermutiveAPI.Context import ContextSegment
+from PermutiveAPI.context import ContextSegment
 
 
 def test_context_segment_to_json():
