@@ -10,7 +10,7 @@ from typing import List
 import pytest
 
 # Ensure the package root is on the Python path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 
 @pytest.fixture

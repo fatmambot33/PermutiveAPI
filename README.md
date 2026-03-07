@@ -477,19 +477,52 @@ To set up a development environment, install the development dependencies:
 pip install ".[dev]"
 ```
 
+### Migrating from duplicated `src/` code to a proper `src` layout
+
+If you copied the package code into a top-level `src/` folder and now want the
+project to use that copy, migrate in three controlled steps:
+
+1. **Move the package under `src/PermutiveAPI/`**
+   - Keep the public package name as `PermutiveAPI`.
+   - Your resulting tree should look like `src/PermutiveAPI/__init__.py`,
+     `src/PermutiveAPI/Cohort.py`, etc.
+2. **Point setuptools at `src/` in `pyproject.toml`**
+   - Add:
+     ```toml
+     [tool.setuptools]
+     package-dir = {"" = "src"}
+
+     [tool.setuptools.packages.find]
+     where = ["src"]
+     ```
+   - Keep package data configuration for `PermutiveAPI` unchanged.
+3. **Delete or archive the old top-level `PermutiveAPI/` folder**
+   - Having both copies side-by-side can cause Python to import the wrong one
+     during local runs and tests.
+
+After the move, reinstall in editable mode and run the full checks:
+
+```bash
+pip install -e ".[dev]"
+pydocstyle src/PermutiveAPI
+black --check .
+pyright src/PermutiveAPI
+pytest -q --cov=PermutiveAPI --cov-report=term-missing --cov-fail-under=70
+```
+
 ### Running Tests
 
 Before committing any changes, please run the following checks to ensure code quality and correctness.
 
 **Style Checks:**
 ```bash
-pydocstyle PermutiveAPI
+pydocstyle src/PermutiveAPI
 black --check .
 ```
 
 **Static Type Analysis:**
 ```bash
-pyright PermutiveAPI
+pyright src/PermutiveAPI
 ```
 
 **Unit Tests and Coverage:**

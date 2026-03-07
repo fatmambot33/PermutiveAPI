@@ -26,5 +26,11 @@ classifiers = [
 [project.optional-dependencies]
 dev = ["pydocstyle", "pytest-pydocstyle", "pyright", "black", "pytest-cov"]
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.setuptools.package-data]
 "PermutiveAPI" = ["py.typed"]

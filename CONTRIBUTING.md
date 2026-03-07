@@ -33,11 +33,11 @@ Before committing, please run the following checks to ensure code quality and co
   ```
 - **Docstring Style with pydocstyle:**
   ```sh
-  pydocstyle PermutiveAPI
+  pydocstyle src/PermutiveAPI
   ```
 - **Static Type Checking with pyright:**
   ```sh
-  pyright PermutiveAPI
+  pyright src/PermutiveAPI
   ```
 
 ## Running Tests
