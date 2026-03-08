@@ -6,7 +6,7 @@ Thank you for considering contributing to this project! The following guidelines
 
 1. **Clone the repository**
    ```sh
-   git clone https://github.com/yourusername/PermutiveAPI.git
+   git clone https://github.com/fatmambo33/PermutiveAPI.git
    cd PermutiveAPI
    ```
 2. **Create a virtual environment** (recommended)
@@ -16,7 +16,7 @@ Thank you for considering contributing to this project! The following guidelines
    ```
 3. **Install development dependencies**
    ```sh
-   pip install -r requirements-dev.txt
+   pip install -e ".[dev]"
    ```
 4. **Install the package in editable mode** (optional)
    ```sh
@@ -33,22 +33,22 @@ Before committing, please run the following checks to ensure code quality and co
   ```
 - **Docstring Style with pydocstyle:**
   ```sh
-  pydocstyle PermutiveAPI
+  pydocstyle src/PermutiveAPI
   ```
 - **Static Type Checking with pyright:**
   ```sh
-  pyright PermutiveAPI
+  pyright src/PermutiveAPI
   ```
 
 ## Running Tests
 
-This project uses `pytest` for testing. To run the test suite, navigate to the root directory of the project and run the following command:
+This project uses `pytest` for testing. To run the test suite with the same coverage threshold used in CI, navigate to the root directory of the project and run:
 
 ```sh
-pytest
+pytest -q --cov=src/PermutiveAPI --cov-report=term-missing --cov-fail-under=70
 ```
 
-This will automatically discover and run all tests within the `tests` directory. Please ensure all tests pass before submitting a pull request.
+This command automatically discovers tests in the `tests` directory. Please ensure it passes before submitting a pull request.
 
 ## Pull Request Process
 

@@ -33,7 +33,12 @@ from .json import to_payload as _json_to_payload
 
 
 class PermutiveAPIError(Exception):
-    """Base exception class for all PermutiveAPI errors.
+    """Represent a base exception for PermutiveAPI errors.
+
+    Methods
+    -------
+    __init__(message, *, status=None, url=None, response=None)
+        Initialise the exception with optional HTTP request context.
 
     Parameters
     ----------
@@ -64,13 +69,25 @@ class PermutiveAPIError(Exception):
 
 
 class PermutiveAuthenticationError(PermutiveAPIError):
-    """Raised when authentication fails (HTTP 401 or 403)."""
+    """Represent an authentication failure (HTTP 401 or 403).
+
+    Methods
+    -------
+    __init__(message, *, status=None, url=None, response=None)
+        Inherit base exception initialisation with HTTP context.
+    """
 
     pass
 
 
 class PermutiveBadRequestError(PermutiveAPIError):
-    """Raised for client-side errors (HTTP 400)."""
+    """Represent a client-side bad request error (HTTP 400).
+
+    Methods
+    -------
+    __init__(message, *, status=None, url=None, response=None)
+        Initialise the bad request error with optional HTTP context.
+    """
 
     def __init__(
         self,
@@ -86,19 +103,37 @@ class PermutiveBadRequestError(PermutiveAPIError):
 
 
 class PermutiveResourceNotFoundError(PermutiveAPIError):
-    """Raised when a requested resource is not found (HTTP 404)."""
+    """Represent a missing resource error (HTTP 404).
+
+    Methods
+    -------
+    __init__(message, *, status=None, url=None, response=None)
+        Inherit base exception initialisation with HTTP context.
+    """
 
     pass
 
 
 class PermutiveRateLimitError(PermutiveAPIError):
-    """Raised when the API rate limit is exceeded (HTTP 429)."""
+    """Represent an API rate limit error (HTTP 429).
+
+    Methods
+    -------
+    __init__(message, *, status=None, url=None, response=None)
+        Inherit base exception initialisation with HTTP context.
+    """
 
     pass
 
 
 class PermutiveServerError(PermutiveAPIError):
-    """Raised for server-side errors (HTTP 5xx)."""
+    """Represent a server-side API error (HTTP 5xx).
+
+    Methods
+    -------
+    __init__(message, *, status=None, url=None, response=None)
+        Inherit base exception initialisation with HTTP context.
+    """
 
     pass
 
@@ -212,7 +247,12 @@ def _default_initial_delay() -> float:
 
 @dataclass
 class RetryConfig:
-    """Configuration for retry/backoff behaviour.
+    """Describe retry and backoff configuration.
+
+    Methods
+    -------
+    None
+        Instances provide dataclass-generated attribute access only.
 
     Parameters
     ----------
@@ -278,7 +318,12 @@ class BatchRequest:
 
 @dataclass(frozen=True)
 class Progress:
-    """Immutable snapshot describing batch processing progress.
+    """Describe an immutable snapshot of batch processing progress.
+
+    Methods
+    -------
+    None
+        Instances provide dataclass-generated attribute access only.
 
     Parameters
     ----------

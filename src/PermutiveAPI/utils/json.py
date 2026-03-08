@@ -147,7 +147,7 @@ T = TypeVar("T", bound="JSONSerializable")
 JSONOutput = TypeVar("JSONOutput", Dict[str, Any], List[Any])
 
 
-def json_default(value: Any):
+def json_default(value: Any) -> Any:
     """Provide JSON serialization for complex data types.
 
     Parameters

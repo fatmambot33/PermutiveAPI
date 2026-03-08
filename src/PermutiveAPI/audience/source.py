@@ -8,7 +8,13 @@ from ..utils.json import JSONSerializable
 
 @dataclass
 class Source(JSONSerializable[Dict[str, Any]]):
-    """Represents a Source entity in the Permutive ecosystem.
+    """Represent a Source entity in the Permutive ecosystem.
+
+    Methods
+    -------
+    None
+        Instances expose dataclass-generated attributes and JSONSerializable
+        helpers.
 
     Parameters
     ----------

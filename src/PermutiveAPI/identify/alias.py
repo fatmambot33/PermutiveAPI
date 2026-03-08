@@ -7,7 +7,13 @@ from ..utils.json import JSONSerializable
 
 @dataclass
 class Alias(JSONSerializable[Dict[str, Any]]):
-    """Represents an Alias entity in the Permutive ecosystem.
+    """Represent an Alias entity in the Permutive ecosystem.
+
+    Methods
+    -------
+    None
+        Instances expose dataclass-generated attributes and JSONSerializable
+        helpers.
 
     Parameters
     ----------
