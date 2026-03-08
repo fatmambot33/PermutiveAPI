@@ -7,9 +7,11 @@ URL and associated page properties to retrieve contextual segment matches.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from requests import Response
 
 from .utils import http
+from .utils.http import BatchRequest, Progress, process_batch
 from .utils.json import JSONSerializable
 
 _API_ENDPOINT = "https://api.permutive.com/ctx/v1/segment"
@@ -40,7 +42,10 @@ class ContextSegment(JSONSerializable[Dict[str, Any]]):
     ...     url="https://example.com/article/sports-news",
     ...     page_properties={
     ...         "client": {"domain": "example.com", "type": "web"},
+    ...         "title": "Sports News: Local Team Wins Championship",
     ...         "category": "sports",
+    ...         "subcategory": "baseball",
+    ...         "tags": ["news", "sports", "baseball"],
     ...     },
     ... )
     >>> request.send(api_key="permutive-api-key")  # doctest: +SKIP
@@ -90,3 +95,84 @@ class ContextSegment(JSONSerializable[Dict[str, Any]]):
             timeout=timeout,
         )
         return response.json()
+
+    @classmethod
+    def batch_send(
+        cls,
+        context_segments: Iterable["ContextSegment"],
+        *,
+        api_key: str,
+        max_workers: Optional[int] = None,
+        progress_callback: Optional[Callable[[Progress], None]] = None,
+    ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
+        """Identify multiple users concurrently.
+
+        Parameters
+        ----------
+        identities : Iterable[Identity]
+            Identity payloads to submit.
+        api_key : str
+            API key for authentication.
+        max_workers : int | None, optional
+            Maximum number of worker threads (default: ``None`` to defer to the
+            shared batch runner's default).
+        progress_callback : Callable[[Progress], None] | None, optional
+            Invoked after each request completes. Receives a
+            :class:`~PermutiveAPI._Utils.http.Progress` snapshot describing
+            throughput (including the estimated seconds per 1,000 requests).
+
+        Returns
+        -------
+        list[Response]
+            Successful HTTP responses in completion order.
+        list[tuple[BatchRequest, Exception]]
+            Requests that raised exceptions alongside their originating
+            descriptors.
+
+        Notes
+        -----
+        This helper delegates work to :func:`PermutiveAPI._Utils.http.process_batch`.
+
+        Examples
+        --------
+        >>> identities = [
+        ...     Identity(user_id="user-1", aliases=[Alias(alias_type="crm", alias_id="123")]),
+        ...     Identity(user_id="user-2", aliases=[Alias(alias_type="crm", alias_id="456")]),
+        ... ]
+        >>> responses, failures = Identity.batch_identify(identities, api_key="test-key")
+        >>> len(responses)  # doctest: +SKIP
+        2
+        >>> failures  # doctest: +SKIP
+        []
+        >>> def on_progress(progress):
+        ...     avg = progress.average_per_thousand_seconds
+        ...     avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
+        ...     print(
+        ...         f"{progress.completed}/{progress.total} "
+        ...         f"(errors: {progress.errors}, avg/1000: {avg_display})"
+        ...     )
+        >>> _responses, _failures = Identity.batch_identify(
+        ...     identities,
+        ...     api_key="test-key",
+        ...     max_workers=4,
+        ...     progress_callback=on_progress,
+        ... )  # doctest: +SKIP
+        """
+        batch_requests: List[BatchRequest] = []
+
+        for context_segment in context_segments:
+            payload = cls._request_helper.to_payload(context_segment, _API_PAYLOAD)
+            batch_requests.append(
+                BatchRequest(
+                    method="POST",
+                    url=_API_ENDPOINT,
+                    json=payload,
+                )
+            )
+
+        return process_batch(
+            batch_requests,
+            api_key=api_key,
+            max_workers=max_workers,
+            progress_callback=progress_callback,
+        )

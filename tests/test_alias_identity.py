@@ -36,7 +36,7 @@ def test_identify_success(mock_request_helper):
     mock_response.status_code = 200
     mock_request_helper.post.return_value = mock_response
 
-    result = identity.identify(api_key="test-key")
+    result = identity.send(api_key="test-key")
 
     assert result is None
     mock_request_helper.post.assert_called_once()
@@ -52,4 +52,4 @@ def test_identify_propagates_exception(monkeypatch):
     monkeypatch.setattr("PermutiveAPI.identify.identify.http.post", fake_post)
 
     with pytest.raises(RequestException):
-        identity.identify("api-key")
+        identity.send("api-key")

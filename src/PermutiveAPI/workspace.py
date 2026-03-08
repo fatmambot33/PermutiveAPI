@@ -45,6 +45,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         """Initialise caches."""
         self._segment_cache: Dict[str, "SegmentList"] = {}
         self._cohort_cache: Dict[bool, CohortList] = {}
+        self._cohorts_dictionary: Dict[str, Cohort] = {}
         self._import_cache: Dict[bool, "ImportList"] = {}
 
     @property
@@ -116,7 +117,23 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         self._cohort_cache[include_details] = cohorts
         return cohorts
 
-    def cohorts(
+    @property
+    def cohorts_dictionary(self) -> Dict[str, Cohort]:
+        """Return a dictionary of cohorts indexed by their IDs.
+
+        Returns
+        -------
+        Dict[str, Cohort]
+            Mapping of cohort IDs to ``Cohort`` objects.
+        """
+        if not self._cohorts_dictionary:
+            cohorts = self.list_cohorts(include_details=True)
+            self._cohorts_dictionary = {
+                cohort.id: cohort for cohort in cohorts if cohort.id
+            }
+        return self._cohorts_dictionary
+
+    def list_cohorts(
         self, include_details: bool = False, force_refresh: bool = False
     ) -> CohortList:
         """Retrieve a cached list of cohorts for the workspace.
@@ -153,7 +170,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         self._import_cache[include_details] = imports
         return imports
 
-    def imports(
+    def list_imports(
         self, include_details: bool = False, force_refresh: bool = False
     ) -> "ImportList":
         """Retrieve a cached list of imports for the workspace.
@@ -184,7 +201,9 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
             import_id=import_id, api_key=self.api_key
         )
 
-    def segments(self, import_id: str, force_refresh: bool = False) -> "SegmentList":
+    def list_segments(
+        self, import_id: str, force_refresh: bool = False
+    ) -> "SegmentList":
         """Retrieve a cached list of segments for a given import.
 
         Parameters
@@ -202,6 +221,68 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         if force_refresh or import_id not in self._segment_cache:
             self._refresh_segments_cache(import_id)
         return self._segment_cache[import_id]
+
+    def get_cohort_by_id(self, cohort_id: str) -> Cohort:
+        """Get a cohort by its ID.
+
+        Parameters
+        ----------
+        cohort_id : str
+            The ID of the cohort to retrieve.
+
+        Returns
+        -------
+        Cohort
+            The cohort with the specified ID.
+
+        Raises
+        ------
+        ValueError
+            If no cohort with the specified ID is found.
+        """
+        return Cohort.get_by_id(id=cohort_id, api_key=self.api_key)
+
+    def get_import_by_id(self, import_id: str) -> Import:
+        """Get an import by its ID.
+
+        Parameters
+        ----------
+        import_id : str
+            The ID of the import to retrieve.
+
+        Returns
+        -------
+        Import
+            The import with the specified ID.
+
+        Raises
+        ------
+        ValueError
+            If no import with the specified ID is found.
+        """
+        return Import.get_by_id(id=import_id, api_key=self.api_key)
+
+    def get_segment_by_id(self, import_id: str, segment_id: str) -> Segment:
+        """Get a segment by its ID.
+
+        Parameters
+        ----------
+        segment_id : str
+            The ID of the segment to retrieve.
+
+        Returns
+        -------
+        Segment
+            The segment with the specified ID.
+
+        Raises
+        ------
+        ValueError
+            If no segment with the specified ID is found.
+        """
+        return Segment.get_by_id(
+            import_id=import_id, segment_id=segment_id, api_key=self.api_key
+        )
 
 
 class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):

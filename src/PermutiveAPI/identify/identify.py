@@ -40,7 +40,7 @@ class Identity(JSONSerializable[Dict[str, Any]]):
     user_id: str
     aliases: List[Alias]
 
-    def identify(self, api_key: str) -> None:
+    def send(self, api_key: str) -> None:
         """Identify a user in Permutive.
 
         This method sends a POST request to the Permutive API to identify a user
@@ -70,7 +70,7 @@ class Identity(JSONSerializable[Dict[str, Any]]):
         )
 
     @classmethod
-    def batch_identify(
+    def batch_send(
         cls,
         identities: Iterable["Identity"],
         *,

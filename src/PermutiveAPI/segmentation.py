@@ -102,7 +102,7 @@ class Segmentation(JSONSerializable[Dict[str, Any]]):
         provided_identifiers = [
             self.user_id is not None,
             self.alias is not None,
-            self.aliases is not None,
+            self.aliases is not None and len(self.aliases) > 0,
         ]
 
         if sum(provided_identifiers) != 1:
