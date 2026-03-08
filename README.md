@@ -1,6 +1,6 @@
 # PermutiveAPI
-[![PyPI version](https://img.shields.io/pypi/v/openai-sdk-helpers.svg)](https://pypi.org/project/openai-sdk-helpers/)
-[![Python versions](https://img.shields.io/pypi/pyversions/openai-sdk-helpers.svg)](https://pypi.org/project/openai-sdk-helpers/)
+[![PyPI version](https://img.shields.io/pypi/v/PermutiveAPI.svg)](https://pypi.org/project/PermutiveAPI/)
+[![Python versions](https://img.shields.io/pypi/pyversions/PermutiveAPI.svg)](https://pypi.org/project/PermutiveAPI/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 PermutiveAPI is a Python module to interact with the Permutive API. It provides a set of classes and methods to manage users, imports, cohorts, and workspaces within the Permutive ecosystem.
@@ -295,7 +295,7 @@ across the API.
 High-volume workflows often rely on the ``batch_*`` helpers to run requests
 concurrently. Every helper accepts an optional ``progress_callback`` that is
 invoked after each request completes with a
-:class:`~PermutiveAPI._Utils.http.Progress` snapshot describing aggregate
+`PermutiveAPI.utils.http.Progress` snapshot describing aggregate
 throughput. The dataclass includes counters for completed requests, failure
 totals, elapsed time, and the estimated seconds required to process 1,000
 requests, making it straightforward to surface both reliability and latency
@@ -306,7 +306,7 @@ and error rates because the Permutive API enforces rate limits.
 
 ```python
 from PermutiveAPI import Cohort
-from PermutiveAPI._Utils.http import Progress
+from PermutiveAPI.utils.http import Progress
 
 
 def on_progress(progress: Progress) -> None:
@@ -339,7 +339,7 @@ The same callback shape is shared across helpers such as
 ``Identity.batch_identify`` and ``Segment.batch_create``, enabling reuse of
 progress reporting utilities that surface throughput, error counts, and
 latency projections. The helpers delegate to
-:func:`PermutiveAPI._Utils.http.process_batch`, so they automatically benefit
+`PermutiveAPI.utils.http.process_batch`, so they automatically benefit
 from the shared retry/backoff configuration used by the underlying request
 helpers. When the API responds with ``HTTP 429`` (rate limiting), the helper
 retries using the exponential backoff already built into the package before
@@ -357,7 +357,7 @@ touching application code:
   integer to cap concurrency or leave it unset to use Python's default
   heuristic.
 - ``PERMUTIVE_BATCH_TIMEOUT_SECONDS`` controls the default timeout applied to
-  each ``PermutiveAPI._Utils.http.BatchRequest``. Set it to a positive
+  each `PermutiveAPI.utils.http.BatchRequest`. Set it to a positive
   float (in seconds) to align the HTTP timeout with your infrastructure's
   expectations.
 
@@ -474,7 +474,7 @@ except PermutiveAPIError as e:
 To set up a development environment, install the development dependencies:
 
 ```sh
-pip install ".[dev]"
+pip install -e ".[dev]"
 ```
 
 ### Running Tests
@@ -483,18 +483,18 @@ Before committing any changes, please run the following checks to ensure code qu
 
 **Style Checks:**
 ```bash
-pydocstyle PermutiveAPI
+pydocstyle src/PermutiveAPI
 black --check .
 ```
 
 **Static Type Analysis:**
 ```bash
-pyright PermutiveAPI
+pyright src/PermutiveAPI
 ```
 
 **Unit Tests and Coverage:**
 ```bash
-pytest -q --cov=PermutiveAPI --cov-report=term-missing --cov-fail-under=70
+pytest -q --cov=src/PermutiveAPI --cov-report=term-missing --cov-fail-under=70
 ```
 
 All checks must pass before a pull request can be merged.
