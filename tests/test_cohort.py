@@ -93,12 +93,14 @@ def test_extract_keywords():
             {"contains": "sports"},
             {"list_contains": ["finance", 42, "news"]},
             {"nested": {"contains": "sports"}},
+            {"contains": "Alpha"},
+            {"contains": "alpha"},
             {"ignored": {"value": True}},
         ]
     }
     cohort = Cohort(name="Keyword Cohort", query=query)
 
-    assert cohort.extract_keywords() == ["finance", "news", "sports"]
+    assert cohort.extract_keywords() == ["Alpha", "alpha", "finance", "news", "sports"]
 
 
 @patch.object(Cohort, "_request_helper")

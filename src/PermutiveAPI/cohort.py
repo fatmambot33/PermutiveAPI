@@ -160,7 +160,7 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
 
             return keywords
 
-        return sorted(_extract(self.query))
+        return sorted(_extract(self.query), key=str.casefold)
 
     def create(self, api_key: str) -> None:
         """Create a new cohort in Permutive.
