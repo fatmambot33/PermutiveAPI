@@ -87,7 +87,7 @@ def test_cohort_list_to_pd_dataframe():
 
 
 def test_extract_keywords():
-    """Test keyword extraction from nested query structures."""
+    """Test keyword extraction from a cohort query."""
     query = {
         "and": [
             {"contains": "sports"},
@@ -96,8 +96,9 @@ def test_extract_keywords():
             {"ignored": {"value": True}},
         ]
     }
+    cohort = Cohort(name="Keyword Cohort", query=query)
 
-    assert Cohort.extract_keywords(query) == ["finance", "news", "sports"]
+    assert cohort.extract_keywords() == ["finance", "news", "sports"]
 
 
 @patch.object(Cohort, "_request_helper")
