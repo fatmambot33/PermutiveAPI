@@ -132,11 +132,9 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
     def extract_keywords(self) -> List[str]:
         """Extract unique keyword strings from the cohort query.
 
-        The method traverses ``self.query`` recursively. When ``self.query`` is
-        an object exposing ``to_json()`` or ``model_dump()``, the method uses
-        its serialized form before traversal. It collects string values under
-        ``"contains"`` and ``"list_contains"`` keys, then returns the unique
-        values sorted in case-insensitive ascending order.
+        The method traverses ``self.query`` recursively. It collects string
+        values under ``"contains"`` and ``"list_contains"`` keys, then returns
+        the unique values sorted in case-insensitive ascending order.
 
         Returns
         -------
@@ -162,16 +160,7 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
 
             return keywords
 
-        query_payload: Any = self.query
-        to_json = getattr(query_payload, "to_json", None)
-        model_dump = getattr(query_payload, "model_dump", None)
-
-        if callable(to_json):
-            query_payload = to_json()
-        elif callable(model_dump):
-            query_payload = model_dump()
-
-        return sorted(_extract(query_payload), key=lambda value: (value.casefold(), value))
+        return sorted(_extract(self.query), key=lambda value: (value.casefold(), value))
 
     def create(self, api_key: str) -> None:
         """Create a new cohort in Permutive.

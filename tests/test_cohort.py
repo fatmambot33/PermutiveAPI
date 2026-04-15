@@ -103,18 +103,6 @@ def test_extract_keywords():
     assert cohort.extract_keywords() == ["Alpha", "alpha", "finance", "news", "sports"]
 
 
-def test_extract_keywords_query_object():
-    """Test keyword extraction when query is a serializable query object."""
-
-    class Query:
-        def to_json(self):
-            return {"contains": "premium"}
-
-    cohort = Cohort(name="Query Object Cohort", query=Query())  # type: ignore[arg-type]
-
-    assert cohort.extract_keywords() == ["premium"]
-
-
 @patch.object(Cohort, "_request_helper")
 def test_cohort_create(mock_request_helper):
     """Test successful creation of a cohort."""
