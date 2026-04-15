@@ -69,6 +69,8 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
 
     Methods
     -------
+    extract_keywords(obj)
+        Extract sorted unique keyword strings from nested objects.
     create(api_key)
         Create a new cohort in Permutive.
     update(api_key)
@@ -125,6 +127,43 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             self.created_at = self.last_updated_at
         elif self.last_updated_at is None:
             self.last_updated_at = self.created_at
+
+    @staticmethod
+    def extract_keywords(obj: Any) -> List[str]:
+        """Extract unique keyword strings from a nested query-like object.
+
+        The method traverses dictionaries and lists recursively. It collects
+        string values under ``"contains"`` and ``"list_contains"`` keys, then
+        returns the unique values sorted in ascending order.
+
+        Parameters
+        ----------
+        obj : Any
+            Nested object to inspect. Supported containers are dictionaries and
+            lists.
+
+        Returns
+        -------
+        List[str]
+            Sorted unique keywords discovered in the object.
+        """
+        keywords = set()
+
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                if key in {"contains", "list_contains"}:
+                    if isinstance(value, str):
+                        keywords.add(value)
+                    elif isinstance(value, list):
+                        keywords.update(v for v in value if isinstance(v, str))
+                else:
+                    keywords.update(Cohort.extract_keywords(value))
+
+        elif isinstance(obj, list):
+            for item in obj:
+                keywords.update(Cohort.extract_keywords(item))
+
+        return sorted(keywords)
 
     def create(self, api_key: str) -> None:
         """Create a new cohort in Permutive.

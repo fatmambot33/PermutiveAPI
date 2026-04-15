@@ -86,6 +86,20 @@ def test_cohort_list_to_pd_dataframe():
     assert "code" in df.columns
 
 
+def test_extract_keywords():
+    """Test keyword extraction from nested query structures."""
+    query = {
+        "and": [
+            {"contains": "sports"},
+            {"list_contains": ["finance", 42, "news"]},
+            {"nested": {"contains": "sports"}},
+            {"ignored": {"value": True}},
+        ]
+    }
+
+    assert Cohort.extract_keywords(query) == ["finance", "news", "sports"]
+
+
 @patch.object(Cohort, "_request_helper")
 def test_cohort_create(mock_request_helper):
     """Test successful creation of a cohort."""
