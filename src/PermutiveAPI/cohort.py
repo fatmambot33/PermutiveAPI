@@ -12,6 +12,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Set,
     Tuple,
     Type,
     Union,
@@ -141,8 +142,8 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             Sorted unique keywords discovered in the cohort query.
         """
 
-        def _extract(obj: Any) -> set[str]:
-            keywords: set[str] = set()
+        def _extract(obj: Any) -> Set[str]:
+            keywords: Set[str] = set()
 
             if isinstance(obj, dict):
                 for key, value in obj.items():
