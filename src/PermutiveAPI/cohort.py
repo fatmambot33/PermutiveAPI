@@ -12,6 +12,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Set,
     Tuple,
     Type,
     Union,
@@ -69,6 +70,8 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
 
     Methods
     -------
+    extract_keywords()
+        Extract sorted unique keyword strings from the cohort query.
     create(api_key)
         Create a new cohort in Permutive.
     update(api_key)
@@ -125,6 +128,39 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             self.created_at = self.last_updated_at
         elif self.last_updated_at is None:
             self.last_updated_at = self.created_at
+
+    def extract_keywords(self) -> List[str]:
+        """Extract unique keyword strings from the cohort query.
+
+        The method traverses ``self.query`` recursively. It collects string
+        values under ``"contains"`` and ``"list_contains"`` keys, then returns
+        the unique values sorted in case-insensitive ascending order.
+
+        Returns
+        -------
+        List[str]
+            Sorted unique keywords discovered in the cohort query.
+        """
+
+        def _extract(obj: Any) -> Set[str]:
+            keywords: Set[str] = set()
+
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    if key in {"contains", "list_contains"}:
+                        if isinstance(value, str):
+                            keywords.add(value)
+                        elif isinstance(value, list):
+                            keywords.update(v for v in value if isinstance(v, str))
+                    else:
+                        keywords.update(_extract(value))
+            elif isinstance(obj, list):
+                for item in obj:
+                    keywords.update(_extract(item))
+
+            return keywords
+
+        return sorted(_extract(self.query), key=lambda value: (value.casefold(), value))
 
     def create(self, api_key: str) -> None:
         """Create a new cohort in Permutive.
