@@ -21,7 +21,14 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["pydocstyle", "pytest-pydocstyle", "pyright", "black", "pytest-cov"]
+dev = [
+    "pydocstyle",
+    "pytest<9",
+    "pytest-pydocstyle",
+    "pyright",
+    "black",
+    "pytest-cov",
+]
 
 [build-system]
 requires = ["hatchling"]

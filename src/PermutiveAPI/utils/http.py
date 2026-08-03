@@ -1,16 +1,7 @@
 """HTTP utilities and exceptions used across the package.
 
-This module provides:
-- Lightweight HTTP helpers (get, post, patch, delete) with retry logic,
-  redaction, and consistent error handling.
-- ``BatchRequest``/``process_batch`` utilities for concurrent operations
-  powered by :class:`~concurrent.futures.ThreadPoolExecutor`. The default
-  worker limit follows the standard Python behaviour (``min(32, os.cpu_count()
-  + 4)``) when ``max_workers`` is ``None``. Helpers only rely on stateless
-  module-level functions, so they are safe to call concurrently provided that
-  user-supplied callbacks are thread-safe.
-- to_payload helper for dataclass-to-JSON conversion using the custom encoder.
-- Exception classes representing API error conditions.
+This module provides retry-aware HTTP helpers, reusable thread-local sessions,
+batch execution, payload conversion, redaction, and purpose-specific errors.
 """
 
 from __future__ import annotations
@@ -19,6 +10,7 @@ import json
 import logging
 import os
 import re
+import threading
 import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -26,6 +18,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import requests
+from requests import Session
 from requests.exceptions import RequestException
 from requests.models import Response
 
@@ -33,24 +26,7 @@ from .json import to_payload as _json_to_payload
 
 
 class PermutiveAPIError(Exception):
-    """Represent a base exception for PermutiveAPI errors.
-
-    Methods
-    -------
-    __init__(message, *, status=None, url=None, response=None)
-        Initialise the exception with optional HTTP request context.
-
-    Parameters
-    ----------
-    message : str
-        Human-friendly error message.
-    status : int | None, optional
-        HTTP status code associated with the error.
-    url : str | None, optional
-        Redacted request URL, when available.
-    response : requests.Response | None, optional
-        Original response object for debugging.
-    """
+    """Represent a base exception for PermutiveAPI errors."""
 
     def __init__(
         self,
@@ -69,78 +45,29 @@ class PermutiveAPIError(Exception):
 
 
 class PermutiveAuthenticationError(PermutiveAPIError):
-    """Represent an authentication failure (HTTP 401 or 403).
-
-    Methods
-    -------
-    __init__(message, *, status=None, url=None, response=None)
-        Inherit base exception initialisation with HTTP context.
-    """
-
-    pass
+    """Represent an authentication failure (HTTP 401 or 403)."""
 
 
 class PermutiveBadRequestError(PermutiveAPIError):
-    """Represent a client-side bad request error (HTTP 400).
-
-    Methods
-    -------
-    __init__(message, *, status=None, url=None, response=None)
-        Initialise the bad request error with optional HTTP context.
-    """
-
-    def __init__(
-        self,
-        message: str,
-        *args,
-        status: Optional[int] = None,
-        url: Optional[str] = None,
-        response: Optional[Response] = None,
-        **kwargs,
-    ) -> None:
-        """Initialise the bad request error with optional HTTP context."""
-        super().__init__(message, status=status, url=url, response=response)
+    """Represent a client-side bad request error (HTTP 400)."""
 
 
 class PermutiveResourceNotFoundError(PermutiveAPIError):
-    """Represent a missing resource error (HTTP 404).
-
-    Methods
-    -------
-    __init__(message, *, status=None, url=None, response=None)
-        Inherit base exception initialisation with HTTP context.
-    """
-
-    pass
+    """Represent a missing resource error (HTTP 404)."""
 
 
 class PermutiveRateLimitError(PermutiveAPIError):
-    """Represent an API rate limit error (HTTP 429).
-
-    Methods
-    -------
-    __init__(message, *, status=None, url=None, response=None)
-        Inherit base exception initialisation with HTTP context.
-    """
-
-    pass
+    """Represent an API rate limit error (HTTP 429)."""
 
 
 class PermutiveServerError(PermutiveAPIError):
-    """Represent a server-side API error (HTTP 5xx).
-
-    Methods
-    -------
-    __init__(message, *, status=None, url=None, response=None)
-        Inherit base exception initialisation with HTTP context.
-    """
-
-    pass
+    """Represent a server-side API error (HTTP 5xx)."""
 
 
 DEFAULT_HEADERS = {"Accept": "application/json", "Content-Type": "application/json"}
 SENSITIVE_QUERY_PARAMS = ("k", "api_key", "token", "access_token", "key")
 SUCCESS_RANGE = range(200, 300)
+SUPPORTED_METHODS = frozenset({"GET", "POST", "PATCH", "DELETE"})
 
 MAX_RETRIES = 3
 BACKOFF_FACTOR = 2.0
@@ -154,7 +81,14 @@ RETRY_MAX_RETRIES_ENV_VAR = "PERMUTIVE_RETRY_MAX_RETRIES"
 RETRY_BACKOFF_FACTOR_ENV_VAR = "PERMUTIVE_RETRY_BACKOFF_FACTOR"
 RETRY_INITIAL_DELAY_ENV_VAR = "PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS"
 
-# Compile regex patterns once for performance optimization
+_THREAD_LOCAL = threading.local()
+_ORIGINAL_REQUEST_METHODS = {
+    "GET": requests.get,
+    "POST": requests.post,
+    "PATCH": requests.patch,
+    "DELETE": requests.delete,
+}
+
 _REDACTION_PATTERNS = {
     key: (
         re.compile(rf"({re.escape(key)})=([^\s&]+)", flags=re.IGNORECASE),
@@ -164,8 +98,44 @@ _REDACTION_PATTERNS = {
 }
 
 
+def _create_session() -> Session:
+    """Create a configured reusable HTTP session.
+
+    Returns
+    -------
+    requests.Session
+        Session with package default headers applied.
+    """
+    session = requests.Session()
+    session.headers.update(DEFAULT_HEADERS)
+    return session
+
+
+def get_session() -> Session:
+    """Return the reusable HTTP session for the current thread.
+
+    Returns
+    -------
+    requests.Session
+        A session isolated to and reused by the current thread.
+    """
+    session = getattr(_THREAD_LOCAL, "session", None)
+    if session is None:
+        session = _create_session()
+        _THREAD_LOCAL.session = session
+    return session
+
+
+def close_session() -> None:
+    """Close and remove the HTTP session for the current thread."""
+    session = getattr(_THREAD_LOCAL, "session", None)
+    if session is not None:
+        session.close()
+        delattr(_THREAD_LOCAL, "session")
+
+
 def _normalise_env_value(name: str) -> Optional[str]:
-    """Return a stripped environment variable value or ``None`` if unset/empty."""
+    """Return a stripped environment variable value or ``None``."""
     value = os.getenv(name)
     if value is None:
         return None
@@ -177,7 +147,7 @@ def _parse_positive_int(value: str, *, env_var: str) -> int:
     """Return ``value`` parsed as a strictly positive integer."""
     try:
         parsed = int(value)
-    except ValueError as exc:  # pragma: no cover - defensive
+    except ValueError as exc:
         raise ValueError(
             f"Environment variable {env_var} must be a positive integer, got {value!r}."
         ) from exc
@@ -192,7 +162,7 @@ def _parse_positive_float(value: str, *, env_var: str) -> float:
     """Return ``value`` parsed as a strictly positive float."""
     try:
         parsed = float(value)
-    except ValueError as exc:  # pragma: no cover - defensive
+    except ValueError as exc:
         raise ValueError(
             f"Environment variable {env_var} must be a positive float, got {value!r}."
         ) from exc
@@ -204,68 +174,50 @@ def _parse_positive_float(value: str, *, env_var: str) -> float:
 
 
 def _default_batch_timeout() -> Optional[float]:
-    """Resolve the default timeout for :class:`BatchRequest` instances."""
-    env_timeout = _normalise_env_value(BATCH_TIMEOUT_ENV_VAR)
-    if env_timeout is None:
+    """Resolve the default timeout for batch requests."""
+    value = _normalise_env_value(BATCH_TIMEOUT_ENV_VAR)
+    if value is None:
         return DEFAULT_BATCH_TIMEOUT
-    return _parse_positive_float(env_timeout, env_var=BATCH_TIMEOUT_ENV_VAR)
+    return _parse_positive_float(value, env_var=BATCH_TIMEOUT_ENV_VAR)
 
 
 def _resolve_max_workers(max_workers: Optional[int]) -> Optional[int]:
-    """Return the executor worker count honouring environment overrides."""
+    """Return the executor worker count honoring environment overrides."""
     if max_workers is not None:
         return max_workers
-    env_workers = _normalise_env_value(BATCH_MAX_WORKERS_ENV_VAR)
-    if env_workers is None:
+    value = _normalise_env_value(BATCH_MAX_WORKERS_ENV_VAR)
+    if value is None:
         return None
-    return _parse_positive_int(env_workers, env_var=BATCH_MAX_WORKERS_ENV_VAR)
+    return _parse_positive_int(value, env_var=BATCH_MAX_WORKERS_ENV_VAR)
 
 
 def _default_max_retries() -> int:
     """Return the default retry attempt count."""
-    env_value = _normalise_env_value(RETRY_MAX_RETRIES_ENV_VAR)
-    if env_value is None:
+    value = _normalise_env_value(RETRY_MAX_RETRIES_ENV_VAR)
+    if value is None:
         return MAX_RETRIES
-    return _parse_positive_int(env_value, env_var=RETRY_MAX_RETRIES_ENV_VAR)
+    return _parse_positive_int(value, env_var=RETRY_MAX_RETRIES_ENV_VAR)
 
 
 def _default_backoff_factor() -> float:
     """Return the default retry backoff multiplier."""
-    env_value = _normalise_env_value(RETRY_BACKOFF_FACTOR_ENV_VAR)
-    if env_value is None:
+    value = _normalise_env_value(RETRY_BACKOFF_FACTOR_ENV_VAR)
+    if value is None:
         return BACKOFF_FACTOR
-    return _parse_positive_float(env_value, env_var=RETRY_BACKOFF_FACTOR_ENV_VAR)
+    return _parse_positive_float(value, env_var=RETRY_BACKOFF_FACTOR_ENV_VAR)
 
 
 def _default_initial_delay() -> float:
-    """Return the default initial delay applied before retrying."""
-    env_value = _normalise_env_value(RETRY_INITIAL_DELAY_ENV_VAR)
-    if env_value is None:
+    """Return the default initial retry delay."""
+    value = _normalise_env_value(RETRY_INITIAL_DELAY_ENV_VAR)
+    if value is None:
         return INITIAL_DELAY
-    return _parse_positive_float(env_value, env_var=RETRY_INITIAL_DELAY_ENV_VAR)
+    return _parse_positive_float(value, env_var=RETRY_INITIAL_DELAY_ENV_VAR)
 
 
 @dataclass
 class RetryConfig:
-    """Describe retry and backoff configuration.
-
-    Methods
-    -------
-    None
-        Instances provide dataclass-generated attribute access only.
-
-    Parameters
-    ----------
-    max_retries : int
-        Maximum retry attempts. Defaults to 3 or
-        ``PERMUTIVE_RETRY_MAX_RETRIES`` when set.
-    backoff_factor : float
-        Exponential backoff multiplier. Defaults to 2.0 or
-        ``PERMUTIVE_RETRY_BACKOFF_FACTOR`` when set.
-    initial_delay : float
-        Initial delay in seconds before the first retry. Defaults to 1.0 or
-        ``PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS`` when set.
-    """
+    """Describe retry and backoff configuration."""
 
     max_retries: int = field(default_factory=_default_max_retries)
     backoff_factor: float = field(default_factory=_default_backoff_factor)
@@ -274,36 +226,7 @@ class RetryConfig:
 
 @dataclass
 class BatchRequest:
-    """Container describing an HTTP request executed within a batch.
-
-    Methods
-    -------
-    None
-        Instances provide dataclass-generated attribute access only.
-
-    Parameters
-    ----------
-    method : str
-        HTTP method name (GET, POST, PATCH, DELETE).
-    url : str
-        Absolute URL to target.
-    params : dict | None, optional
-        Query parameters to include. Defaults to ``None``.
-    json : dict | None, optional
-        JSON payload for methods that support it. Defaults to ``None``.
-    headers : dict | None, optional
-        Extra headers merged with :data:`DEFAULT_HEADERS`. Defaults to ``None``.
-    timeout : float | None, optional
-        Requests timeout in seconds. Defaults to the value of
-        ``PERMUTIVE_BATCH_TIMEOUT_SECONDS`` when set, otherwise ``10.0``.
-    retry : RetryConfig | None, optional
-        Override retry configuration for the request. Defaults to ``None``.
-    callback : Callable[[requests.Response], None] | None, optional
-        Invoked with the successful response. Defaults to ``None``.
-    error_callback : Callable[[Exception], None] | None, optional
-        Invoked with the raised exception if the request fails. Defaults to
-        ``None``.
-    """
+    """Describe an HTTP request executed within a batch."""
 
     method: str
     url: str
@@ -318,31 +241,7 @@ class BatchRequest:
 
 @dataclass(frozen=True)
 class Progress:
-    """Describe an immutable snapshot of batch processing progress.
-
-    Methods
-    -------
-    None
-        Instances provide dataclass-generated attribute access only.
-
-    Parameters
-    ----------
-    completed : int
-        Number of requests that have finished (successfully or with an
-        exception).
-    total : int
-        Total number of requests in the batch.
-    errors : int
-        Number of requests that have failed so far.
-    batch_request : BatchRequest
-        Descriptor corresponding to the request that just finished.
-    elapsed_seconds : float
-        Wall-clock seconds elapsed since :func:`process_batch` started.
-    average_per_thousand_seconds : float | None
-        Estimated seconds required to process 1,000 requests based on the
-        observed throughput. ``None`` when insufficient data is available
-        (e.g. before any request has completed).
-    """
+    """Describe an immutable snapshot of batch processing progress."""
 
     completed: int
     total: int
@@ -352,102 +251,67 @@ class Progress:
     average_per_thousand_seconds: Optional[float]
 
 
-def get(api_key: str, url: str, params: Optional[Dict[str, Any]] = None) -> Response:
-    """Perform a GET request with retry logic.
+def get(
+    api_key: str,
+    url: str,
+    params: Optional[Dict[str, Any]] = None,
+    *,
+    session: Optional[Session] = None,
+) -> Response:
+    """Perform a GET request with retry logic."""
+    active_session = session or get_session()
+    return _with_retry(active_session.get, url, api_key, params=params)
 
-    Parameters
-    ----------
-    api_key : str
-        The API key for authentication.
-    url : str
-        The URL for the request.
-    params : dict, optional
-        Query parameters to include in the request.
 
-    Returns
-    -------
-    requests.Response
-        The response object from the API.
+def post(
+    api_key: str,
+    url: str,
+    data: dict,
+    *,
+    session: Optional[Session] = None,
+) -> Response:
+    """Perform a POST request with retry logic."""
+    active_session = session or get_session()
+    return _with_retry(active_session.post, url, api_key, json=data)
 
-    Raises
-    ------
-    PermutiveAPIError
-        If the request fails after all retries.
+
+def patch(
+    api_key: str,
+    url: str,
+    data: dict,
+    *,
+    session: Optional[Session] = None,
+) -> Response:
+    """Perform a PATCH request with retry logic."""
+    active_session = session or get_session()
+    return _with_retry(active_session.patch, url, api_key, json=data)
+
+
+def delete(
+    api_key: str,
+    url: str,
+    *,
+    session: Optional[Session] = None,
+) -> Response:
+    """Perform a DELETE request with retry logic."""
+    active_session = session or get_session()
+    return _with_retry(active_session.delete, url, api_key)
+
+
+def _transport_method(method: str, session: Session) -> Callable[..., Response]:
+    """Return the active transport callable for ``method``.
+
+    Module-level request callables are honored when replaced by tests or
+    applications. Otherwise the reusable session transport is used.
     """
-    return _with_retry(requests.get, url, api_key, params=params)
+    module_method = getattr(requests, method.lower())
+    if module_method is not _ORIGINAL_REQUEST_METHODS[method]:
+        return module_method
 
+    def send(url: str, **kwargs: Any) -> Response:
+        return session.request(method=method, url=url, **kwargs)
 
-def post(api_key: str, url: str, data: dict) -> Response:
-    """Perform a POST request with retry logic.
-
-    Parameters
-    ----------
-    api_key : str
-        The API key for authentication.
-    url : str
-        The URL for the request.
-    data : dict
-        The JSON payload to send with the request.
-
-    Returns
-    -------
-    requests.Response
-        The response object from the API.
-
-    Raises
-    ------
-    PermutiveAPIError
-        If the request fails after all retries.
-    """
-    return _with_retry(requests.post, url, api_key, json=data)
-
-
-def patch(api_key: str, url: str, data: dict) -> Response:
-    """Perform a PATCH request with retry logic.
-
-    Parameters
-    ----------
-    api_key : str
-        The API key for authentication.
-    url : str
-        The URL for the request.
-    data : dict
-        The JSON payload to send with the request.
-
-    Returns
-    -------
-    requests.Response
-        The response object from the API.
-
-    Raises
-    ------
-    PermutiveAPIError
-        If the request fails after all retries.
-    """
-    return _with_retry(requests.patch, url, api_key, json=data)
-
-
-def delete(api_key: str, url: str) -> Response:
-    """Perform a DELETE request with retry logic.
-
-    Parameters
-    ----------
-    api_key : str
-        The API key for authentication.
-    url : str
-        The URL for the request.
-
-    Returns
-    -------
-    requests.Response
-        The response object from the API.
-
-    Raises
-    ------
-    PermutiveAPIError
-        If the request fails after all retries.
-    """
-    return _with_retry(requests.delete, url, api_key)
+    return send
 
 
 def request(
@@ -460,48 +324,11 @@ def request(
     headers: Optional[Dict[str, str]] = None,
     timeout: Optional[float] = 10.0,
     retry: Optional[RetryConfig] = None,
+    session: Optional[Session] = None,
 ) -> Response:
-    """Perform an HTTP request with retry and sensible defaults.
-
-    Parameters
-    ----------
-    method : str
-        HTTP method name (GET, POST, PATCH, DELETE).
-    api_key : str
-        API key to include as `k` query parameter.
-    url : str
-        Absolute URL.
-    params : dict | None, optional
-        Query parameters to include.
-    json : dict | None, optional
-        JSON body for methods that support it.
-    headers : dict | None, optional
-        Extra headers to merge with DEFAULT_HEADERS (extra wins).
-    timeout : float | None, optional
-        Requests timeout in seconds. Defaults to 10.0.
-    retry : RetryConfig | None, optional
-        Override retry configuration. Defaults to module constants.
-
-    Returns
-    -------
-    requests.Response
-        The response object from the API.
-
-    Raises
-    ------
-    ValueError
-        If an unsupported HTTP method is provided.
-    PermutiveAPIError
-        If the request fails after all retries.
-    """
-    session_method_map = {
-        "GET": requests.get,
-        "POST": requests.post,
-        "PATCH": requests.patch,
-        "DELETE": requests.delete,
-    }
-    request_method = session_method_map.get(method.upper())
-    if request_method is None:
+    """Perform an HTTP request through a reusable session."""
+    normalised_method = method.upper()
+    if normalised_method not in SUPPORTED_METHODS:
         raise ValueError(f"Unsupported HTTP method: {method}")
 
     merged_headers = dict(DEFAULT_HEADERS)
@@ -516,39 +343,27 @@ def request(
     if timeout is not None:
         kwargs["timeout"] = timeout
 
+    active_session = session or get_session()
+    transport = _transport_method(normalised_method, active_session)
     return _with_retry(
-        request_method, url, api_key, headers=merged_headers, retry=retry, **kwargs
+        transport,
+        url,
+        api_key,
+        headers=merged_headers,
+        retry=retry,
+        **kwargs,
     )
 
 
 def to_payload(
     dataclass_obj: Any, api_payload: Optional[List[str]] = None
 ) -> Dict[str, Any]:
-    """Convert a dataclass object to a JSON-compatible dictionary payload.
-
-    This helper simply delegates to :func:`PermutiveAPI._Utils.json.to_payload`
-    so that every payload produced by the HTTP module benefits from the
-    centralised ``customJSONEncoder`` handling. The wrapper is kept for
-    backwards compatibility with existing imports.
-
-    Parameters
-    ----------
-    dataclass_obj : Any
-        The dataclass instance to convert.
-    api_payload : list[str] | None, optional
-        A list of attribute names to include in the payload. If ``None``, all
-        attributes are considered. Defaults to ``None``.
-
-    Returns
-    -------
-    dict[str, Any]
-        A dictionary representing the JSON payload.
-    """
+    """Convert a dataclass object to a JSON-compatible payload."""
     return _json_to_payload(dataclass_obj, api_payload)
 
 
 def _with_retry(
-    method: Callable,
+    method: Callable[..., Response],
     url: str,
     api_key: str,
     *,
@@ -556,7 +371,7 @@ def _with_retry(
     retry: Optional[RetryConfig] = None,
     **kwargs: Any,
 ) -> Response:
-    """Retry logic for transient errors and rate limiting."""
+    """Execute an HTTP callable with retry handling."""
     resolved_retry = retry or RetryConfig()
     params = (kwargs.pop("params", {}) or {}).copy()
     params["k"] = api_key
@@ -572,19 +387,23 @@ def _with_retry(
         try:
             merged_headers = headers if headers is not None else DEFAULT_HEADERS
             response = method(url, headers=merged_headers, **kwargs)
-            assert response is not None
             if response.status_code in SUCCESS_RANGE:
                 return response
 
             if response.status_code == 429:
                 retry_after = int(response.headers.get("Retry-After", delay))
                 logging.warning(
-                    f"429 Too Many Requests: retrying in {retry_after}s (attempt {attempt+1})"
+                    "429 Too Many Requests: retrying in %ss (attempt %s)",
+                    retry_after,
+                    attempt + 1,
                 )
                 time.sleep(retry_after)
             elif 500 <= response.status_code < 600:
                 logging.warning(
-                    f"{response.status_code} Server Error: retrying in {delay}s (attempt {attempt+1})"
+                    "%s Server Error: retrying in %ss (attempt %s)",
+                    response.status_code,
+                    delay,
+                    attempt + 1,
                 )
                 time.sleep(delay)
                 delay *= resolved_retry.backoff_factor
@@ -605,29 +424,22 @@ def _with_retry(
                 if response is not None:
                     try:
                         raise_for_status(RequestException(redacted_error), response)
-                    except (
-                        PermutiveAPIError
-                    ) as api_error:  # pragma: no cover - defensive
+                    except PermutiveAPIError as api_error:
                         raise api_error from exc
                 raise PermutiveAPIError(
-                    f"Request failed after {attempt+1} attempts: {redacted_error}"
+                    f"Request failed after {attempt + 1} attempts: {redacted_error}"
                 ) from exc
             time.sleep(delay)
             delay *= resolved_retry.backoff_factor
 
         attempt += 1
 
-    final_exception: RequestException
-    if last_exception is not None:
-        final_exception = last_exception
-    else:
-        final_exception = RequestException("Max retries reached")
-
+    final_exception = last_exception or RequestException("Max retries reached")
     redacted_message = redact_message(str(final_exception))
     if response is not None:
         try:
             raise_for_status(RequestException(redacted_message), response)
-        except PermutiveAPIError as api_error:  # pragma: no cover - defensive
+        except PermutiveAPIError as api_error:
             raise api_error from final_exception
 
     logging.error(
@@ -647,31 +459,7 @@ def process_batch(
     max_workers: Optional[int],
     progress_callback: Optional[Callable[[Progress], None]] = None,
 ) -> Tuple[List[Response], List[Tuple[BatchRequest, Exception]]]:
-    """Execute multiple HTTP requests concurrently.
-
-    Parameters
-    ----------
-    requests : Iterable[BatchRequest]
-        Sequence of :class:`BatchRequest` descriptors.
-    api_key : str
-        API key appended to each request.
-    max_workers : int | None
-        Maximum number of worker threads. When ``None`` the executor applies
-        its default limit (``min(32, os.cpu_count() + 4)``). Set the
-        ``PERMUTIVE_BATCH_MAX_WORKERS`` environment variable to override this
-        default globally.
-    progress_callback : Callable[[Progress], None] | None, optional
-        Invoked after each request completes with a
-        :class:`~PermutiveAPI._Utils.http.Progress` snapshot containing the
-        aggregate metrics recorded so far. Defaults to ``None``.
-
-    Returns
-    -------
-    responses : list[requests.Response]
-        Successful responses in the order they complete.
-    errors : list[tuple[BatchRequest, Exception]]
-        Collected failures paired with their originating request.
-    """
+    """Execute multiple HTTP requests concurrently."""
     batch_requests = list(requests)
     total = len(batch_requests)
     if total == 0:
@@ -679,7 +467,6 @@ def process_batch(
 
     responses: List[Response] = []
     errors: List[Tuple[BatchRequest, Exception]] = []
-
     start_time = time.perf_counter()
     resolved_max_workers = _resolve_max_workers(max_workers)
 
@@ -709,23 +496,21 @@ def process_batch(
                 if batch_request.error_callback is not None:
                     try:
                         batch_request.error_callback(exc)
-                    except Exception:  # pragma: no cover - defensive logging
+                    except Exception:
                         logging.exception("Error callback raised an exception")
             else:
                 responses.append(response)
                 if batch_request.callback is not None:
                     try:
                         batch_request.callback(response)
-                    except Exception:  # pragma: no cover - defensive logging
+                    except Exception:
                         logging.exception("Success callback raised an exception")
             finally:
                 completed += 1
                 if progress_callback is not None:
                     try:
                         elapsed = time.perf_counter() - start_time
-                        average_per_thousand = (
-                            (elapsed / completed) * 1000 if completed else None
-                        )
+                        average_per_thousand = (elapsed / completed) * 1000
                         progress_callback(
                             Progress(
                                 completed=completed,
@@ -736,25 +521,14 @@ def process_batch(
                                 average_per_thousand_seconds=average_per_thousand,
                             )
                         )
-                    except Exception:  # pragma: no cover - defensive logging
+                    except Exception:
                         logging.exception("Progress callback raised an exception")
 
     return responses, errors
 
 
 def redact_message(message: str) -> str:
-    """Redact sensitive tokens in free-form text and JSON snippets.
-
-    Parameters
-    ----------
-    message : str
-        The string containing potentially sensitive information.
-
-    Returns
-    -------
-    str
-        The message with sensitive tokens redacted.
-    """
+    """Redact sensitive tokens in free-form text and JSON snippets."""
     for key in SENSITIVE_QUERY_PARAMS:
         param_pattern, json_pattern = _REDACTION_PATTERNS[key]
         message = param_pattern.sub(rf"\1=[REDACTED]", message)
@@ -763,33 +537,22 @@ def redact_message(message: str) -> str:
 
 
 def redact_url(url: str) -> str:
-    """Return a copy of url with sensitive query parameter values redacted.
-
-    Parameters
-    ----------
-    url : str
-        The URL to redact.
-
-    Returns
-    -------
-    str
-        The redacted URL.
-    """
+    """Return a URL with sensitive query values redacted."""
     try:
         parsed = urllib.parse.urlparse(url)
-        q = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
-        sens = {k.lower() for k in SENSITIVE_QUERY_PARAMS}
-        for key in list(q.keys()):
-            if key.lower() in sens:
-                q[key] = ["[REDACTED]" for _ in q[key]]
-        redacted_q = urllib.parse.urlencode(q, doseq=True)
-        return urllib.parse.urlunparse(parsed._replace(query=redacted_q))
+        query = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
+        sensitive = {key.lower() for key in SENSITIVE_QUERY_PARAMS}
+        for key in list(query.keys()):
+            if key.lower() in sensitive:
+                query[key] = ["[REDACTED]" for _ in query[key]]
+        redacted_query = urllib.parse.urlencode(query, doseq=True)
+        return urllib.parse.urlunparse(parsed._replace(query=redacted_query))
     except Exception:
         return url
 
 
 def _redact_sensitive_data(message: str, response: Response) -> str:
-    """Redact sensitive data from message and request URL query parameters."""
+    """Redact sensitive data from a message and response request URL."""
     if hasattr(response, "request") and hasattr(response.request, "url"):
         parsed_url = urllib.parse.urlparse(response.request.url)
         query_params = urllib.parse.parse_qs(str(parsed_url.query))
@@ -798,14 +561,11 @@ def _redact_sensitive_data(message: str, response: Response) -> str:
                 for secret in query_params[key]:
                     if secret:
                         message = message.replace(secret, "[REDACTED]")
-    for key in SENSITIVE_QUERY_PARAMS:
-        param_pattern, json_pattern = _REDACTION_PATTERNS[key]
-        message = param_pattern.sub(rf"\1=[REDACTED]", message)
-        message = json_pattern.sub(rf"\1[REDACTED]\2", message)
-    return message
+    return redact_message(message)
 
 
 def _extract_error_message(response: Response) -> str:
+    """Extract a human-readable API error message."""
     try:
         error_content = json.loads(response.content)
         if isinstance(error_content, dict):
@@ -817,25 +577,12 @@ def _extract_error_message(response: Response) -> str:
     return "Unknown error"
 
 
-def raise_for_status(e: Exception, response: Optional[Response]) -> None:
-    """Raise a custom exception based on HTTP status, with redaction.
-
-    Parameters
-    ----------
-    e : Exception
-        The original exception that was caught.
-    response : requests.Response, optional
-        The HTTP response object, if available.
-
-    Raises
-    ------
-    PermutiveAPIError
-        Or one of its subclasses, depending on the response status code.
-    """
+def raise_for_status(error: Exception, response: Optional[Response]) -> None:
+    """Raise a custom exception based on an HTTP response status."""
     if response is not None:
         status = response.status_code
         if status in SUCCESS_RANGE:
-            return  # pragma: no cover
+            return
         redacted_url = None
         request_obj = getattr(response, "request", None)
         request_url = getattr(request_obj, "url", None)
@@ -843,48 +590,47 @@ def raise_for_status(e: Exception, response: Optional[Response]) -> None:
             redacted_url = redact_url(request_url)
 
         if status == 400:
-            msg = redact_message(_extract_error_message(response))
+            message = redact_message(_extract_error_message(response))
             display_url = urllib.parse.unquote(redacted_url) if redacted_url else None
-            full_msg = f"400 Bad Request: {msg}" + (
+            full_message = f"400 Bad Request: {message}" + (
                 f" [URL: {display_url}]" if display_url else ""
             )
             raise PermutiveBadRequestError(
-                full_msg, status=status, url=redacted_url, response=response
-            ) from e
-
+                full_message,
+                status=status,
+                url=redacted_url,
+                response=response,
+            ) from error
         if status in (401, 403):
             raise PermutiveAuthenticationError(
                 f"{status}: Invalid API key or insufficient permissions.",
                 status=status,
                 url=redacted_url,
                 response=response,
-            ) from e
-
+            ) from error
         if status == 404:
             raise PermutiveResourceNotFoundError(
                 "Resource not found.",
                 status=status,
                 url=redacted_url,
                 response=response,
-            ) from e
-
+            ) from error
         if status == 429:
             raise PermutiveRateLimitError(
                 "Retry limit exceeded.",
                 status=status,
                 url=redacted_url,
                 response=response,
-            ) from e
-
+            ) from error
         if 500 <= status < 600:
             raise PermutiveServerError(
                 f"{status}: API unavailable after retries.",
                 status=status,
                 url=redacted_url,
                 response=response,
-            ) from e
+            ) from error
 
-    raise PermutiveAPIError(f"An unexpected error occurred: {e}") from e
+    raise PermutiveAPIError(f"An unexpected error occurred: {error}") from error
 
 
 __all__ = [
@@ -894,11 +640,14 @@ __all__ = [
     "post",
     "patch",
     "delete",
+    "get_session",
+    "close_session",
     "to_payload",
     "redact_url",
     "redact_message",
     "RetryConfig",
     "BatchRequest",
+    "Progress",
     "raise_for_status",
     "PermutiveAPIError",
     "PermutiveAuthenticationError",
