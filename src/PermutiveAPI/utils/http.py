@@ -82,6 +82,12 @@ RETRY_BACKOFF_FACTOR_ENV_VAR = "PERMUTIVE_RETRY_BACKOFF_FACTOR"
 RETRY_INITIAL_DELAY_ENV_VAR = "PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS"
 
 _THREAD_LOCAL = threading.local()
+_ORIGINAL_REQUEST_METHODS = {
+    "GET": requests.get,
+    "POST": requests.post,
+    "PATCH": requests.patch,
+    "DELETE": requests.delete,
+}
 
 _REDACTION_PATTERNS = {
     key: (
@@ -292,6 +298,22 @@ def delete(
     return _with_retry(active_session.delete, url, api_key)
 
 
+def _transport_method(method: str, session: Session) -> Callable[..., Response]:
+    """Return the active transport callable for ``method``.
+
+    Module-level request callables are honored when replaced by tests or
+    applications. Otherwise the reusable session transport is used.
+    """
+    module_method = getattr(requests, method.lower())
+    if module_method is not _ORIGINAL_REQUEST_METHODS[method]:
+        return module_method
+
+    def send(url: str, **kwargs: Any) -> Response:
+        return session.request(method=method, url=url, **kwargs)
+
+    return send
+
+
 def request(
     method: str,
     api_key: str,
@@ -322,16 +344,9 @@ def request(
         kwargs["timeout"] = timeout
 
     active_session = session or get_session()
-
-    def send(target_url: str, **request_kwargs: Any) -> Response:
-        return active_session.request(
-            method=normalised_method,
-            url=target_url,
-            **request_kwargs,
-        )
-
+    transport = _transport_method(normalised_method, active_session)
     return _with_retry(
-        send,
+        transport,
         url,
         api_key,
         headers=merged_headers,
