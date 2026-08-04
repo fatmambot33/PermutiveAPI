@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 from .agent import PermutiveAgentKit
 from .async_client import AsyncPermutiveClient, AsyncResponse, AsyncTransport
 from .client import PermutiveClient
+from .config import PermutiveConfig, Secret
 from .mcp import (
     PERMUTIVE_MCP_DOCUMENTATION_URL,
     PERMUTIVE_MCP_SERVER_NAME,
@@ -21,6 +22,14 @@ from .models import (
     EventPayload,
     IdentityPayload,
     SegmentationPayload,
+)
+from .query_dsl import (
+    QueryExpression,
+    all_of,
+    any_of,
+    event,
+    in_segment,
+    property_condition,
 )
 from .resources import Resource
 from .sdk import (
@@ -127,14 +136,17 @@ __all__ = [
     "PermutiveAuthenticationError",
     "PermutiveBadRequestError",
     "PermutiveClient",
+    "PermutiveConfig",
     "PermutiveMCPConfig",
     "PermutiveRateLimitError",
     "PermutiveResourceNotFoundError",
     "PermutiveServerError",
+    "QueryExpression",
     "RateLimitError",
     "Resource",
     "RetryPolicy",
     "SDKError",
+    "Secret",
     "Segment",
     "SegmentationPayload",
     "SegmentList",
@@ -148,6 +160,11 @@ __all__ = [
     "ValidationError",
     "Workspace",
     "WorkspaceList",
+    "all_of",
+    "any_of",
+    "event",
     "execute_batch",
+    "in_segment",
+    "property_condition",
     "tool",
 ]
