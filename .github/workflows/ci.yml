@@ -32,7 +32,7 @@ jobs:
       - name: Docstrings
         run: pydocstyle src/PermutiveAPI
       - name: Types
-        run: pyright src/PermutiveAPI
+        run: pyright
       - name: Tests
         run: pytest -q --cov-fail-under=70
 
