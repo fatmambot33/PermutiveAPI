@@ -85,7 +85,9 @@ class ToolRegistry:
             tools = (tool for tool in tools if tag in tool.tags)
         return tuple(sorted(tools, key=lambda tool: tool.name))
 
-    def invoke(self, name: str, arguments: Mapping[str, Any] | None = None) -> Any:
+    def invoke(
+        self, name: str, arguments: Mapping[str, Any] | None = None
+    ) -> Any:
         """Invoke a registered tool."""
         return self.get(name).invoke(arguments)
 
