@@ -66,7 +66,9 @@ class ToolRegistry:
     def register(self, tool: ToolDefinition, *, replace: bool = False) -> None:
         """Register a tool while protecting stable names from collisions."""
         if not tool.name or not tool.name.replace("_", "").isalnum():
-            raise ValueError("Tool names must contain only letters, digits, and underscores.")
+            raise ValueError(
+                "Tool names must contain only letters, digits, and underscores."
+            )
         if tool.name in self._tools and not replace:
             raise ValueError(f"Tool already registered: {tool.name}")
         self._tools[tool.name] = tool
