@@ -379,11 +379,7 @@ class PermutiveClient:
             token = page.next_token
 
     def _sleep(self, delay: float) -> None:
-        jitter = (
-            random.uniform(0.0, self._retry.jitter)
-            if self._retry.jitter
-            else 0.0
-        )
+        jitter = random.uniform(0.0, self._retry.jitter) if self._retry.jitter else 0.0
         time.sleep(min(delay + jitter, self._retry.max_delay))
 
 
@@ -424,6 +420,4 @@ def execute_batch(
             completed += 1
             if progress is not None:
                 progress(completed, len(inputs))
-    return BatchResult(
-        items=tuple(item for item in outcomes if item is not None)
-    )
+    return BatchResult(items=tuple(item for item in outcomes if item is not None))
