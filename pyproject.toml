@@ -29,7 +29,7 @@ classifiers = [
 [project.optional-dependencies]
 dataframe = ["pandas>=2"]
 dev = [
-    "black==24.10.0",
+    "black==26.3.1",
     "build>=1",
     "pandas>=2",
     "pydocstyle>=6",
