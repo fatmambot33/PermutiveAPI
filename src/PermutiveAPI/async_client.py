@@ -19,7 +19,14 @@ from typing import (
 )
 
 from .config import PermutiveConfig, Secret
-from .sdk import DecodingError, JSONObject, JSONScalar, Page, RetryPolicy, SDKError
+from .sdk import (
+    DecodingError,
+    JSONObject,
+    JSONScalar,
+    Page,
+    RetryPolicy,
+    SDKError,
+)
 
 T = TypeVar("T")
 
@@ -241,7 +248,8 @@ class AsyncResource(Generic[T]):
 
     async def create(self, payload: JSONObject) -> T:
         """Create one resource."""
-        return self.decoder(await self.client.request("POST", self.path, json=payload))
+        result = await self.client.request("POST", self.path, json=payload)
+        return self.decoder(result)
 
     async def update(self, resource_id: str, payload: JSONObject) -> T:
         """Update one resource."""
