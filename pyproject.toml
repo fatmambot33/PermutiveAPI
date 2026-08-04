@@ -30,10 +30,12 @@ classifiers = [
 codex = "PermutiveAPI.plugins.codex:CodexPlugin"
 
 [project.optional-dependencies]
+async = ["httpx>=0.27"]
 dataframe = ["pandas>=2"]
 dev = [
     "black==25.11.0",
     "build>=1",
+    "httpx>=0.27",
     "pandas>=2",
     "pydocstyle>=6",
     "pyright>=1.1.390",
@@ -76,11 +78,15 @@ line-length = 88
 include = [
     "src/PermutiveAPI/__init__.py",
     "src/PermutiveAPI/agent.py",
+    "src/PermutiveAPI/async_client.py",
     "src/PermutiveAPI/client.py",
+    "src/PermutiveAPI/config.py",
     "src/PermutiveAPI/credentials.py",
     "src/PermutiveAPI/mcp.py",
     "src/PermutiveAPI/models.py",
     "src/PermutiveAPI/plugins",
+    "src/PermutiveAPI/query.py",
+    "src/PermutiveAPI/query_dsl.py",
     "src/PermutiveAPI/resources.py",
     "src/PermutiveAPI/sdk.py",
     "src/PermutiveAPI/tools.py",
