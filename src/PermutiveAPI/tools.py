@@ -10,7 +10,7 @@ JSONSchema = dict[str, Any]
 ToolHandler = Callable[..., Any]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ToolDefinition:
     """Describe one callable exposed to agents.
 
