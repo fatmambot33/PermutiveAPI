@@ -6,6 +6,13 @@ from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
 from .client import PermutiveClient
+from .models import (
+    AliasPayload,
+    ContextPayload,
+    EventPayload,
+    IdentityPayload,
+    SegmentationPayload,
+)
 from .resources import Resource
 from .sdk import (
     AuthenticationError,
@@ -75,6 +82,7 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "Alias",
+    "AliasPayload",
     "AuthenticationError",
     "AuthorizationError",
     "BatchItem",
@@ -82,10 +90,13 @@ __all__ = [
     "Cohort",
     "CohortList",
     "ConflictError",
+    "ContextPayload",
     "ContextSegment",
     "DecodingError",
     "Event",
+    "EventPayload",
     "Identity",
+    "IdentityPayload",
     "Import",
     "ImportList",
     "JSONObject",
@@ -105,6 +116,7 @@ __all__ = [
     "RetryPolicy",
     "SDKError",
     "Segment",
+    "SegmentationPayload",
     "SegmentList",
     "Segmentation",
     "ServerError",

@@ -6,12 +6,16 @@ import PermutiveAPI
 
 
 CANONICAL_EXPORTS = {
+    "AliasPayload",
     "AuthenticationError",
     "AuthorizationError",
     "BatchItem",
     "BatchResult",
     "ConflictError",
+    "ContextPayload",
     "DecodingError",
+    "EventPayload",
+    "IdentityPayload",
     "JSONObject",
     "JSONScalar",
     "JSONValue",
@@ -22,6 +26,7 @@ CANONICAL_EXPORTS = {
     "Resource",
     "RetryPolicy",
     "SDKError",
+    "SegmentationPayload",
     "ServerError",
     "TransportError",
     "ValidationError",
