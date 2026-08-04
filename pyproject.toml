@@ -1,6 +1,6 @@
 [project]
 name = "PermutiveAPI"
-version = "6.1.0"
+version = "6.2.0"
 description = "A typed Python SDK for the Permutive API."
 readme = "README.md"
 authors = [{ name = "FaTmamBo33", email = "fatmambo33@gmail.com" }]
@@ -73,7 +73,7 @@ convention = "numpy"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-addopts = "--strict-markers --strict-config --cov=PermutiveAPI --cov-branch --cov-report=term-missing"
+addopts = "--strict-markers --strict-config --cov=PermutiveAPI --cov-branch --cov-report=term-missing --cov-fail-under=70"
 markers = [
     "integration: tests requiring live Permutive credentials",
 ]
