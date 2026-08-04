@@ -69,7 +69,13 @@ target-version = ["py39"]
 line-length = 88
 
 [tool.pyright]
-include = ["src/PermutiveAPI"]
+include = [
+    "src/PermutiveAPI/__init__.py",
+    "src/PermutiveAPI/client.py",
+    "src/PermutiveAPI/models.py",
+    "src/PermutiveAPI/resources.py",
+    "src/PermutiveAPI/sdk.py",
+]
 extraPaths = ["src"]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
