@@ -3,7 +3,20 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, AsyncIterator, Callable, Dict, Generic, Mapping, Optional, Protocol, Tuple, TypeVar, cast
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Generic,
+    Mapping,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from .config import PermutiveConfig, Secret
 from .sdk import DecodingError, JSONObject, JSONScalar, Page, RetryPolicy, SDKError
@@ -39,13 +52,13 @@ class AsyncPermutiveClient:
 
     def __init__(
         self,
-        api_key: str | Secret | None = None,
+        api_key: Optional[Union[str, Secret]] = None,
         *,
-        config: PermutiveConfig | None = None,
+        config: Optional[PermutiveConfig] = None,
         base_url: str = "https://api.permutive.com",
         timeout: Tuple[float, float] = (3.05, 30.0),
-        retry_policy: RetryPolicy | None = None,
-        transport: AsyncTransport | None = None,
+        retry_policy: Optional[RetryPolicy] = None,
+        transport: Optional[AsyncTransport] = None,
     ) -> None:
         if config is None:
             if api_key is None:
@@ -69,15 +82,15 @@ class AsyncPermutiveClient:
                 "Async support requires `pip install PermutiveAPI[async]` "
                 "or an injected AsyncTransport"
             ) from exc
-        return cast(
-            AsyncTransport,
-            httpx.AsyncClient(timeout=httpx.Timeout(config.timeout[1], connect=config.timeout[0])),
-        )
+        timeout = httpx.Timeout(config.timeout[1], connect=config.timeout[0])
+        return cast(AsyncTransport, httpx.AsyncClient(timeout=timeout))
 
     async def __aenter__(self) -> "AsyncPermutiveClient":
+        """Return the active asynchronous client."""
         return self
 
     async def __aexit__(self, *_: object) -> None:
+        """Close the active asynchronous client."""
         await self.close()
 
     async def close(self) -> None:
@@ -95,18 +108,23 @@ class AsyncPermutiveClient:
     ) -> JSONObject:
         """Send one request with bounded retry behavior."""
         verb = method.upper()
-        may_retry = verb in {"GET", "HEAD", "OPTIONS", "DELETE"} if idempotent is None else idempotent
+        safe = verb in {"GET", "HEAD", "OPTIONS", "DELETE"}
+        may_retry = safe if idempotent is None else idempotent
         endpoint = f"{self._config.base_url.rstrip('/')}/{path.lstrip('/')}"
         query: Dict[str, JSONScalar] = dict(params or {})
         query["k"] = self._config.api_key.value
         delay = self._config.retry_policy.initial_delay
+
         for attempt in range(1, self._config.retry_policy.max_attempts + 1):
             response = await self._transport.request(
                 verb,
                 endpoint,
                 params=query,
                 json=json,
-                headers={"Accept": "application/json", "Content-Type": "application/json"},
+                headers={
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
                 timeout=self._config.timeout,
             )
             if 200 <= response.status_code < 300:
@@ -116,8 +134,13 @@ class AsyncPermutiveClient:
                 if not isinstance(payload, dict):
                     raise DecodingError("Permutive returned a non-object JSON payload")
                 return cast(JSONObject, payload)
+
             retryable = response.status_code in self._config.retry_policy.retry_statuses
-            if not may_retry or not retryable or attempt == self._config.retry_policy.max_attempts:
+            if (
+                not may_retry
+                or not retryable
+                or attempt == self._config.retry_policy.max_attempts
+            ):
                 raise SDKError(
                     f"Permutive request failed with HTTP {response.status_code}",
                     status_code=response.status_code,
@@ -128,7 +151,9 @@ class AsyncPermutiveClient:
             retry_after = response.headers.get("Retry-After")
             if retry_after:
                 try:
-                    delay = min(float(retry_after), self._config.retry_policy.max_delay)
+                    delay = min(
+                        float(retry_after), self._config.retry_policy.max_delay
+                    )
                 except ValueError:
                     pass
             await asyncio.sleep(delay)
@@ -144,9 +169,11 @@ class AsyncPermutiveClient:
         *,
         item_decoder: Callable[[JSONObject], T],
         page_size: int = 100,
-        continuation: str | None = None,
+        continuation: Optional[str] = None,
     ) -> Page[T]:
         """Fetch one typed asynchronous page."""
+        if page_size < 1:
+            raise ValueError("page_size must be positive")
         params: Dict[str, JSONScalar] = {"limit": page_size}
         if continuation:
             params["continuation"] = continuation
@@ -168,10 +195,10 @@ class AsyncPermutiveClient:
         *,
         item_decoder: Callable[[JSONObject], T],
         page_size: int = 100,
-        max_items: int | None = None,
+        max_items: Optional[int] = None,
     ) -> AsyncIterator[T]:
         """Iterate pages lazily with repeated-token protection."""
-        token: str | None = None
+        token: Optional[str] = None
         seen: set[str] = set()
         yielded = 0
         while True:
@@ -197,19 +224,32 @@ class AsyncPermutiveClient:
 class AsyncResource(Generic[T]):
     """Canonical asynchronous resource facade."""
 
-    def __init__(self, client: AsyncPermutiveClient, path: str, decoder: Callable[[JSONObject], T]) -> None:
+    def __init__(
+        self,
+        client: AsyncPermutiveClient,
+        path: str,
+        decoder: Callable[[JSONObject], T],
+    ) -> None:
         self.client = client
         self.path = path
         self.decoder = decoder
 
     async def get(self, resource_id: str) -> T:
-        return self.decoder(await self.client.request("GET", f"{self.path}/{resource_id}"))
+        """Return one resource."""
+        payload = await self.client.request("GET", f"{self.path}/{resource_id}")
+        return self.decoder(payload)
 
     async def create(self, payload: JSONObject) -> T:
+        """Create one resource."""
         return self.decoder(await self.client.request("POST", self.path, json=payload))
 
     async def update(self, resource_id: str, payload: JSONObject) -> T:
-        return self.decoder(await self.client.request("PATCH", f"{self.path}/{resource_id}", json=payload))
+        """Update one resource."""
+        result = await self.client.request(
+            "PATCH", f"{self.path}/{resource_id}", json=payload
+        )
+        return self.decoder(result)
 
     async def delete(self, resource_id: str) -> None:
+        """Delete one resource."""
         await self.client.request("DELETE", f"{self.path}/{resource_id}")
