@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping, Optional, Protocol, Tuple
+from typing import Mapping, Optional, Protocol, Tuple, Union
 
 import requests
 from requests import Response, Session
 
 from .types import JSONObject
 from .utils.http import raise_for_status
+
+ParameterValue = Union[str, int, float, bool]
 
 
 class Transport(Protocol):
@@ -46,7 +48,7 @@ class PermutiveClient:
         method: str,
         path: str,
         *,
-        params: Optional[Mapping[str, object]] = None,
+        params: Optional[Mapping[str, ParameterValue]] = None,
         json: Optional[JSONObject] = None,
         idempotent: Optional[bool] = None,
     ) -> Response:
@@ -101,4 +103,4 @@ class PermutiveClient:
         self.close()
 
 
-__all__ = ["ClientConfig", "PermutiveClient", "Transport"]
+__all__ = ["ClientConfig", "ParameterValue", "PermutiveClient", "Transport"]
