@@ -7,6 +7,9 @@ import PermutiveAPI
 
 EXPECTED_PUBLIC_API = {
     "Alias",
+    "BatchItemResult",
+    "BatchResult",
+    "ClientConfig",
     "Cohort",
     "CohortList",
     "ContextSegment",
@@ -14,9 +17,15 @@ EXPECTED_PUBLIC_API = {
     "Identity",
     "Import",
     "ImportList",
+    "JSONArray",
+    "JSONObject",
+    "JSONScalar",
+    "JSONValue",
+    "Page",
     "PermutiveAPIError",
     "PermutiveAuthenticationError",
     "PermutiveBadRequestError",
+    "PermutiveClient",
     "PermutiveRateLimitError",
     "PermutiveResourceNotFoundError",
     "PermutiveServerError",
@@ -24,8 +33,10 @@ EXPECTED_PUBLIC_API = {
     "SegmentList",
     "Segmentation",
     "Source",
+    "Transport",
     "Workspace",
     "WorkspaceList",
+    "iter_pages",
 }
 
 
