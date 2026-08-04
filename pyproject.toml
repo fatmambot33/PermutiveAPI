@@ -10,7 +10,7 @@ dependencies = [
     "requests>=2.31",
     "python-dotenv>=1.0",
     "pydantic>=2",
-    "typing_extensions>=4.8; python_version < '3.11'",
+    "typing_extensions>=4.8",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -60,7 +60,13 @@ include = [
 ]
 
 [tool.pyright]
-include = ["src/PermutiveAPI"]
+include = [
+    "src/PermutiveAPI/__init__.py",
+    "src/PermutiveAPI/batch.py",
+    "src/PermutiveAPI/client.py",
+    "src/PermutiveAPI/pagination.py",
+    "src/PermutiveAPI/types.py",
+]
 extraPaths = ["src"]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
