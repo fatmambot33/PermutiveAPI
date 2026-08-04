@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping, Optional, Protocol, Sequence
+from typing import Mapping, Optional, Protocol, Sequence, Union
 
 from dotenv import dotenv_values
 
@@ -45,13 +45,8 @@ class CredentialsProvider(Protocol):
 class LocalCredentialsProvider:
     """Resolve credentials from explicit input, environment, or local files.
 
-    Resolution order is deterministic:
-
-    1. explicit ``api_key``
-    2. process environment
-    3. configured dotenv files, in order
-
-    The provider never mutates ``os.environ`` and never returns a blank key.
+    Resolution order is deterministic: explicit input, process environment,
+    then configured dotenv files. The provider never mutates ``os.environ``.
     """
 
     def __init__(
@@ -59,7 +54,7 @@ class LocalCredentialsProvider:
         api_key: Optional[str] = None,
         *,
         env_var: str = "PERMUTIVE_API_KEY",
-        dotenv_paths: Optional[Sequence[Path | str]] = None,
+        dotenv_paths: Optional[Sequence[Union[Path, str]]] = None,
         environ: Optional[Mapping[str, str]] = None,
     ) -> None:
         self._api_key = api_key
