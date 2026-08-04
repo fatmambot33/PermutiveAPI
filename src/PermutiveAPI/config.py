@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Mapping, Optional, Tuple
+from typing import Mapping, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 from .sdk import RetryPolicy
@@ -17,6 +17,7 @@ class Secret:
     value: str
 
     def __post_init__(self) -> None:
+        """Reject empty secrets."""
         if not self.value:
             raise ValueError("secret must not be empty")
 
@@ -38,6 +39,7 @@ class PermutiveConfig:
     allow_insecure_localhost: bool = False
 
     def __post_init__(self) -> None:
+        """Validate endpoint and timeout safety."""
         parsed = urlparse(self.base_url)
         local = parsed.hostname in {"localhost", "127.0.0.1", "::1"}
         if parsed.scheme != "https" and not (local and self.allow_insecure_localhost):
@@ -49,18 +51,31 @@ class PermutiveConfig:
     def from_env(
         cls,
         environ: Optional[Mapping[str, str]] = None,
-        **overrides: object,
+        *,
+        api_key: Optional[Union[str, Secret]] = None,
+        base_url: Optional[str] = None,
+        timeout: Tuple[float, float] = (3.05, 30.0),
+        retry_policy: Optional[RetryPolicy] = None,
+        allow_insecure_localhost: bool = False,
     ) -> "PermutiveConfig":
-        """Load configuration with explicit values overriding environment values."""
+        """Load environment values with explicit arguments taking precedence."""
         env = os.environ if environ is None else environ
-        api_key = overrides.pop("api_key", None) or env.get("PERMUTIVE_API_KEY")
-        if isinstance(api_key, Secret):
-            secret = api_key
-        elif isinstance(api_key, str):
-            secret = Secret(api_key)
+        resolved_key: Optional[Union[str, Secret]] = api_key or env.get(
+            "PERMUTIVE_API_KEY"
+        )
+        if isinstance(resolved_key, Secret):
+            secret = resolved_key
+        elif isinstance(resolved_key, str):
+            secret = Secret(resolved_key)
         else:
             raise ValueError("PERMUTIVE_API_KEY is required")
-        base_url = overrides.pop("base_url", None) or env.get(
+        resolved_url = base_url or env.get(
             "PERMUTIVE_BASE_URL", "https://api.permutive.com"
         )
-        return cls(api_key=secret, base_url=str(base_url), **overrides)
+        return cls(
+            api_key=secret,
+            base_url=resolved_url,
+            timeout=timeout,
+            retry_policy=retry_policy or RetryPolicy(),
+            allow_insecure_localhost=allow_insecure_localhost,
+        )
