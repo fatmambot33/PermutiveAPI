@@ -83,9 +83,7 @@ class PermutiveClient:
             raise RuntimeError("Permutive transport request failed") from exc
 
         if not 200 <= response.status_code < 300:
-            raise_for_status(
-                requests.RequestException("HTTP request failed"), response
-            )
+            raise_for_status(requests.RequestException("HTTP request failed"), response)
         return response
 
     def close(self) -> None:
