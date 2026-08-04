@@ -6,7 +6,9 @@ from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
 from .agent import PermutiveAgentKit
+from .async_client import AsyncPermutiveClient, AsyncResource, AsyncTransport
 from .client import PermutiveClient
+from .config import PermutiveConfig, Secret
 from .mcp import (
     PERMUTIVE_MCP_DOCUMENTATION_URL,
     PERMUTIVE_MCP_SERVER_NAME,
@@ -21,6 +23,7 @@ from .models import (
     IdentityPayload,
     SegmentationPayload,
 )
+from .query_dsl import QueryExpression, all_of, any_of, event, in_segment, property_condition
 from .resources import Resource
 from .sdk import (
     AuthenticationError,
@@ -90,60 +93,19 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "Alias",
-    "AliasPayload",
-    "AuthenticationError",
-    "AuthorizationError",
-    "BatchItem",
-    "BatchResult",
-    "Cohort",
-    "CohortList",
-    "ConflictError",
-    "ContextPayload",
-    "ContextSegment",
-    "DecodingError",
-    "Event",
-    "EventPayload",
-    "Identity",
-    "IdentityPayload",
-    "Import",
-    "ImportList",
-    "JSONObject",
-    "JSONScalar",
-    "JSONSchema",
-    "JSONValue",
-    "NotFoundError",
-    "PERMUTIVE_MCP_DOCUMENTATION_URL",
-    "PERMUTIVE_MCP_SERVER_NAME",
-    "PERMUTIVE_MCP_TOKEN_ENV",
-    "PERMUTIVE_MCP_URL_ENV",
-    "Page",
-    "PermutiveAPIError",
-    "PermutiveAgentKit",
-    "PermutiveAuthenticationError",
-    "PermutiveBadRequestError",
-    "PermutiveClient",
-    "PermutiveMCPConfig",
-    "PermutiveRateLimitError",
-    "PermutiveResourceNotFoundError",
-    "PermutiveServerError",
-    "RateLimitError",
-    "Resource",
-    "RetryPolicy",
-    "SDKError",
-    "Segment",
-    "SegmentationPayload",
-    "SegmentList",
-    "Segmentation",
-    "ServerError",
-    "Source",
-    "ToolDefinition",
-    "ToolHandler",
-    "ToolRegistry",
-    "TransportError",
-    "ValidationError",
-    "Workspace",
-    "WorkspaceList",
-    "execute_batch",
-    "tool",
+    "Alias", "AliasPayload", "AsyncPermutiveClient", "AsyncResource", "AsyncTransport",
+    "AuthenticationError", "AuthorizationError", "BatchItem", "BatchResult", "Cohort",
+    "CohortList", "ConflictError", "ContextPayload", "ContextSegment", "DecodingError",
+    "Event", "EventPayload", "Identity", "IdentityPayload", "Import", "ImportList",
+    "JSONObject", "JSONScalar", "JSONSchema", "JSONValue", "NotFoundError",
+    "PERMUTIVE_MCP_DOCUMENTATION_URL", "PERMUTIVE_MCP_SERVER_NAME",
+    "PERMUTIVE_MCP_TOKEN_ENV", "PERMUTIVE_MCP_URL_ENV", "Page", "PermutiveAPIError",
+    "PermutiveAgentKit", "PermutiveAuthenticationError", "PermutiveBadRequestError",
+    "PermutiveClient", "PermutiveConfig", "PermutiveMCPConfig", "PermutiveRateLimitError",
+    "PermutiveResourceNotFoundError", "PermutiveServerError", "QueryExpression",
+    "RateLimitError", "Resource", "RetryPolicy", "SDKError", "Secret", "Segment",
+    "SegmentationPayload", "SegmentList", "Segmentation", "ServerError", "Source",
+    "ToolDefinition", "ToolHandler", "ToolRegistry", "TransportError", "ValidationError",
+    "Workspace", "WorkspaceList", "all_of", "any_of", "event", "execute_batch",
+    "in_segment", "property_condition", "tool",
 ]
