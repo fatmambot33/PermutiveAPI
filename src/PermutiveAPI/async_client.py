@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any, Dict, Mapping, Optional, Protocol, Tuple, cast
 
 from .sdk import (
@@ -77,7 +76,12 @@ class AsyncPermutiveClient:
         return cast(
             AsyncTransport,
             httpx.AsyncClient(
-                timeout=httpx.Timeout(connect=timeout[0], read=timeout[1], write=timeout[1], pool=timeout[0])
+                timeout=httpx.Timeout(
+                    connect=timeout[0],
+                    read=timeout[1],
+                    write=timeout[1],
+                    pool=timeout[0],
+                )
             ),
         )
 
@@ -125,8 +129,6 @@ class AsyncPermutiveClient:
                     timeout=self._timeout,
                 )
             except Exception as exc:
-                if isinstance(exc, asyncio.CancelledError):
-                    raise
                 if not may_retry or attempt == self._retry.max_attempts:
                     raise TransportError(
                         _redact(str(exc), self._api_key),
@@ -175,4 +177,6 @@ class AsyncPermutiveClient:
 
     async def _sleep(self, delay: float) -> None:
         """Sleep without blocking the event loop."""
+        import asyncio
+
         await asyncio.sleep(min(delay, self._retry.max_delay))
