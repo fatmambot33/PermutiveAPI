@@ -82,7 +82,9 @@ async def test_async_request_reuses_sync_error_hierarchy() -> None:
 
 
 @pytest.mark.asyncio
-async def test_async_request_retries_without_blocking(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_async_request_retries_without_blocking(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Retry safe requests through asynchronous sleep."""
     transport = FakeTransport(
         FakeResponse(503, {"error": "busy"}),
