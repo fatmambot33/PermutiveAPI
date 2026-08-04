@@ -5,7 +5,7 @@ This document is the source of truth for public support, deprecation, and remova
 
 ## Canonical surface
 
-New code should use these exports from `PermutiveAPI`:
+New code should use these exports from `PermutiveAPI`.
 
 ### Client and resources
 
@@ -30,6 +30,23 @@ New code should use these exports from `PermutiveAPI`:
 - `BatchItem`
 - `BatchResult`
 - `execute_batch`
+
+### Agent and tool integration
+
+- `PermutiveAgentKit`
+- `JSONSchema`
+- `ToolDefinition`
+- `ToolHandler`
+- `ToolRegistry`
+- `tool`
+
+### MCP integration
+
+- `PermutiveMCPConfig`
+- `PERMUTIVE_MCP_DOCUMENTATION_URL`
+- `PERMUTIVE_MCP_SERVER_NAME`
+- `PERMUTIVE_MCP_TOKEN_ENV`
+- `PERMUTIVE_MCP_URL_ENV`
 
 ### Canonical errors
 
@@ -93,7 +110,9 @@ Users must not rely on imports from private modules or names prefixed with `_`.
 
 ## Decision rules
 
-- Prefer `PermutiveClient` and `Resource` for all new work.
+- Prefer `PermutiveClient` and `Resource` for all new API work.
+- Prefer `PermutiveAgentKit` and `ToolRegistry` for agent integrations.
+- Use `PermutiveMCPConfig` for MCP server composition rather than duplicating environment handling.
 - Do not add a second way to perform the same operation without a documented product reason.
 - Public methods require stable names, typed signatures, documented errors, tests, and examples.
 - Compatibility code delegates to canonical code rather than duplicating request logic.
@@ -101,4 +120,4 @@ Users must not rely on imports from private modules or names prefixed with `_`.
 
 ## Migration direction
 
-Core CRUD resources are available through the canonical client. Identity, user segmentation, and context segmentation remain compatibility actions while their endpoint contracts stabilize. `API_COVERAGE.md` records the exact support status and `MIGRATION.md` provides the supported transition path.
+Core CRUD resources are available through the canonical client. Identity, user segmentation, and context segmentation remain compatibility actions while their endpoint contracts stabilize. Agent, tool, and MCP integrations are canonical extension surfaces. `API_COVERAGE.md` records the exact support status and `MIGRATION.md` provides the supported transition path.
