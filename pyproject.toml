@@ -26,6 +26,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
+[project.entry-points."permutiveapi.plugins"]
+codex = "PermutiveAPI.plugins.codex:CodexPlugin"
+
 [project.optional-dependencies]
 dataframe = ["pandas>=2"]
 dev = [
@@ -72,7 +75,9 @@ line-length = 88
 include = [
     "src/PermutiveAPI/__init__.py",
     "src/PermutiveAPI/client.py",
+    "src/PermutiveAPI/credentials.py",
     "src/PermutiveAPI/models.py",
+    "src/PermutiveAPI/plugins",
     "src/PermutiveAPI/resources.py",
     "src/PermutiveAPI/sdk.py",
 ]
