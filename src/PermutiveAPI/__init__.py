@@ -1,9 +1,10 @@
 """Public imports for the typed Permutive API SDK."""
 
-from .audience import Import, ImportList, Segment, SegmentList, Source
-from .cohort import Cohort, CohortList
-from .context import ContextSegment
-from .identify import Alias, Identity
+from __future__ import annotations
+
+from importlib import import_module
+from typing import Any
+
 from .resources import Resource
 from .sdk import (
     AuthenticationError,
@@ -26,7 +27,6 @@ from .sdk import (
     ValidationError,
     execute_batch,
 )
-from .segmentation import Event, Segmentation
 from .utils.http import (
     PermutiveAPIError,
     PermutiveAuthenticationError,
@@ -35,7 +35,35 @@ from .utils.http import (
     PermutiveResourceNotFoundError,
     PermutiveServerError,
 )
-from .workspace import Workspace, WorkspaceList
+
+_LAZY_EXPORTS = {
+    "Alias": ("PermutiveAPI.identify", "Alias"),
+    "Cohort": ("PermutiveAPI.cohort", "Cohort"),
+    "CohortList": ("PermutiveAPI.cohort", "CohortList"),
+    "ContextSegment": ("PermutiveAPI.context", "ContextSegment"),
+    "Event": ("PermutiveAPI.segmentation", "Event"),
+    "Identity": ("PermutiveAPI.identify", "Identity"),
+    "Import": ("PermutiveAPI.audience", "Import"),
+    "ImportList": ("PermutiveAPI.audience", "ImportList"),
+    "Segment": ("PermutiveAPI.audience", "Segment"),
+    "SegmentList": ("PermutiveAPI.audience", "SegmentList"),
+    "Segmentation": ("PermutiveAPI.segmentation", "Segmentation"),
+    "Source": ("PermutiveAPI.audience", "Source"),
+    "Workspace": ("PermutiveAPI.workspace", "Workspace"),
+    "WorkspaceList": ("PermutiveAPI.workspace", "WorkspaceList"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    """Load legacy resource exports only when requested."""
+    target = _LAZY_EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attribute_name = target
+    value = getattr(import_module(module_name), attribute_name)
+    globals()[name] = value
+    return value
+
 
 __all__ = [
     "Alias",
