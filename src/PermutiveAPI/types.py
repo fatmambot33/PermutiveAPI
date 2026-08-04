@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, TypeAlias, Union
+from typing import Dict, List, Union
+from typing_extensions import TypeAlias
 
 JSONScalar: TypeAlias = Union[str, int, float, bool, None]
 JSONValue: TypeAlias = Union[JSONScalar, "JSONObject", "JSONArray"]
