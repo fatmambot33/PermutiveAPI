@@ -1,16 +1,32 @@
-"""Convenience imports for interacting with the Permutive API.
-
-The `PermutiveAPI` package exposes classes for managing users, imports,
-cohorts and workspaces through Permutive's REST API.  Refer to ``README.md`` in
-the repository root for installation and full usage documentation.
-"""
+"""Public imports for the typed Permutive API SDK."""
 
 from .audience import Import, ImportList, Segment, SegmentList, Source
-from .identify import Identity, Alias
 from .cohort import Cohort, CohortList
-from .workspace import Workspace, WorkspaceList
-from .segmentation import Event, Segmentation
 from .context import ContextSegment
+from .identify import Alias, Identity
+from .resources import Resource
+from .sdk import (
+    AuthenticationError,
+    AuthorizationError,
+    BatchItem,
+    BatchResult,
+    ConflictError,
+    DecodingError,
+    JSONObject,
+    JSONScalar,
+    JSONValue,
+    NotFoundError,
+    Page,
+    PermutiveClient,
+    RateLimitError,
+    RetryPolicy,
+    SDKError,
+    ServerError,
+    TransportError,
+    ValidationError,
+    execute_batch,
+)
+from .segmentation import Event, Segmentation
 from .utils.http import (
     PermutiveAPIError,
     PermutiveAuthenticationError,
@@ -19,26 +35,47 @@ from .utils.http import (
     PermutiveResourceNotFoundError,
     PermutiveServerError,
 )
+from .workspace import Workspace, WorkspaceList
 
 __all__ = [
+    "Alias",
+    "AuthenticationError",
+    "AuthorizationError",
+    "BatchItem",
+    "BatchResult",
     "Cohort",
     "CohortList",
+    "ConflictError",
+    "ContextSegment",
+    "DecodingError",
+    "Event",
+    "Identity",
     "Import",
     "ImportList",
-    "Segment",
-    "SegmentList",
-    "Source",
-    "Workspace",
-    "WorkspaceList",
-    "Identity",
-    "Alias",
-    "Event",
-    "Segmentation",
-    "ContextSegment",
+    "JSONObject",
+    "JSONScalar",
+    "JSONValue",
+    "NotFoundError",
+    "Page",
     "PermutiveAPIError",
     "PermutiveAuthenticationError",
     "PermutiveBadRequestError",
+    "PermutiveClient",
     "PermutiveRateLimitError",
     "PermutiveResourceNotFoundError",
     "PermutiveServerError",
+    "RateLimitError",
+    "Resource",
+    "RetryPolicy",
+    "SDKError",
+    "Segment",
+    "SegmentList",
+    "Segmentation",
+    "ServerError",
+    "Source",
+    "TransportError",
+    "ValidationError",
+    "Workspace",
+    "WorkspaceList",
+    "execute_batch",
 ]
