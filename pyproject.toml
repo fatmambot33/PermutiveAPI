@@ -59,6 +59,10 @@ include = [
     "LICENSE",
 ]
 
+[tool.black]
+target-version = ["py39"]
+line-length = 88
+
 [tool.pyright]
 include = ["src/PermutiveAPI"]
 extraPaths = ["src"]
