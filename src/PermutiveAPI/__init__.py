@@ -5,6 +5,7 @@ from __future__ import annotations
 from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
+from .agent import PermutiveAgentKit
 from .client import PermutiveClient
 from .mcp import (
     PERMUTIVE_MCP_DOCUMENTATION_URL,
@@ -41,6 +42,7 @@ from .sdk import (
     ValidationError,
     execute_batch,
 )
+from .tools import JSONSchema, ToolDefinition, ToolHandler, ToolRegistry, tool
 from .utils.http import (
     PermutiveAPIError,
     PermutiveAuthenticationError,
@@ -108,6 +110,7 @@ __all__ = [
     "ImportList",
     "JSONObject",
     "JSONScalar",
+    "JSONSchema",
     "JSONValue",
     "NotFoundError",
     "PERMUTIVE_MCP_DOCUMENTATION_URL",
@@ -116,6 +119,7 @@ __all__ = [
     "PERMUTIVE_MCP_URL_ENV",
     "Page",
     "PermutiveAPIError",
+    "PermutiveAgentKit",
     "PermutiveAuthenticationError",
     "PermutiveBadRequestError",
     "PermutiveClient",
@@ -133,9 +137,13 @@ __all__ = [
     "Segmentation",
     "ServerError",
     "Source",
+    "ToolDefinition",
+    "ToolHandler",
+    "ToolRegistry",
     "TransportError",
     "ValidationError",
     "Workspace",
     "WorkspaceList",
     "execute_batch",
+    "tool",
 ]
