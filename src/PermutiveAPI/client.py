@@ -93,9 +93,11 @@ class PermutiveClient:
             close()
 
     def __enter__(self) -> "PermutiveClient":
+        """Return this client for context-managed use."""
         return self
 
     def __exit__(self, *_: object) -> None:
+        """Close the underlying transport on context exit."""
         self.close()
 
 
