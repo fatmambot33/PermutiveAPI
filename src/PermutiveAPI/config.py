@@ -43,7 +43,9 @@ class PermutiveConfig:
         parsed = urlparse(self.base_url)
         local = parsed.hostname in {"localhost", "127.0.0.1", "::1"}
         if parsed.scheme != "https" and not (local and self.allow_insecure_localhost):
-            raise ValueError("base_url must use HTTPS unless localhost is explicitly allowed")
+            raise ValueError(
+                "base_url must use HTTPS unless localhost is explicitly allowed"
+            )
         if min(self.timeout) <= 0:
             raise ValueError("timeout values must be positive")
 
