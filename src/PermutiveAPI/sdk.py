@@ -5,10 +5,25 @@ from __future__ import annotations
 import random
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Generic, Iterator, List, Mapping, Optional, Protocol, Sequence, Tuple, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import requests
-from requests import Response, Session
+from requests import Response
 
 JSONScalar = Union[str, int, float, bool, None]
 JSONValue = Union[JSONScalar, List["JSONValue"], Dict[str, "JSONValue"]]
@@ -22,6 +37,7 @@ class Transport(Protocol):
 
     def request(self, method: str, url: str, **kwargs: Any) -> Response:
         """Send one HTTP request."""
+        ...
 
 
 @dataclass(frozen=True)
@@ -121,6 +137,7 @@ class BatchItem(Generic[T, R]):
 
     @property
     def succeeded(self) -> bool:
+        """Return whether the item completed successfully."""
         return self.error is None
 
 
@@ -132,10 +149,12 @@ class BatchResult(Generic[T, R]):
 
     @property
     def successes(self) -> Tuple[BatchItem[T, R], ...]:
+        """Return successful item outcomes."""
         return tuple(item for item in self.items if item.succeeded)
 
     @property
     def failures(self) -> Tuple[BatchItem[T, R], ...]:
+        """Return failed item outcomes."""
         return tuple(item for item in self.items if not item.succeeded)
 
 
@@ -143,32 +162,48 @@ def _redact(text: str, secret: str) -> str:
     return text.replace(secret, "[REDACTED]") if secret else text
 
 
-def _error_for_response(response: Response, endpoint: str, attempts: int) -> SDKError:
+def _make_error(
+    error_type: type[SDKError],
+    message: str,
+    response: Response,
+    endpoint: str,
+    attempts: int,
+) -> SDKError:
     status = response.status_code
-    request_id = response.headers.get("X-Request-ID") or response.headers.get("Request-ID")
-    message = f"Permutive request failed with HTTP {status}"
-    kwargs = dict(
+    request_id = response.headers.get("X-Request-ID") or response.headers.get(
+        "Request-ID"
+    )
+    return error_type(
+        message,
         status_code=status,
         request_id=request_id,
         endpoint=endpoint,
         retryable=status == 429 or status >= 500,
         attempts=attempts,
     )
+
+
+def _error_for_response(response: Response, endpoint: str, attempts: int) -> SDKError:
+    status = response.status_code
+    message = f"Permutive request failed with HTTP {status}"
+    error_type: type[SDKError]
     if status == 401:
-        return AuthenticationError(message, **kwargs)
-    if status == 403:
-        return AuthorizationError(message, **kwargs)
-    if status in {400, 422}:
-        return ValidationError(message, **kwargs)
-    if status == 404:
-        return NotFoundError(message, **kwargs)
-    if status == 409:
-        return ConflictError(message, **kwargs)
-    if status == 429:
-        return RateLimitError(message, **kwargs)
-    if status >= 500:
-        return ServerError(message, **kwargs)
-    return SDKError(message, **kwargs)
+        error_type = AuthenticationError
+    elif status == 403:
+        error_type = AuthorizationError
+    elif status in {400, 422}:
+        error_type = ValidationError
+    elif status == 404:
+        error_type = NotFoundError
+    elif status == 409:
+        error_type = ConflictError
+    elif status == 429:
+        error_type = RateLimitError
+    elif status >= 500:
+        error_type = ServerError
+    else:
+        error_type = SDKError
+    return _make_error(error_type, message, response, endpoint, attempts)
 
 
 class PermutiveClient:
@@ -189,7 +224,7 @@ class PermutiveClient:
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
         self._retry = retry_policy or RetryPolicy()
-        self._transport = transport or requests.Session()
+        self._transport: Transport = transport or requests.Session()
 
     def close(self) -> None:
         """Close the underlying session when supported."""
@@ -198,9 +233,11 @@ class PermutiveClient:
             close()
 
     def __enter__(self) -> "PermutiveClient":
+        """Return the active client context."""
         return self
 
     def __exit__(self, *_: object) -> None:
+        """Close the active client context."""
         self.close()
 
     def request(
@@ -220,7 +257,6 @@ class PermutiveClient:
         query = dict(params or {})
         query["k"] = self._api_key
         delay = self._retry.initial_delay
-        response: Optional[Response] = None
 
         for attempt in range(1, self._retry.max_attempts + 1):
             try:
@@ -229,7 +265,10 @@ class PermutiveClient:
                     endpoint,
                     params=query,
                     json=json,
-                    headers={"Accept": "application/json", "Content-Type": "application/json"},
+                    headers={
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                    },
                     timeout=self._timeout,
                 )
             except requests.RequestException as exc:
@@ -303,7 +342,10 @@ class PermutiveClient:
             if isinstance(item, dict)
         )
         token = payload.get("continuation") or payload.get("next_token")
-        return Page(items=items, next_token=token if isinstance(token, str) else None)
+        return Page(
+            items=items,
+            next_token=token if isinstance(token, str) else None,
+        )
 
     def iter_all(
         self,
@@ -337,7 +379,11 @@ class PermutiveClient:
             token = page.next_token
 
     def _sleep(self, delay: float) -> None:
-        jitter = random.uniform(0.0, self._retry.jitter) if self._retry.jitter else 0.0
+        jitter = (
+            random.uniform(0.0, self._retry.jitter)
+            if self._retry.jitter
+            else 0.0
+        )
         time.sleep(min(delay + jitter, self._retry.max_delay))
 
 
@@ -359,7 +405,10 @@ def execute_batch(
 
     outcomes: List[Optional[BatchItem[T, R]]] = [None] * len(inputs)
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {executor.submit(operation, value): index for index, value in enumerate(inputs)}
+        futures = {
+            executor.submit(operation, value): index
+            for index, value in enumerate(inputs)
+        }
         completed = 0
         for future in as_completed(futures):
             index = futures[future]
@@ -375,4 +424,6 @@ def execute_batch(
             completed += 1
             if progress is not None:
                 progress(completed, len(inputs))
-    return BatchResult(items=tuple(item for item in outcomes if item is not None))
+    return BatchResult(
+        items=tuple(item for item in outcomes if item is not None)
+    )
