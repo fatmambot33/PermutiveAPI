@@ -5,6 +5,7 @@ from __future__ import annotations
 from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
+from .client import PermutiveClient
 from .resources import Resource
 from .sdk import (
     AuthenticationError,
@@ -18,7 +19,6 @@ from .sdk import (
     JSONValue,
     NotFoundError,
     Page,
-    PermutiveClient,
     RateLimitError,
     RetryPolicy,
     SDKError,

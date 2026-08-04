@@ -22,7 +22,7 @@ class Resource(Generic[T]):
         """Return one resource by identifier."""
         return self.decoder(self.client.request("GET", f"{self.path}/{resource_id}"))
 
-    def list_page(
+    def list(
         self, *, page_size: int = 100, continuation: Optional[str] = None
     ) -> Page[T]:
         """Return one typed page."""
@@ -32,6 +32,12 @@ class Resource(Generic[T]):
             page_size=page_size,
             continuation=continuation,
         )
+
+    def list_page(
+        self, *, page_size: int = 100, continuation: Optional[str] = None
+    ) -> Page[T]:
+        """Return one typed page using the compatibility method name."""
+        return self.list(page_size=page_size, continuation=continuation)
 
     def iter_all(
         self, *, page_size: int = 100, max_items: Optional[int] = None
