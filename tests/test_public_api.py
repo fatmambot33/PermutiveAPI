@@ -50,4 +50,6 @@ def test_public_api_is_explicit_and_complete() -> None:
 
 def test_public_api_does_not_contain_duplicates() -> None:
     """Ensure duplicate exports cannot hide mistakes in the API inventory."""
-    assert len(PermutiveAPI.__all__) == len(set(PermutiveAPI.__all__))
+    assert len(PermutiveAPI.__all__) == len(
+        set(PermutiveAPI.__all__)
+    )
