@@ -12,6 +12,14 @@ New code should use these exports from `PermutiveAPI`:
 - `PermutiveClient`
 - `Resource`
 
+### Typed request contracts
+
+- `AliasPayload`
+- `IdentityPayload`
+- `EventPayload`
+- `SegmentationPayload`
+- `ContextPayload`
+
 ### Typed SDK primitives
 
 - `JSONObject`
@@ -93,5 +101,4 @@ Users must not rely on imports from private modules or names prefixed with `_`.
 
 ## Migration direction
 
-The roadmap is to move cohorts, imports, segments, workspaces, identity, segmentation, and context operations behind the canonical client and resource pattern while preserving documented compatibility entry points.
-Issue #113 tracks that implementation work.
+Core CRUD resources are available through the canonical client. Identity, user segmentation, and context segmentation remain compatibility actions while their endpoint contracts stabilize. `API_COVERAGE.md` records the exact support status and `MIGRATION.md` provides the supported transition path.
