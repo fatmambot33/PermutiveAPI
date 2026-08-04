@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, Tuple, Union
+from typing import Any, Dict, Iterable, Optional, Tuple, Union
 
 Scalar = Union[str, int, float, bool]
 
@@ -38,7 +38,7 @@ def event(
     *,
     operator: str = "greater_than_or_equal_to",
     times: Union[int, float] = 1,
-    where: QueryExpression | None = None,
+    where: Optional[QueryExpression] = None,
 ) -> QueryExpression:
     """Build an event-frequency expression."""
     if not name:
