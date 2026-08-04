@@ -80,6 +80,7 @@ include = [
     "src/PermutiveAPI/__init__.py",
     "src/PermutiveAPI/agent.py",
     "src/PermutiveAPI/async_client.py",
+    "src/PermutiveAPI/async_operations.py",
     "src/PermutiveAPI/client.py",
     "src/PermutiveAPI/config.py",
     "src/PermutiveAPI/credentials.py",
