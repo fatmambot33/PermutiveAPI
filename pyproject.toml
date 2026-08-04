@@ -1,6 +1,6 @@
 [project]
 name = "PermutiveAPI"
-version = "6.1.0"
+version = "6.2.0"
 description = "A typed Python SDK for the Permutive API."
 readme = "README.md"
 authors = [{ name = "FaTmamBo33", email = "fatmambo33@gmail.com" }]
@@ -10,7 +10,7 @@ dependencies = [
     "requests>=2.31",
     "python-dotenv>=1.0",
     "pydantic>=2",
-    "typing_extensions>=4.8",
+    "typing_extensions>=4.8; python_version < '3.11'",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -76,6 +76,7 @@ reportMissingTypeStubs = false
 reportUnknownMemberType = false
 reportUnknownVariableType = false
 reportUnknownArgumentType = false
+reportAttributeAccessIssue = false
 
 [tool.pydocstyle]
 convention = "numpy"
