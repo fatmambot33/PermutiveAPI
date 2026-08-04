@@ -32,7 +32,7 @@ codex = "PermutiveAPI.plugins.codex:CodexPlugin"
 [project.optional-dependencies]
 dataframe = ["pandas>=2"]
 dev = [
-    "black==26.3.1",
+    "black==25.11.0",
     "build>=1",
     "pandas>=2",
     "pydocstyle>=6",
