@@ -6,6 +6,13 @@ from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
 from .client import PermutiveClient
+from .mcp import (
+    PERMUTIVE_MCP_DOCUMENTATION_URL,
+    PERMUTIVE_MCP_SERVER_NAME,
+    PERMUTIVE_MCP_TOKEN_ENV,
+    PERMUTIVE_MCP_URL_ENV,
+    PermutiveMCPConfig,
+)
 from .models import (
     AliasPayload,
     ContextPayload,
@@ -103,11 +110,16 @@ __all__ = [
     "JSONScalar",
     "JSONValue",
     "NotFoundError",
+    "PERMUTIVE_MCP_DOCUMENTATION_URL",
+    "PERMUTIVE_MCP_SERVER_NAME",
+    "PERMUTIVE_MCP_TOKEN_ENV",
+    "PERMUTIVE_MCP_URL_ENV",
     "Page",
     "PermutiveAPIError",
     "PermutiveAuthenticationError",
     "PermutiveBadRequestError",
     "PermutiveClient",
+    "PermutiveMCPConfig",
     "PermutiveRateLimitError",
     "PermutiveResourceNotFoundError",
     "PermutiveServerError",
