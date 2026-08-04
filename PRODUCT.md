@@ -17,6 +17,11 @@ Build the best Python SDK for Permutive: simple, reliable, typed, and production
 - Public APIs are long-term commitments.
 - Documentation, tests, and types are part of every feature.
 
+## Public API
+
+`PUBLIC_API.md` is the source of truth for canonical, compatibility, deprecated, and internal SDK surfaces.
+New features must extend the canonical surface rather than introduce parallel entry points.
+
 ## Scope
 
 PermutiveAPI includes API clients, authentication, typed models, utilities, error handling, documentation, examples, and tests.
