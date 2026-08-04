@@ -54,6 +54,7 @@ class RetryPolicy:
     )
 
     def __post_init__(self) -> None:
+        """Validate retry bounds after initialization."""
         if self.max_attempts < 1:
             raise ValueError("max_attempts must be at least 1")
         if min(self.initial_delay, self.multiplier, self.max_delay) <= 0:
