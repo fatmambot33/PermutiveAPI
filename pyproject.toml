@@ -1,6 +1,6 @@
 [project]
 name = "PermutiveAPI"
-version = "6.2.0"
+version = "6.3.0"
 description = "A typed Python SDK for the Permutive API."
 readme = "README.md"
 authors = [{ name = "FaTmamBo33", email = "fatmambo33@gmail.com" }]
@@ -75,6 +75,7 @@ line-length = 88
 [tool.pyright]
 include = [
     "src/PermutiveAPI/__init__.py",
+    "src/PermutiveAPI/agent.py",
     "src/PermutiveAPI/client.py",
     "src/PermutiveAPI/credentials.py",
     "src/PermutiveAPI/mcp.py",
@@ -82,6 +83,7 @@ include = [
     "src/PermutiveAPI/plugins",
     "src/PermutiveAPI/resources.py",
     "src/PermutiveAPI/sdk.py",
+    "src/PermutiveAPI/tools.py",
 ]
 extraPaths = ["src"]
 typeCheckingMode = "strict"
