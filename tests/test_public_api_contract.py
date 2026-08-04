@@ -7,6 +7,9 @@ import PermutiveAPI
 
 CANONICAL_EXPORTS = {
     "AliasPayload",
+    "AsyncPermutiveClient",
+    "AsyncResource",
+    "AsyncTransport",
     "AuthenticationError",
     "AuthorizationError",
     "BatchItem",
@@ -18,19 +21,38 @@ CANONICAL_EXPORTS = {
     "IdentityPayload",
     "JSONObject",
     "JSONScalar",
+    "JSONSchema",
     "JSONValue",
     "NotFoundError",
+    "PERMUTIVE_MCP_DOCUMENTATION_URL",
+    "PERMUTIVE_MCP_SERVER_NAME",
+    "PERMUTIVE_MCP_TOKEN_ENV",
+    "PERMUTIVE_MCP_URL_ENV",
     "Page",
+    "PermutiveAgentKit",
     "PermutiveClient",
+    "PermutiveConfig",
+    "PermutiveMCPConfig",
+    "QueryExpression",
     "RateLimitError",
     "Resource",
     "RetryPolicy",
     "SDKError",
+    "Secret",
     "SegmentationPayload",
     "ServerError",
+    "ToolDefinition",
+    "ToolHandler",
+    "ToolRegistry",
     "TransportError",
     "ValidationError",
+    "all_of",
+    "any_of",
+    "event",
     "execute_batch",
+    "in_segment",
+    "property_condition",
+    "tool",
 }
 
 COMPATIBILITY_EXPORTS = {
@@ -60,7 +82,6 @@ COMPATIBILITY_EXPORTS = {
 def test_public_exports_are_fully_classified() -> None:
     """Require every package-root export to have an explicit support class."""
     classified = CANONICAL_EXPORTS | COMPATIBILITY_EXPORTS
-
     assert set(PermutiveAPI.__all__) == classified
 
 
