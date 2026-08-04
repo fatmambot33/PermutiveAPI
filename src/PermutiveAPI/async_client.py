@@ -10,8 +10,8 @@ from .sdk import (
     JSONScalar,
     RetryPolicy,
     TransportError,
-    _error_for_response,
-    _redact,
+    _error_for_response,  # pyright: ignore[reportPrivateUsage]
+    _redact,  # pyright: ignore[reportPrivateUsage]
 )
 
 
