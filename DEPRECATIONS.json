@@ -1,0 +1,14 @@
+{
+  "policy": {
+    "minimum_minor_releases": 2,
+    "removal_release_type": "major",
+    "required_fields": [
+      "symbol",
+      "replacement",
+      "warning_version",
+      "removal_version",
+      "migration"
+    ]
+  },
+  "active": []
+}
