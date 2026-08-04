@@ -6,6 +6,7 @@ from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
 from .agent import PermutiveAgentKit
+from .async_client import AsyncPermutiveClient, AsyncResponse, AsyncTransport
 from .client import PermutiveClient
 from .mcp import (
     PERMUTIVE_MCP_DOCUMENTATION_URL,
@@ -92,6 +93,9 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "Alias",
     "AliasPayload",
+    "AsyncPermutiveClient",
+    "AsyncResponse",
+    "AsyncTransport",
     "AuthenticationError",
     "AuthorizationError",
     "BatchItem",

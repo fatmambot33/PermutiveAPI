@@ -9,6 +9,9 @@ import PermutiveAPI
 EXPECTED_PUBLIC_API = {
     "Alias",
     "AliasPayload",
+    "AsyncPermutiveClient",
+    "AsyncResponse",
+    "AsyncTransport",
     "AuthenticationError",
     "AuthorizationError",
     "BatchItem",
