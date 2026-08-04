@@ -73,14 +73,19 @@ class PermutiveClient:
                 url,
                 params=request_params,
                 json=json,
-                headers={"Accept": "application/json", "Content-Type": "application/json"},
+                headers={
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
                 timeout=self.config.timeout,
             )
         except requests.RequestException as exc:
             raise RuntimeError("Permutive transport request failed") from exc
 
         if not 200 <= response.status_code < 300:
-            raise_for_status(requests.RequestException("HTTP request failed"), response)
+            raise_for_status(
+                requests.RequestException("HTTP request failed"), response
+            )
         return response
 
     def close(self) -> None:
