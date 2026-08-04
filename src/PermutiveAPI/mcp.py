@@ -20,7 +20,7 @@ PERMUTIVE_MCP_SERVER_NAME = "permutive"
 PERMUTIVE_MCP_DOCUMENTATION_URL = "https://docs.permutive.com/api/mcp/introduction"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class PermutiveMCPConfig:
     """Describe a connection to the official Permutive MCP server.
 
