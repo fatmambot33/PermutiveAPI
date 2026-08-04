@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from importlib import import_module
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .resources import Resource
 from .sdk import (
@@ -35,6 +35,14 @@ from .utils.http import (
     PermutiveResourceNotFoundError,
     PermutiveServerError,
 )
+
+if TYPE_CHECKING:
+    from .audience import Import, ImportList, Segment, SegmentList, Source
+    from .cohort import Cohort, CohortList
+    from .context import ContextSegment
+    from .identify import Alias, Identity
+    from .segmentation import Event, Segmentation
+    from .workspace import Workspace, WorkspaceList
 
 _LAZY_EXPORTS = {
     "Alias": ("PermutiveAPI.identify", "Alias"),
