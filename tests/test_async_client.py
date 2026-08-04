@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import pytest
 
@@ -17,7 +17,7 @@ class FakeResponse:
         status_code: int,
         payload: Any,
         *,
-        headers: Mapping[str, str] | None = None,
+        headers: Optional[Mapping[str, str]] = None,
     ) -> None:
         self.status_code = status_code
         self._payload = payload
@@ -34,7 +34,7 @@ class FakeTransport:
 
     def __init__(self, *responses: FakeResponse) -> None:
         self.responses = list(responses)
-        self.requests: list[tuple[str, str, dict[str, Any]]] = []
+        self.requests: List[Tuple[str, str, Dict[str, Any]]] = []
         self.closed = False
 
     async def request(self, method: str, url: str, **kwargs: Any) -> FakeResponse:
@@ -49,7 +49,7 @@ class FakeTransport:
 
 @pytest.mark.asyncio
 async def test_async_request_uses_typed_transport_and_closes() -> None:
-    """Exercise success, authentication, timeout, and context management."""
+    """Exercise success, timeout, and context management."""
     transport = FakeTransport(FakeResponse(200, {"id": "cohort-1"}))
 
     async with AsyncPermutiveClient("secret", transport=transport) as client:
@@ -93,7 +93,7 @@ async def test_async_request_retries_without_blocking(monkeypatch: pytest.Monkey
         transport=transport,
         retry_policy=RetryPolicy(max_attempts=2, initial_delay=0.01, jitter=0),
     )
-    delays: list[float] = []
+    delays: List[float] = []
 
     async def record_sleep(delay: float) -> None:
         delays.append(delay)
