@@ -58,6 +58,7 @@ packages = ["src/PermutiveAPI"]
 include = [
     "src/PermutiveAPI",
     "tests",
+    "docs",
     "README.md",
     "CHANGELOG.md",
     "PUBLIC_API.md",
@@ -76,6 +77,7 @@ include = [
     "src/PermutiveAPI/__init__.py",
     "src/PermutiveAPI/client.py",
     "src/PermutiveAPI/credentials.py",
+    "src/PermutiveAPI/mcp.py",
     "src/PermutiveAPI/models.py",
     "src/PermutiveAPI/plugins",
     "src/PermutiveAPI/resources.py",
