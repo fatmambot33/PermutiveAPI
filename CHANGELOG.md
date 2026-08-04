@@ -2,6 +2,22 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
+## 6.2.0 - 2026-08-04
+
+### Added
+- Explicit synchronous `PermutiveClient` with dependency-injected transport and connect/read timeouts.
+- Stable typed JSON aliases and structured SDK exception hierarchy.
+- Bounded retry policy with safe-method defaults, `Retry-After`, jitter, and attempt metadata.
+- Generic typed `Page[T]`, lazy iteration, maximum-item bounds, and repeated-token protection.
+- Ordered bounded `BatchResult` execution with per-item errors, fail-fast mode, and progress callbacks.
+- Canonical typed `Resource[T]` CRUD/list facade.
+- Deterministic contract tests for transport, redaction, retry safety, pagination, and batch behavior.
+
+### Changed
+- Exported the new stable client primitives at package root while retaining legacy exports.
+- Enforced a 70% branch-aware coverage floor.
+- Advanced the minor version from 6.1.0 to 6.2.0.
+
 ## 6.1.0 - 2026-08-04
 
 ### Added
@@ -15,15 +31,6 @@ All notable changes to PermutiveAPI are documented here. The project follows Sem
 - Made pandas an optional `dataframe` integration instead of a core dependency.
 - Normalized the package version to PEP 440 and advanced the minor version from 6.0.x to 6.1.0.
 - Updated GitHub Actions to current major versions.
-
-### Existing first-class capabilities audited
-- Shared reusable HTTP sessions and centralized request dispatch.
-- Explicit request timeouts.
-- Typed exception classes and secret redaction.
-- Bounded retries and `Retry-After` support.
-- Shared JSON serialization helpers.
-- Typed batch request and progress models.
-- Unit and integration-test separation.
 
 ## Release policy
 
