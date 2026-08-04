@@ -1,16 +1,32 @@
-"""Convenience imports for interacting with the Permutive API.
+"""Public imports for the typed Permutive API SDK."""
 
-The `PermutiveAPI` package exposes classes for managing users, imports,
-cohorts and workspaces through Permutive's REST API.  Refer to ``README.md`` in
-the repository root for installation and full usage documentation.
-"""
+from __future__ import annotations
 
-from .audience import Import, ImportList, Segment, SegmentList, Source
-from .identify import Identity, Alias
-from .cohort import Cohort, CohortList
-from .workspace import Workspace, WorkspaceList
-from .segmentation import Event, Segmentation
-from .context import ContextSegment
+from importlib import import_module
+from typing import TYPE_CHECKING, Any
+
+from .resources import Resource
+from .sdk import (
+    AuthenticationError,
+    AuthorizationError,
+    BatchItem,
+    BatchResult,
+    ConflictError,
+    DecodingError,
+    JSONObject,
+    JSONScalar,
+    JSONValue,
+    NotFoundError,
+    Page,
+    PermutiveClient,
+    RateLimitError,
+    RetryPolicy,
+    SDKError,
+    ServerError,
+    TransportError,
+    ValidationError,
+    execute_batch,
+)
 from .utils.http import (
     PermutiveAPIError,
     PermutiveAuthenticationError,
@@ -20,25 +36,82 @@ from .utils.http import (
     PermutiveServerError,
 )
 
+if TYPE_CHECKING:
+    from .audience import Import, ImportList, Segment, SegmentList, Source
+    from .cohort import Cohort, CohortList
+    from .context import ContextSegment
+    from .identify import Alias, Identity
+    from .segmentation import Event, Segmentation
+    from .workspace import Workspace, WorkspaceList
+
+_LAZY_EXPORTS = {
+    "Alias": ("PermutiveAPI.identify", "Alias"),
+    "Cohort": ("PermutiveAPI.cohort", "Cohort"),
+    "CohortList": ("PermutiveAPI.cohort", "CohortList"),
+    "ContextSegment": ("PermutiveAPI.context", "ContextSegment"),
+    "Event": ("PermutiveAPI.segmentation", "Event"),
+    "Identity": ("PermutiveAPI.identify", "Identity"),
+    "Import": ("PermutiveAPI.audience", "Import"),
+    "ImportList": ("PermutiveAPI.audience", "ImportList"),
+    "Segment": ("PermutiveAPI.audience", "Segment"),
+    "SegmentList": ("PermutiveAPI.audience", "SegmentList"),
+    "Segmentation": ("PermutiveAPI.segmentation", "Segmentation"),
+    "Source": ("PermutiveAPI.audience", "Source"),
+    "Workspace": ("PermutiveAPI.workspace", "Workspace"),
+    "WorkspaceList": ("PermutiveAPI.workspace", "WorkspaceList"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    """Load legacy resource exports only when requested."""
+    target = _LAZY_EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attribute_name = target
+    value = getattr(import_module(module_name), attribute_name)
+    globals()[name] = value
+    return value
+
+
 __all__ = [
+    "Alias",
+    "AuthenticationError",
+    "AuthorizationError",
+    "BatchItem",
+    "BatchResult",
     "Cohort",
     "CohortList",
+    "ConflictError",
+    "ContextSegment",
+    "DecodingError",
+    "Event",
+    "Identity",
     "Import",
     "ImportList",
-    "Segment",
-    "SegmentList",
-    "Source",
-    "Workspace",
-    "WorkspaceList",
-    "Identity",
-    "Alias",
-    "Event",
-    "Segmentation",
-    "ContextSegment",
+    "JSONObject",
+    "JSONScalar",
+    "JSONValue",
+    "NotFoundError",
+    "Page",
     "PermutiveAPIError",
     "PermutiveAuthenticationError",
     "PermutiveBadRequestError",
+    "PermutiveClient",
     "PermutiveRateLimitError",
     "PermutiveResourceNotFoundError",
     "PermutiveServerError",
+    "RateLimitError",
+    "Resource",
+    "RetryPolicy",
+    "SDKError",
+    "Segment",
+    "SegmentList",
+    "Segmentation",
+    "ServerError",
+    "Source",
+    "TransportError",
+    "ValidationError",
+    "Workspace",
+    "WorkspaceList",
+    "execute_batch",
 ]

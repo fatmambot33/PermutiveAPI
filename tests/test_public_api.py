@@ -4,28 +4,47 @@ from __future__ import annotations
 
 import PermutiveAPI
 
-
 EXPECTED_PUBLIC_API = {
     "Alias",
+    "AuthenticationError",
+    "AuthorizationError",
+    "BatchItem",
+    "BatchResult",
     "Cohort",
     "CohortList",
+    "ConflictError",
     "ContextSegment",
+    "DecodingError",
     "Event",
     "Identity",
     "Import",
     "ImportList",
+    "JSONObject",
+    "JSONScalar",
+    "JSONValue",
+    "NotFoundError",
+    "Page",
     "PermutiveAPIError",
     "PermutiveAuthenticationError",
     "PermutiveBadRequestError",
+    "PermutiveClient",
     "PermutiveRateLimitError",
     "PermutiveResourceNotFoundError",
     "PermutiveServerError",
+    "RateLimitError",
+    "Resource",
+    "RetryPolicy",
+    "SDKError",
     "Segment",
     "SegmentList",
     "Segmentation",
+    "ServerError",
     "Source",
+    "TransportError",
+    "ValidationError",
     "Workspace",
     "WorkspaceList",
+    "execute_batch",
 }
 
 
