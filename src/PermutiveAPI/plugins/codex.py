@@ -7,7 +7,11 @@ from typing import Any, Mapping, cast
 
 from ..agent import PermutiveAgentKit
 from ..client import PermutiveClient
-from ..credentials import CredentialsError, CredentialsProvider, LocalCredentialsProvider
+from ..credentials import (
+    CredentialsError,
+    CredentialsProvider,
+    LocalCredentialsProvider,
+)
 from ..mcp import PermutiveMCPConfig
 from ..sdk import JSONObject
 from ..tools import ToolDefinition, ToolRegistry
