@@ -8,6 +8,7 @@ import PermutiveAPI
 CANONICAL_EXPORTS = {
     "AliasPayload",
     "AsyncPermutiveClient",
+    "AsyncResource",
     "AsyncResponse",
     "AsyncTransport",
     "AuthenticationError",
@@ -49,6 +50,7 @@ CANONICAL_EXPORTS = {
     "all_of",
     "any_of",
     "event",
+    "execute_async_batch",
     "execute_batch",
     "in_segment",
     "property_condition",
