@@ -26,6 +26,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
+[project.scripts]
+permutiveapi = "PermutiveAPI.cli:main"
+
 [project.entry-points."permutiveapi.plugins"]
 codex = "PermutiveAPI.plugins.codex:CodexPlugin"
 
@@ -80,6 +83,7 @@ include = [
     "src/PermutiveAPI/__init__.py",
     "src/PermutiveAPI/agent.py",
     "src/PermutiveAPI/async_client.py",
+    "src/PermutiveAPI/cli.py",
     "src/PermutiveAPI/client.py",
     "src/PermutiveAPI/config.py",
     "src/PermutiveAPI/credentials.py",
