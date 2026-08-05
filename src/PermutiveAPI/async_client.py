@@ -367,8 +367,7 @@ async def execute_async_batch(
                     progress(completed, len(inputs))
 
     tasks = [
-        asyncio.create_task(run(index, value))
-        for index, value in enumerate(inputs)
+        asyncio.create_task(run(index, value)) for index, value in enumerate(inputs)
     ]
     try:
         await asyncio.gather(*tasks)
