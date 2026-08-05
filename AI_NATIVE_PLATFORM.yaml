@@ -2,7 +2,7 @@ version: 1
 
 standard:
   repository: fatmambot33/ai-native-platform
-  ref: c160b627593a08c4cfd6355c9f4744305e154ed2
+  ref: 12ea076844deeb9a04b9a549b304d933f84b1c65
 
 product:
   name: PermutiveAPI
