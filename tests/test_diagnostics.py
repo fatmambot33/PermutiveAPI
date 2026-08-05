@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping
+from typing import Any, List, Mapping, Optional
 
 import pytest
 
@@ -17,7 +17,7 @@ class Response:
     """Small response double."""
 
     def __init__(
-        self, status_code: int, headers: Mapping[str, str] | None = None
+        self, status_code: int, headers: Optional[Mapping[str, str]] = None
     ) -> None:
         self.status_code = status_code
         self.headers = dict(headers or {})
