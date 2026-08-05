@@ -79,6 +79,12 @@ def test_agent_kit_reports_local_and_mcp_capabilities() -> None:
         "write_tools": 0,
         "tags": [],
         "official_mcp": True,
+        "governed_execution": True,
+        "workflow_runner": True,
+        "idempotency": True,
+        "structured_results": True,
     }
-    assert kit.invoke("increment", {"value": 8}) == 9
+    result = kit.invoke("increment", {"value": 8})
+    assert result.ok
+    assert result.output == 9
     assert kit.mcp_config() == mcp.to_client_config()

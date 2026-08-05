@@ -1,7 +1,7 @@
 [project]
 name = "PermutiveAPI"
-version = "6.4.1"
-description = "A typed Python SDK for the Permutive API."
+version = "6.5.0"
+description = "A typed, governed AI-native Python platform for the Permutive API."
 readme = "README.md"
 authors = [{ name = "FaTmamBo33", email = "fatmambo33@gmail.com" }]
 license = { file = "LICENSE" }
@@ -82,6 +82,7 @@ line-length = 88
 include = [
     "src/PermutiveAPI/__init__.py",
     "src/PermutiveAPI/agent.py",
+    "src/PermutiveAPI/ai_native.py",
     "src/PermutiveAPI/async_client.py",
     "src/PermutiveAPI/cli.py",
     "src/PermutiveAPI/client.py",
