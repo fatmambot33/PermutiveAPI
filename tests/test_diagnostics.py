@@ -66,8 +66,12 @@ def test_sync_diagnostics_are_safe_and_track_retries() -> None:
         events.append,
     )
 
-    wrapped.request("get", "https://api.example.test/items?k=secret", json={"token": "x"})
-    wrapped.request("get", "https://api.example.test/items?k=secret", json={"token": "x"})
+    wrapped.request(
+        "get", "https://api.example.test/items?k=secret", json={"token": "x"}
+    )
+    wrapped.request(
+        "get", "https://api.example.test/items?k=secret", json={"token": "x"}
+    )
 
     completed = [event for event in events if event.phase == "end"]
     assert [event.attempt for event in completed] == [1, 2]
