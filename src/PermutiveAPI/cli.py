@@ -78,7 +78,9 @@ def doctor(env_file: Path) -> int:
         if missing:
             problems.append("missing variables: " + ", ".join(missing))
         if os.name != "nt" and env_file.stat().st_mode & 0o077:
-            problems.append("credential file permissions are too broad; run chmod 600 .env")
+            problems.append(
+                "credential file permissions are too broad; run chmod 600 .env"
+            )
     if not _is_ignored(env_file):
         problems.append(".env is not explicitly ignored by .gitignore")
 

@@ -63,9 +63,7 @@ def test_codex_plugin_supports_allow_list() -> None:
         ),
     )
 
-    assert [tool.name for tool in plugin.tools().list()] == [
-        "permutive_get_cohort"
-    ]
+    assert [tool.name for tool in plugin.tools().list()] == ["permutive_get_cohort"]
 
 
 def test_codex_plugin_validation_and_metadata_are_explicit() -> None:

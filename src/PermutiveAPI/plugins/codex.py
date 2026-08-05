@@ -7,7 +7,11 @@ from typing import Any, Mapping, cast
 
 from ..agent import PermutiveAgentKit
 from ..client import PermutiveClient
-from ..credentials import CredentialsError, CredentialsProvider, LocalCredentialsProvider
+from ..credentials import (
+    CredentialsError,
+    CredentialsProvider,
+    LocalCredentialsProvider,
+)
 from ..mcp import PermutiveMCPConfig
 from ..sdk import JSONObject
 from ..tools import ToolDefinition, ToolRegistry
@@ -106,40 +110,58 @@ class CodexPlugin:
         return schema
 
     def _definitions(self, client: PermutiveClient) -> tuple[ToolDefinition, ...]:
+        def list_cohorts(page_size: int = 100) -> Any:
+            return client.cohorts.list(page_size=page_size).items
+
+        def get_cohort(resource_id: str) -> Any:
+            return client.cohorts.get(resource_id)
+
+        def list_segments(page_size: int = 100) -> Any:
+            return client.segments.list(page_size=page_size).items
+
+        def get_workspace(resource_id: str) -> Any:
+            return client.workspaces.get(resource_id)
+
+        def create_cohort(payload: JSONObject) -> Any:
+            return client.cohorts.create(payload)
+
+        def update_cohort(resource_id: str, payload: JSONObject) -> Any:
+            return client.cohorts.update(resource_id, payload)
+
         return (
             ToolDefinition(
                 "permutive_list_cohorts",
                 "List Permutive cohorts with bounded pagination.",
                 self._object_schema(),
-                lambda page_size=100: client.cohorts.list(page_size=page_size).items,
+                list_cohorts,
                 ("cohorts", "read"),
             ),
             ToolDefinition(
                 "permutive_get_cohort",
                 "Get one Permutive cohort by identifier.",
                 self._object_schema(required=("resource_id",)),
-                lambda resource_id: client.cohorts.get(resource_id),
+                get_cohort,
                 ("cohorts", "read"),
             ),
             ToolDefinition(
                 "permutive_list_segments",
                 "List Permutive audience segments with bounded pagination.",
                 self._object_schema(),
-                lambda page_size=100: client.segments.list(page_size=page_size).items,
+                list_segments,
                 ("segments", "read"),
             ),
             ToolDefinition(
                 "permutive_get_workspace",
                 "Get one Permutive workspace by identifier.",
                 self._object_schema(required=("resource_id",)),
-                lambda resource_id: client.workspaces.get(resource_id),
+                get_workspace,
                 ("workspaces", "read"),
             ),
             ToolDefinition(
                 "permutive_create_cohort",
                 "Create a Permutive cohort from a JSON payload.",
                 self._object_schema(required=("payload",)),
-                lambda payload: client.cohorts.create(cast(JSONObject, payload)),
+                create_cohort,
                 ("cohorts", "write"),
                 False,
             ),
@@ -147,9 +169,7 @@ class CodexPlugin:
                 "permutive_update_cohort",
                 "Update a Permutive cohort from a JSON payload.",
                 self._object_schema(required=("resource_id", "payload")),
-                lambda resource_id, payload: client.cohorts.update(
-                    resource_id, cast(JSONObject, payload)
-                ),
+                update_cohort,
                 ("cohorts", "write"),
                 False,
             ),
