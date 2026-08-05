@@ -151,9 +151,11 @@ async def test_async_batch_is_bounded_ordered_and_typed() -> None:
 @pytest.mark.asyncio
 async def test_async_batch_cancels_children_when_parent_is_cancelled() -> None:
     """Collect child cancellation before propagating parent cancellation."""
+    started = asyncio.Event()
     cancelled = asyncio.Event()
 
     async def operation(_: int) -> int:
+        started.set()
         try:
             await asyncio.sleep(60)
         except asyncio.CancelledError:
@@ -161,7 +163,7 @@ async def test_async_batch_cancels_children_when_parent_is_cancelled() -> None:
             raise
 
     task = asyncio.create_task(execute_async_batch([1, 2], operation))
-    await asyncio.sleep(0)
+    await started.wait()
     task.cancel()
 
     with pytest.raises(asyncio.CancelledError):
