@@ -27,10 +27,30 @@ REQUIRED_TRUE_PATHS = (
     ("quality", "typed"),
     ("quality", "tests"),
     ("quality", "docs"),
+    ("self_improvement", "enabled"),
+    ("self_improvement", "github_issues_as_work_queue"),
+    ("self_improvement", "discover_improvements"),
+    ("self_improvement", "create_issues"),
+    ("self_improvement", "agent_ready_issues"),
+    ("self_improvement", "agent_can_open_pull_requests"),
+    ("self_improvement", "run_ci_before_merge"),
     ("release", "block_if_quality_fails"),
     ("release", "block_if_plugin_invalid"),
+    ("release", "block_if_self_improvement_contract_invalid"),
 )
-REQUIRED_GUARANTEES = {"deterministic_tool_discovery", "structured_outputs"}
+REQUIRED_GUARANTEES = {
+    "deterministic_tool_discovery",
+    "structured_outputs",
+    "issue_driven_self_improvement",
+}
+REQUIRED_SOURCES = {"ci_failures", "user_feedback", "todos", "code_analysis"}
+REQUIRED_APPROVALS = {
+    "breaking_changes",
+    "security_changes",
+    "credential_changes",
+    "public_api_changes",
+    "release_changes",
+}
 
 
 def read_path(data: dict[str, Any], path: tuple[str, ...]) -> Any:
@@ -61,6 +81,9 @@ def main() -> int:
         except KeyError:
             errors.append(f"missing {'.'.join(path)}")
 
+    if not data.get("platform", {}).get("standard_repository"):
+        errors.append("platform.standard_repository is required")
+
     commands = set(data.get("commands", {}).get("required", []))
     for command in ("validate", "test", "docs", "examples", "upgrade", "uninstall"):
         if command not in commands:
@@ -77,10 +100,28 @@ def main() -> int:
             if command not in commands:
                 errors.append(f"credentialed products require command {command}")
 
+    improvement = data.get("self_improvement", {})
+    sources = set(improvement.get("sources", []))
+    missing_sources = REQUIRED_SOURCES - sources
+    if missing_sources:
+        errors.append("missing self-improvement sources: " + ", ".join(sorted(missing_sources)))
+    approvals = set(improvement.get("governance", {}).get("human_approval_required", []))
+    missing_approvals = REQUIRED_APPROVALS - approvals
+    if missing_approvals:
+        errors.append("missing human approval gates: " + ", ".join(sorted(missing_approvals)))
+
     guarantees = set(data.get("agent", {}).get("guarantees", []))
     missing_guarantees = REQUIRED_GUARANTEES - guarantees
     if missing_guarantees:
         errors.append("missing agent guarantees: " + ", ".join(sorted(missing_guarantees)))
+
+    required_files = (
+        Path(".github/ISSUE_TEMPLATE/ai-improvement.yml"),
+        Path(".github/workflows/ai-self-improvement.yml"),
+    )
+    for path in required_files:
+        if not path.is_file():
+            errors.append(f"missing required self-improvement file: {path}")
 
     if errors:
         print("AI-native platform manifest validation failed:")
