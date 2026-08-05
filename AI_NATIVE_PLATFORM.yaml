@@ -1,0 +1,86 @@
+version: 1
+
+platform:
+  name: First Class AI Native Platform
+  required: true
+
+product:
+  name: PermutiveAPI
+  ai_native: true
+  plugin_first: true
+  sdk_first: true
+  api_first: true
+  cli_first: true
+  mcp_first: true
+
+plugin:
+  enabled: true
+  codex:
+    supported: true
+    marketplace: true
+  discovery:
+    entry_points: true
+    manifest: true
+    capabilities: true
+  credentials:
+    required: true
+    local_only: true
+    env_file: .env
+    env_example: plugins/permutiveapi/.env.example
+    required_variables:
+      - PERMUTIVE_API_KEY
+      - PERMUTIVE_WORKSPACE_ID
+    setup_command: permutiveapi configure
+    validation_command: permutiveapi doctor
+    policy:
+      never_store_remote: true
+      never_commit: true
+      never_echo: true
+      require_gitignore: true
+      require_local_env: true
+
+commands:
+  required:
+    - configure
+    - doctor
+    - validate
+    - test
+    - docs
+    - examples
+    - upgrade
+    - uninstall
+  recommended:
+    - eval
+    - benchmark
+
+interfaces:
+  sdk: true
+  cli: true
+  plugin: true
+  mcp: true
+  openai_tools: true
+  json_schema: true
+
+quality:
+  typed: true
+  tests: true
+  docs: true
+  examples: true
+  security_scan: true
+  compatibility_tests: true
+  ai_evaluations: true
+  benchmark: true
+
+release:
+  block_if_quality_fails: true
+  block_if_doctor_fails: true
+  block_if_plugin_invalid: true
+  validate_manifest: python scripts/validate_ai_native_platform.py
+
+agent:
+  guarantees:
+    - local_credentials_only
+    - no_remote_secret_storage
+    - human_confirmation_for_writes
+    - deterministic_tool_discovery
+    - structured_outputs
