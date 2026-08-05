@@ -6,7 +6,7 @@ import argparse
 import getpass
 import os
 from pathlib import Path
-from typing import Dict, Iterable, Optional, Sequence
+from typing import Dict, Optional, Sequence
 
 from dotenv import dotenv_values
 
