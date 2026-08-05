@@ -2,6 +2,18 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
+## 6.4.1 - 2026-08-05
+
+### Added
+- Opt-in synchronous and asynchronous diagnostic transport wrappers.
+- Framework-neutral structured request lifecycle events with method, safe endpoint, duration, status, request ID, retry attempt, and exception type metadata.
+- Deterministic diagnostics contract tests and a standard-library logging adapter example.
+
+### Security
+- Diagnostic endpoints exclude query strings.
+- Credentials, payloads, and exception messages are never emitted by the diagnostic contract.
+- Diagnostics remain disabled by default and add no runtime dependency.
+
 ## 6.4.0 - 2026-08-05
 
 ### Added
