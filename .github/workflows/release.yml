@@ -21,7 +21,6 @@ jobs:
       url: https://pypi.org/project/PermutiveAPI/
     permissions:
       contents: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,6 +64,9 @@ jobs:
       - name: Publish to PyPI
         if: steps.existing.outputs.released != 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Create tag and GitHub release
         if: steps.existing.outputs.released != 'true'
