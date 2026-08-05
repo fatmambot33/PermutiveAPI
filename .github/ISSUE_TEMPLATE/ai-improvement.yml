@@ -1,0 +1,53 @@
+name: AI improvement
+description: Agent-ready improvement proposal for the self-improving product loop
+title: "[AI improvement] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for a bounded, testable improvement that an agent can implement through a pull request.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is missing, failing, outdated, or unnecessarily difficult?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Include CI output, code locations, user feedback, release notes, benchmarks, or documentation gaps.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe the observable result and acceptance criteria.
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Governance risk
+      options:
+        - Safe maintenance
+        - Public API change
+        - Breaking change
+        - Security change
+        - Credential change
+        - Release change
+    validations:
+      required: true
+  - type: checkboxes
+    id: agent
+    attributes:
+      label: Agent handoff
+      options:
+        - label: The scope is bounded enough for an agent-created pull request.
+          required: true
+        - label: Tests or validation steps are identified.
+          required: true
+        - label: High-impact changes will receive human approval before merge.
+          required: true
