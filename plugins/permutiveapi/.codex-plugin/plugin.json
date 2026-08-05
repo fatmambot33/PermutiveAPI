@@ -1,0 +1,30 @@
+{
+  "name": "permutiveapi",
+  "version": "6.4.1",
+  "description": "Use the typed Permutive API SDK safely from Codex.",
+  "author": {
+    "name": "FaTmamBo33",
+    "email": "fatmambo33@gmail.com",
+    "url": "https://github.com/fatmambot33"
+  },
+  "homepage": "https://github.com/fatmambot33/PermutiveAPI",
+  "repository": "https://github.com/fatmambot33/PermutiveAPI",
+  "license": "MIT",
+  "keywords": ["permutive", "api", "sdk", "codex", "python"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "PermutiveAPI",
+    "shortDescription": "Typed Permutive workflows for Codex",
+    "longDescription": "Install and use PermutiveAPI from Git, inspect cohorts and segments, and make confirmed write operations through its safe typed plugin surface.",
+    "developerName": "FaTmamBo33",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write", "Interactive"],
+    "websiteURL": "https://github.com/fatmambot33/PermutiveAPI",
+    "defaultPrompt": [
+      "Inspect my Permutive workspace safely.",
+      "List cohorts and explain their configuration.",
+      "Prepare a confirmed Permutive API change."
+    ],
+    "brandColor": "#2563EB"
+  }
+}
