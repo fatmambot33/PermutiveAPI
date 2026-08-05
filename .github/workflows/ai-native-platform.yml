@@ -5,13 +5,12 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
-  validate-manifest:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: python -m pip install PyYAML
-      - run: python scripts/validate_ai_native_platform.py
+  validate:
+    uses: fatmambot33/ai-native-platform/.github/workflows/validate.yml@c160b627593a08c4cfd6355c9f4744305e154ed2
+    with:
+      manifest: AI_NATIVE_PLATFORM.yaml
+      standard_ref: c160b627593a08c4cfd6355c9f4744305e154ed2
