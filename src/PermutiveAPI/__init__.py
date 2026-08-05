@@ -6,7 +6,13 @@ from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
 from .agent import PermutiveAgentKit
-from .async_client import AsyncPermutiveClient, AsyncResponse, AsyncTransport
+from .async_client import (
+    AsyncPermutiveClient,
+    AsyncResource,
+    AsyncResponse,
+    AsyncTransport,
+    execute_async_batch,
+)
 from .client import PermutiveClient
 from .config import PermutiveConfig, Secret
 from .mcp import (
@@ -103,6 +109,7 @@ __all__ = [
     "Alias",
     "AliasPayload",
     "AsyncPermutiveClient",
+    "AsyncResource",
     "AsyncResponse",
     "AsyncTransport",
     "AuthenticationError",
@@ -163,6 +170,7 @@ __all__ = [
     "all_of",
     "any_of",
     "event",
+    "execute_async_batch",
     "execute_batch",
     "in_segment",
     "property_condition",
