@@ -10,25 +10,34 @@ import yaml
 MANIFEST = Path("AI_NATIVE_PLATFORM.yaml")
 STANDARD_REPOSITORY = "fatmambot33/ai-native-platform"
 REQUIRED_TRUE_PATHS = (
-    ("product", "typed"),
-    ("product", "sdk"),
-    ("product", "documented"),
-    ("product", "install", "git"),
-    ("product", "install", "pypi"),
-    ("product", "install", "documented"),
+    ("product", "ai_native"),
+    ("product", "plugin_first"),
+    ("product", "sdk_first"),
     ("plugin", "enabled"),
-    ("plugin", "codex"),
-    ("plugin", "manifest"),
-    ("plugin", "discovery"),
-    ("installation", "git"),
-    ("installation", "pypi"),
-    ("installation", "documented"),
+    ("plugin", "codex", "supported"),
+    ("plugin", "codex", "marketplace"),
+    ("plugin", "discovery", "entry_points"),
+    ("plugin", "discovery", "manifest"),
+    ("plugin", "credentials", "local_only"),
+    ("plugin", "credentials", "policy", "never_store_remote"),
+    ("plugin", "credentials", "policy", "never_commit"),
+    ("plugin", "credentials", "policy", "never_echo"),
+    ("interfaces", "sdk"),
+    ("interfaces", "cli"),
+    ("interfaces", "plugin"),
+    ("quality", "typed"),
+    ("quality", "tests"),
+    ("quality", "docs"),
     ("self_improvement", "enabled"),
-    ("self_improvement", "github", "issues_as_work_queue"),
-    ("self_improvement", "agent_implementation", "enabled"),
-    ("self_improvement", "agent_implementation", "ci_required"),
-    ("release", "validate_against_standard"),
-    ("release", "pin_standard"),
+    ("self_improvement", "github", "issues"),
+    ("self_improvement", "autonomous", "discover_improvements"),
+    ("self_improvement", "autonomous", "create_issues"),
+    ("self_improvement", "autonomous", "generate_pr"),
+    ("self_improvement", "autonomous", "run_ci"),
+    ("self_improvement", "autonomous", "update_roadmap_and_changelog"),
+    ("release", "block_if_quality_fails"),
+    ("release", "block_if_plugin_invalid"),
+    ("release", "block_if_self_improvement_contract_invalid"),
 )
 REQUIRED_GUARANTEES = {
     "deterministic_tool_discovery",
@@ -43,7 +52,6 @@ REQUIRED_APPROVALS = {
     "credential_changes",
     "public_api_changes",
     "release_changes",
-    "permission_expansion",
 }
 REQUIRED_FILES = (
     Path(".github/ISSUE_TEMPLATE/ai-improvement.yml"),
@@ -73,11 +81,11 @@ def main() -> int:
         return 1
 
     errors: list[str] = []
-    platform = data.get("platform", {})
-    if platform.get("standard_repository") != STANDARD_REPOSITORY:
-        errors.append(f"platform.standard_repository must be {STANDARD_REPOSITORY}")
-    if not platform.get("standard_ref"):
-        errors.append("platform.standard_ref must pin an immutable revision")
+    standard = data.get("standard", {})
+    if standard.get("repository") != STANDARD_REPOSITORY:
+        errors.append(f"standard.repository must be {STANDARD_REPOSITORY}")
+    if not standard.get("ref"):
+        errors.append("standard.ref must pin an immutable revision")
 
     for path in REQUIRED_TRUE_PATHS:
         try:
@@ -86,20 +94,28 @@ def main() -> int:
         except KeyError:
             errors.append(f"missing {'.'.join(path)}")
 
-    credentials = data.get("credentials", {})
-    if credentials.get("required"):
-        if credentials.get("storage") != "local_env_only":
-            errors.append("credentials.storage must be local_env_only")
-        for key in ("configure_command", "doctor_command"):
-            if not credentials.get(key):
-                errors.append(f"credentials.{key} is required")
+    commands = set(data.get("commands", {}).get("required", []))
+    for command in ("validate", "test", "docs", "examples", "upgrade", "uninstall"):
+        if command not in commands:
+            errors.append(f"commands.required must include {command}")
 
-    approvals = set(
-        data.get("self_improvement", {})
-        .get("governance", {})
-        .get("human_approval_required", [])
+    credentials = data.get("plugin", {}).get("credentials", {})
+    if credentials.get("required"):
+        for key in ("env_file", "env_example", "setup_command", "validation_command"):
+            if not credentials.get(key):
+                errors.append(f"plugin.credentials.{key} is required")
+        if not credentials.get("required_variables"):
+            errors.append("plugin.credentials.required_variables must not be empty")
+        for command in ("configure", "doctor"):
+            if command not in commands:
+                errors.append(f"credentialed products require command {command}")
+
+    approvals = data.get("self_improvement", {}).get("governance", {}).get(
+        "human_approval", {}
     )
-    missing_approvals = REQUIRED_APPROVALS - approvals
+    missing_approvals = {
+        name for name in REQUIRED_APPROVALS if approvals.get(name) is not True
+    }
     if missing_approvals:
         errors.append(
             "missing human approval gates: "
