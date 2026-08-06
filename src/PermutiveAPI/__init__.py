@@ -5,6 +5,7 @@ from __future__ import annotations
 from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
+from .actionable_errors import ErrorGuidance, classify_exception
 from .agent import PermutiveAgentKit
 from .async_client import (
     AsyncPermutiveClient,
@@ -25,6 +26,14 @@ from .capabilities import (
 )
 from .client import PermutiveClient
 from .config import PermutiveConfig, Secret
+from .first_success import (
+    FIRST_SUCCESS_BUDGET_SECONDS,
+    FIRST_SUCCESS_CONTRACT_VERSION,
+    FIRST_SUCCESS_RECIPE,
+    FirstSuccessMeasurement,
+    first_success_contract,
+    measure_first_success,
+)
 from .mcp import (
     PERMUTIVE_MCP_DOCUMENTATION_URL,
     PERMUTIVE_MCP_SERVER_NAME,
@@ -46,6 +55,13 @@ from .query_dsl import (
     event,
     in_segment,
     property_condition,
+)
+from .recipes import (
+    Recipe,
+    RecipeCategory,
+    find_recipes,
+    recipe_catalog,
+    recipe_manifest,
 )
 from .resources import Resource
 from .sdk import (
@@ -137,8 +153,13 @@ __all__ = [
     "ContextPayload",
     "ContextSegment",
     "DecodingError",
+    "ErrorGuidance",
     "Event",
     "EventPayload",
+    "FIRST_SUCCESS_BUDGET_SECONDS",
+    "FIRST_SUCCESS_CONTRACT_VERSION",
+    "FIRST_SUCCESS_RECIPE",
+    "FirstSuccessMeasurement",
     "Identity",
     "IdentityPayload",
     "Import",
@@ -165,14 +186,16 @@ __all__ = [
     "PermutiveServerError",
     "QueryExpression",
     "RateLimitError",
+    "Recipe",
+    "RecipeCategory",
     "Resource",
     "RetryPolicy",
     "SDKError",
     "Secret",
     "Segment",
-    "SegmentationPayload",
     "SegmentList",
     "Segmentation",
+    "SegmentationPayload",
     "ServerError",
     "Source",
     "TOOL_SCHEMA_VERSION",
@@ -186,11 +209,17 @@ __all__ = [
     "all_of",
     "any_of",
     "capability_contract_manifest",
+    "classify_exception",
     "event",
     "execute_async_batch",
     "execute_batch",
+    "find_recipes",
+    "first_success_contract",
     "in_segment",
+    "measure_first_success",
     "negotiate_capabilities",
     "property_condition",
+    "recipe_catalog",
+    "recipe_manifest",
     "tool",
 ]

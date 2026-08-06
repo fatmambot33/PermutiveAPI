@@ -40,6 +40,7 @@ def test_wheel_contains_typed_package_and_plugin_metadata(tmp_path: Path) -> Non
 
     required_package_files = {
         "PermutiveAPI/__init__.py",
+        "PermutiveAPI/actionable_errors.py",
         "PermutiveAPI/agent.py",
         "PermutiveAPI/ai_native.py",
         "PermutiveAPI/async_client.py",
@@ -50,6 +51,7 @@ def test_wheel_contains_typed_package_and_plugin_metadata(tmp_path: Path) -> Non
         "PermutiveAPI/credentials.py",
         "PermutiveAPI/diagnostics.py",
         "PermutiveAPI/evaluations.py",
+        "PermutiveAPI/first_success.py",
         "PermutiveAPI/mcp.py",
         "PermutiveAPI/models.py",
         "PermutiveAPI/plugins/__init__.py",
@@ -58,6 +60,7 @@ def test_wheel_contains_typed_package_and_plugin_metadata(tmp_path: Path) -> Non
         "PermutiveAPI/plugins/runtime.py",
         "PermutiveAPI/py.typed",
         "PermutiveAPI/query_dsl.py",
+        "PermutiveAPI/recipes.py",
         "PermutiveAPI/resources.py",
         "PermutiveAPI/scenario_fixtures.py",
         "PermutiveAPI/scenarios.py",

@@ -67,6 +67,7 @@ include = [
     "typing_examples",
     "capabilities",
     "evals",
+    "metrics",
     "mock_fixtures",
     "scenarios",
     "scripts",
@@ -91,6 +92,7 @@ line-length = 88
 [tool.pyright]
 include = [
     "src/PermutiveAPI/__init__.py",
+    "src/PermutiveAPI/actionable_errors.py",
     "src/PermutiveAPI/agent.py",
     "src/PermutiveAPI/ai_native.py",
     "src/PermutiveAPI/async_client.py",
@@ -101,6 +103,7 @@ include = [
     "src/PermutiveAPI/credentials.py",
     "src/PermutiveAPI/diagnostics.py",
     "src/PermutiveAPI/evaluations.py",
+    "src/PermutiveAPI/first_success.py",
     "src/PermutiveAPI/mcp.py",
     "src/PermutiveAPI/models.py",
     "src/PermutiveAPI/plugins/__init__.py",
@@ -108,6 +111,7 @@ include = [
     "src/PermutiveAPI/plugins/codex.py",
     "src/PermutiveAPI/plugins/runtime.py",
     "src/PermutiveAPI/query_dsl.py",
+    "src/PermutiveAPI/recipes.py",
     "src/PermutiveAPI/resources.py",
     "src/PermutiveAPI/scenario_fixtures.py",
     "src/PermutiveAPI/scenarios.py",

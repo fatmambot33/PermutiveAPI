@@ -29,6 +29,10 @@ jobs:
         run: python scripts/validate_scenario_evidence.py
       - name: Validate capability negotiation
         run: python scripts/validate_capability_contract.py
+      - name: Validate executable recipes
+        run: python scripts/validate_recipes.py
+      - name: Validate first success
+        run: python scripts/validate_first_success.py
       - name: Run governed-platform evaluations
         run: |
           permutiveapi eval > /tmp/permutiveapi-scorecard.json

@@ -16,27 +16,25 @@ Tracking issue: #185
 
 The 6.5.1 patch release establishes verifiable product claims, truthful onboarding, and an explicit canonical typing boundary.
 
-## Now — 6.6: platform proof
+## Completed — 6.6: platform proof
 
 Tracking issue: #186
 
 - [x] #196 — Deterministic policy, tool-selection, security, workflow, and audit scorecards.
-- [ ] #197 — Local mock Permutive server and reusable fixtures.
-- [ ] #198 — End-to-end governed agent scenarios.
-- [ ] #199 — Versioned capability negotiation across tools, plugin, and MCP.
-- [ ] #200 — Actionable errors, executable recipes, and first-success budget.
+- [x] #197 — Local mock Permutive server and reusable fixtures.
+- [x] #198 — End-to-end governed agent scenarios.
+- [x] #199 — Versioned capability negotiation across tools, plugin, AgentKit, and MCP.
+- [x] #200 — Actionable errors, executable recipes, and first-success budget.
 
-The scorecard now proves local governance. The active slice adds realistic HTTP behavior without requiring live credentials or external network access.
+The 6.6 platform proves governed behavior from tool discovery through realistic local HTTP execution. Adaptive integrations negotiate capabilities before execution, failures provide secret-safe next actions, and a fresh installed interpreter reaches a useful result inside an enforced five-second budget.
 
-## Then — 6.7: operational reliability
+## Now — 6.7: operational reliability
 
 Tracking issue: #187
 
-- Detect upstream request and response schema drift.
-- Add sanitized HTTP recording and deterministic replay.
-- Coordinate rate limits across sync and async concurrency.
-- Add credential rotation, stress tests, and performance budgets.
-- Validate release candidates from immutable publishable artifacts.
+- [ ] #204 — Generated API coverage, schema-drift detection, sanitized recording, and deterministic replay.
+- [ ] #205 — Coordinated rate limits, atomic credential rotation, and sync/async stress safety.
+- [ ] #206 — Performance budgets and immutable release-artifact validation.
 
 ## Non-goals until demonstrated demand
 

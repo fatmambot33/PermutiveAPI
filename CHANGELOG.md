@@ -11,18 +11,25 @@ All notable changes to PermutiveAPI are documented here. The project follows Sem
 - Deterministic governed end-to-end scenarios over the canonical SDK, policy engine, workflow runner, and audit sink.
 - Versioned capability discovery and negotiation across `ToolRegistry`, `PermutiveAgentKit`, the Codex plugin, and MCP configuration.
 - Stable capability negotiation error codes, committed contract evidence, and cross-surface compatibility tests.
-- CI enforcement for evaluations, scenario evidence, capability evidence, strict typing, and clean-wheel negotiation.
+- Secret-safe `ErrorGuidance` with stable codes, retryability, recommended actions, and sanitized context.
+- `CodexPlugin.invoke_safe()` for actionable structured plugin results without changing existing invocation behavior.
+- Seven executable credential-free recipes across SDK, async, queries, plugin, and governed workflow categories.
+- CLI recipe discovery, filtering, source printing, and machine-readable JSON output.
+- A committed installation-to-first-success metric with a five-second fresh-process budget.
+- CI enforcement for evaluations, scenarios, capabilities, recipes, first success, strict typing, and clean-wheel execution.
 
 ### Security
 - Governed tool failures retain the exception type but no longer expose raw exception messages.
 - Evaluation runner failures report only the exception type and never persist secret-bearing text.
 - Scenario and capability metadata exclude credentials, bearer tokens, custom MCP header values, and request payloads.
+- Actionable errors exclude credentials, payloads, raw messages, and URL query strings.
 - Unsupported intents, denied writes, missing approvals, and incompatible capability requirements fail before HTTP or tool execution.
 
 ### Changed
 - Declared AI evaluations as an evidence-backed platform capability.
-- Added evaluation, mock-server, scenario, and capability modules to strict typing, wheel-content, and source-distribution contracts.
+- Added evaluation, mock-server, scenario, capability, actionable-error, recipe, and first-success modules to strict typing, wheel-content, and source-distribution contracts.
 - Preserved the historical Codex plugin API value `1` while exposing the normalized negotiation version `1.0`.
+- Made `permutiveapi examples` an executable installed-product surface rather than a static path listing.
 
 ## 6.5.1 - 2026-08-06
 

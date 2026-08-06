@@ -74,6 +74,34 @@ New code should import these names from `PermutiveAPI`.
 
 `ToolRegistry`, `PermutiveAgentKit`, `CodexPlugin`, and `PermutiveMCPConfig` expose compatible `capability_descriptor()` and `negotiate()` operations. Negotiation is deterministic, secret-free, and must complete before tool execution.
 
+### Actionable errors
+
+- `ErrorGuidance`
+- `classify_exception`
+
+Governed `InvocationResult` failures also expose `error_code`, `retryable`, `recommended_action`, and `safe_context` while preserving their existing fields. `CodexPlugin.invoke_safe()` is a documented secondary surface for the same result semantics.
+
+### Executable recipes
+
+- `Recipe`
+- `RecipeCategory`
+- `find_recipes`
+- `recipe_catalog`
+- `recipe_manifest`
+
+Recipes are deterministic installed-package artifacts and are discoverable through both Python and `permutiveapi examples`.
+
+### First-success measurement
+
+- `FIRST_SUCCESS_BUDGET_SECONDS`
+- `FIRST_SUCCESS_CONTRACT_VERSION`
+- `FIRST_SUCCESS_RECIPE`
+- `FirstSuccessMeasurement`
+- `first_success_contract`
+- `measure_first_success`
+
+The metric starts a fresh installed Python interpreter and completes the canonical credential-free workspace recipe. Its committed budget is five seconds.
+
 ### MCP integration
 
 - `PermutiveMCPConfig`
@@ -152,6 +180,8 @@ Documented secondary surfaces such as `PermutiveAPI.plugins.codex.CodexPlugin`, 
 - Prefer typed query helpers over hand-built dictionaries when the schema is supported.
 - Prefer `PermutiveAgentKit`, `ToolRegistry`, and `CodexPlugin` for agent integrations.
 - Negotiate required interfaces and features before adaptive tool execution.
+- Use `classify_exception` or `CodexPlugin.invoke_safe()` when structured next-action metadata is needed.
+- Use the installed recipe catalog rather than maintaining untested copy-paste snippets.
 - Use `PermutiveMCPConfig` for MCP server composition rather than duplicating environment handling.
 - Do not add a second way to perform the same operation without a documented product reason.
 - Public methods require stable names, typed signatures, documented errors, tests, and examples.
@@ -161,6 +191,6 @@ Documented secondary surfaces such as `PermutiveAPI.plugins.codex.CodexPlugin`, 
 
 ## Migration direction
 
-Core CRUD resources are available through the canonical client. Identity, user segmentation, and context segmentation remain compatibility actions while their endpoint contracts stabilize. Agent, tool, plugin, capability-negotiation, and MCP integrations are canonical extension surfaces.
+Core CRUD resources are available through the canonical client. Identity, user segmentation, and context segmentation remain compatibility actions while their endpoint contracts stabilize. Agent, tool, plugin, capability-negotiation, actionable-error, recipe, first-success, and MCP integrations are canonical extension surfaces.
 
 `API_COVERAGE.md` records exact endpoint support, `MIGRATION.md` provides supported transitions, and `docs/TYPING.md` explains the strict implementation boundary.

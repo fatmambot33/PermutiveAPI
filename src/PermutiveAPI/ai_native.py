@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable, Mapping, Sequence
 
+from .actionable_errors import classify_exception
 from .tools import ToolDefinition, ToolRegistry
 
 
@@ -85,6 +86,10 @@ class InvocationResult:
     started_at: str = ""
     finished_at: str = ""
     idempotency_key: str | None = None
+    error_code: str | None = None
+    retryable: bool = False
+    recommended_action: str | None = None
+    safe_context: Mapping[str, object] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serializable representation."""
@@ -98,6 +103,10 @@ class InvocationResult:
             "started_at": self.started_at,
             "finished_at": self.finished_at,
             "idempotency_key": self.idempotency_key,
+            "error_code": self.error_code,
+            "retryable": self.retryable,
+            "recommended_action": self.recommended_action,
+            "safe_context": dict(self.safe_context),
         }
 
 
@@ -147,6 +156,7 @@ class GovernedToolExecutor:
                 idempotency_key=key,
             )
         except Exception as exc:  # noqa: BLE001 - boundary converts failures to data
+            guidance = classify_exception(exc, operation=name)
             result = InvocationResult(
                 tool_name=name,
                 run_id=context.run_id,
@@ -156,6 +166,10 @@ class GovernedToolExecutor:
                 started_at=started_at,
                 finished_at=datetime.now(timezone.utc).isoformat(),
                 idempotency_key=key,
+                error_code=guidance.code,
+                retryable=guidance.retryable,
+                recommended_action=guidance.recommended_action,
+                safe_context=guidance.safe_context,
             )
 
         if key is not None and result.ok:

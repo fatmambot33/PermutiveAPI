@@ -89,7 +89,7 @@ def test_eval_command_prints_machine_readable_scorecard(capsys) -> None:
     ("command", "expected"),
     (
         ("docs", "docs/AI_NATIVE.md"),
-        ("examples", "PermutiveClient"),
+        ("examples", "workspace-inspection"),
         ("upgrade", "pip install --upgrade PermutiveAPI"),
         ("uninstall", "pip uninstall PermutiveAPI"),
     ),

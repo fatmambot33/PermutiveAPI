@@ -34,6 +34,10 @@ jobs:
         run: python scripts/validate_scenario_evidence.py
       - name: Capability contract
         run: python scripts/validate_capability_contract.py
+      - name: Executable recipes
+        run: python scripts/validate_recipes.py
+      - name: First success
+        run: python scripts/validate_first_success.py
       - name: Evaluation scorecard
         run: python scripts/generate_evaluation_scorecard.py --check evals/scorecard.json
       - name: Format
@@ -82,9 +86,11 @@ jobs:
       - run: python scripts/validate_typing_scope.py
       - run: python scripts/validate_scenario_evidence.py
       - run: python scripts/validate_capability_contract.py
+      - run: python scripts/validate_recipes.py
+      - run: python scripts/validate_first_success.py
       - run: python -m build
       - run: python -m twine check dist/*
-      - name: Verify core, CLI, plugin, evaluations, and capabilities
+      - name: Verify core, CLI, plugin, evaluations, capabilities, and first success
         shell: bash
         run: |
           wheel="$(ls dist/*.whl)"
@@ -92,16 +98,19 @@ jobs:
           /tmp/permutiveapi-core/bin/pip install "$wheel"
           /tmp/permutiveapi-core/bin/python -c "import PermutiveAPI; print(PermutiveAPI.__all__)"
           /tmp/permutiveapi-core/bin/permutiveapi validate
+          /tmp/permutiveapi-core/bin/permutiveapi examples --json > /tmp/permutiveapi-recipes.json
+          /tmp/permutiveapi-core/bin/python -c 'import json; assert len(json.load(open("/tmp/permutiveapi-recipes.json"))) >= 7'
+          /tmp/permutiveapi-core/bin/python -m PermutiveAPI.first_success
           /tmp/permutiveapi-core/bin/permutiveapi eval > /tmp/permutiveapi-scorecard.json
           /tmp/permutiveapi-core/bin/python -c 'import json; assert json.load(open("/tmp/permutiveapi-scorecard.json"))["summary"]["ok"]'
           /tmp/permutiveapi-core/bin/python -c 'from PermutiveAPI import CapabilityRequirement, ToolRegistry; ToolRegistry().negotiate(CapabilityRequirement(interfaces=("tool_registry",)))'
-      - name: Verify async extra install
+      - name: Verify async extra and recipe
         shell: bash
         run: |
           wheel="$(ls dist/*.whl)"
           python -m venv /tmp/permutiveapi-async
           /tmp/permutiveapi-async/bin/pip install "${wheel}[async]"
-          /tmp/permutiveapi-async/bin/python -c "import httpx; from PermutiveAPI import AsyncPermutiveClient"
+          /tmp/permutiveapi-async/bin/python -c 'from PermutiveAPI.recipes import find_recipes; recipe=find_recipes(name="async-workspace-inspection")[0]; namespace={"__name__":"recipe_async"}; exec(compile(recipe.source, recipe.name, "exec"), namespace); assert namespace["main"]()["id"] == "async-demo"'
       - name: Verify dataframe extra install
         shell: bash
         run: |
