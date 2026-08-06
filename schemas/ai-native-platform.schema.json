@@ -1,0 +1,420 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/fatmambot33/ai-native-platform/schemas/ai-native-platform.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "standard",
+    "product",
+    "plugin",
+    "interfaces",
+    "quality",
+    "release",
+    "agent",
+    "self_improvement",
+    "evidence"
+  ],
+  "$defs": {
+    "pathValue": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      ]
+    }
+  },
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "standard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "ref"
+      ],
+      "properties": {
+        "repository": {
+          "const": "fatmambot33/ai-native-platform"
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "profile",
+        "ai_native"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profile": {
+          "enum": [
+            "library",
+            "cli",
+            "service",
+            "agent-tool",
+            "plugin",
+            "full-platform"
+          ]
+        },
+        "ai_native": {
+          "const": true
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "codex",
+        "discovery",
+        "credentials"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "codex": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "supported",
+            "marketplace"
+          ],
+          "properties": {
+            "supported": {
+              "type": "boolean"
+            },
+            "marketplace": {
+              "type": "boolean"
+            }
+          }
+        },
+        "discovery": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "entry_points",
+            "manifest",
+            "capabilities"
+          ],
+          "properties": {
+            "entry_points": {
+              "type": "boolean"
+            },
+            "manifest": {
+              "type": "boolean"
+            },
+            "capabilities": {
+              "type": "boolean"
+            }
+          }
+        },
+        "credentials": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required",
+            "local_only",
+            "policy"
+          ],
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "local_only": {
+              "const": true
+            },
+            "env_file": {
+              "type": "string",
+              "minLength": 1
+            },
+            "env_example": {
+              "type": "string",
+              "minLength": 1
+            },
+            "setup_command": {
+              "type": "string",
+              "minLength": 1
+            },
+            "validation_command": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required_variables": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "policy": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "never_store_remote",
+                "never_commit",
+                "never_echo"
+              ],
+              "properties": {
+                "never_store_remote": {
+                  "const": true
+                },
+                "never_commit": {
+                  "const": true
+                },
+                "never_echo": {
+                  "const": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "interfaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sdk",
+        "cli",
+        "plugin",
+        "json_schema",
+        "mcp",
+        "openapi"
+      ],
+      "properties": {
+        "sdk": {
+          "type": "boolean"
+        },
+        "cli": {
+          "type": "boolean"
+        },
+        "plugin": {
+          "type": "boolean"
+        },
+        "json_schema": {
+          "type": "boolean"
+        },
+        "mcp": {
+          "type": "boolean"
+        },
+        "openapi": {
+          "type": "boolean"
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "typed",
+        "tests",
+        "docs",
+        "examples",
+        "compatibility",
+        "security_scan"
+      ],
+      "properties": {
+        "typed": {
+          "const": true
+        },
+        "tests": {
+          "const": true
+        },
+        "docs": {
+          "const": true
+        },
+        "examples": {
+          "const": true
+        },
+        "compatibility": {
+          "const": true
+        },
+        "security_scan": {
+          "const": true
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "block_if_quality_fails",
+        "block_if_plugin_invalid"
+      ],
+      "properties": {
+        "block_if_quality_fails": {
+          "const": true
+        },
+        "block_if_plugin_invalid": {
+          "const": true
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "guarantees"
+      ],
+      "properties": {
+        "guarantees": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 5,
+          "items": {
+            "enum": [
+              "ci_validated_changes",
+              "deterministic_tool_discovery",
+              "governed_autonomy",
+              "issue_driven_improvement",
+              "structured_outputs"
+            ]
+          }
+        }
+      }
+    },
+    "self_improvement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "github",
+        "autonomous",
+        "governance"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "github": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "issues"
+          ],
+          "properties": {
+            "issues": {
+              "type": "boolean"
+            }
+          }
+        },
+        "autonomous": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "discover_improvements",
+            "create_issues",
+            "generate_pr",
+            "run_ci"
+          ],
+          "properties": {
+            "discover_improvements": {
+              "type": "boolean"
+            },
+            "create_issues": {
+              "type": "boolean"
+            },
+            "generate_pr": {
+              "type": "boolean"
+            },
+            "run_ci": {
+              "type": "boolean"
+            }
+          }
+        },
+        "governance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "human_approval"
+          ],
+          "properties": {
+            "human_approval": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "breaking_changes",
+                "security_changes",
+                "credential_changes",
+                "public_api_changes",
+                "permission_expansion",
+                "release_changes"
+              ],
+              "properties": {
+                "breaking_changes": {
+                  "const": true
+                },
+                "security_changes": {
+                  "const": true
+                },
+                "credential_changes": {
+                  "const": true
+                },
+                "public_api_changes": {
+                  "const": true
+                },
+                "permission_expansion": {
+                  "const": true
+                },
+                "release_changes": {
+                  "const": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "paths"
+      ],
+      "properties": {
+        "mode": {
+          "const": "repository"
+        },
+        "paths": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/pathValue"
+          }
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

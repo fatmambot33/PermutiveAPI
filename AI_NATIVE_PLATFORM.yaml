@@ -1,18 +1,47 @@
 version: 1
-
 standard:
   repository: fatmambot33/ai-native-platform
-  ref: 67ec7caf19ead3282ea1aad29c43906f59e64d67
-
+  ref: 585484a227741a9eac78393e631b9d3794b85ec8
+quality:
+  typed: true
+  tests: true
+  docs: true
+  examples: true
+  compatibility: true
+  security_scan: true
+release:
+  block_if_quality_fails: true
+  block_if_plugin_invalid: true
+agent:
+  guarantees:
+  - deterministic_tool_discovery
+  - structured_outputs
+  - issue_driven_improvement
+  - ci_validated_changes
+  - governed_autonomy
+self_improvement:
+  enabled: true
+  github:
+    issues: true
+  autonomous:
+    discover_improvements: true
+    create_issues: true
+    generate_pr: true
+    run_ci: true
+  governance:
+    human_approval:
+      breaking_changes: true
+      security_changes: true
+      credential_changes: true
+      public_api_changes: true
+      permission_expansion: true
+      release_changes: true
 product:
   name: PermutiveAPI
+  profile: full-platform
   ai_native: true
-  plugin_first: true
-  sdk_first: true
-  api_first: true
-  cli_first: true
-  mcp_first: true
-
+  description: Typed Permutive SDK, CLI, MCP, and Codex plugin with governed write
+    operations.
 plugin:
   enabled: true
   codex:
@@ -27,71 +56,41 @@ plugin:
     local_only: true
     env_file: .env
     env_example: plugins/permutiveapi/.env.example
-    required_variables: [PERMUTIVE_API_KEY]
     setup_command: permutiveapi configure
     validation_command: permutiveapi doctor
+    required_variables:
+    - PERMUTIVE_API_KEY
     policy:
       never_store_remote: true
       never_commit: true
       never_echo: true
-      require_gitignore: true
-      require_local_env: true
-
-commands:
-  required: [configure, doctor, validate, test, eval, docs, examples, upgrade, uninstall]
-  recommended: [benchmark]
-
 interfaces:
   sdk: true
   cli: true
   plugin: true
-  mcp: true
-  openai_tools: true
   json_schema: true
-
-quality:
-  typed: true
-  tests: true
-  docs: true
-  examples: true
-  security_scan: true
-  compatibility_tests: true
-  ai_evaluations: true
-  benchmark: false
-
-self_improvement:
-  enabled: true
-  github:
-    issues: true
-  autonomous:
-    discover_improvements: true
-    create_issues: true
-    generate_pr: true
-    run_ci: true
-    update_roadmap_and_changelog: true
-  governance:
-    human_approval:
-      breaking_changes: true
-      security_changes: true
-      credential_changes: true
-      public_api_changes: true
-      permission_expansion: true
-      release_changes: true
-    safe_auto_merge: [documentation, tests, formatting, examples, non_breaking_maintenance]
-
-release:
-  block_if_quality_fails: true
-  block_if_doctor_fails: true
-  block_if_plugin_invalid: true
-  block_if_self_improvement_contract_invalid: true
-
-agent:
-  guarantees:
-    - local_credentials_only
-    - no_remote_secret_storage
-    - human_confirmation_for_writes
-    - deterministic_tool_discovery
-    - structured_outputs
-    - issue_driven_improvement
-    - ci_validated_changes
-    - governed_autonomy
+  mcp: true
+  openapi: false
+evidence:
+  mode: repository
+  paths:
+    readme: README.md
+    tests: tests
+    agent_instructions: AGENTS.md
+    typing: pyproject.toml
+    ci: .github/workflows/ci.yml
+    sdk: src/PermutiveAPI
+    cli: src/PermutiveAPI/cli.py
+    schemas: schemas/ai-native-platform.schema.json
+    mcp: src/PermutiveAPI/mcp.py
+    plugin_manifest: plugins/permutiveapi/.codex-plugin/plugin.json
+    plugin_tests:
+    - tests/test_codex_plugin_surface.py
+    - tests/test_plugins.py
+    docs: docs
+    examples: README.md
+    security_workflow: .github/workflows/security.yml
+    env_example: plugins/permutiveapi/.env.example
+    gitignore: .gitignore
+    self_improvement_workflow: .github/workflows/ai-self-improvement.yml
+    improvement_issue_template: .github/ISSUE_TEMPLATE/ai-improvement.yml

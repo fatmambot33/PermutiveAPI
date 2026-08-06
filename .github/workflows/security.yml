@@ -1,0 +1,33 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 5 * * 1'
+
+permissions:
+  actions: read
+  contents: read
+  security-events: read
+
+jobs:
+  codeql-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: python
+      - name: Analyze without duplicating GitHub default setup
+        uses: github/codeql-action/analyze@v4
+        with:
+          output: codeql-results
+          upload: never
+      - name: Retain CodeQL SARIF
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif-${{ github.sha }}
+          path: codeql-results/*.sarif
+          retention-days: 14
