@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any, Awaitable, Callable, Mapping, Optional, Protocol
 
-from requests import Response
+from requests import RequestException, Response
 
 
 class SyncTransport(Protocol):
@@ -195,7 +195,12 @@ class CoordinatedTransport:
         self.coordinator.acquire()
         snapshot = self.credentials.snapshot()
         kwargs["params"] = _credential_params(kwargs.get("params"), snapshot.api_key)
-        response = self._transport.request(method, url, **kwargs)
+        try:
+            response = self._transport.request(method, url, **kwargs)
+        except RequestException as error:
+            raise RequestException(
+                _redact_secret(str(error), snapshot.api_key)
+            ) from None
         if response.status_code == 429:
             self.coordinator.observe_retry_after(response.headers.get("Retry-After"))
         return response
@@ -230,7 +235,12 @@ class CoordinatedAsyncTransport:
         await self.coordinator.acquire_async()
         snapshot = self.credentials.snapshot()
         kwargs["params"] = _credential_params(kwargs.get("params"), snapshot.api_key)
-        response = await self._transport.request(method, url, **kwargs)
+        try:
+            response = await self._transport.request(method, url, **kwargs)
+        except asyncio.CancelledError:
+            raise
+        except Exception as error:
+            raise RuntimeError(_redact_secret(str(error), snapshot.api_key)) from None
         if response.status_code == 429:
             self.coordinator.observe_retry_after(response.headers.get("Retry-After"))
         return response
@@ -248,6 +258,10 @@ def _credential_params(value: object, api_key: str) -> dict[str, object]:
         params = {}
     params["k"] = api_key
     return params
+
+
+def _redact_secret(text: str, secret: str) -> str:
+    return text.replace(secret, "[REDACTED]") if secret else text
 
 
 def _retry_after_seconds(value: str) -> Optional[float]:
