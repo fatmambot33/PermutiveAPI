@@ -6,6 +6,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from string import hexdigits
 from typing import Iterable, Mapping
 
 RELEASE_EVIDENCE_VERSION = 1
@@ -58,6 +59,9 @@ def create_release_manifest(
     )
     if not artifacts:
         raise ValueError("A release candidate must contain at least one artifact.")
+    artifact_paths = [artifact.path for artifact in artifacts]
+    if len(artifact_paths) != len(set(artifact_paths)):
+        raise ValueError("Release candidate artifact paths must be unique.")
     return {
         "version": RELEASE_EVIDENCE_VERSION,
         "project": project,
@@ -83,10 +87,14 @@ def verify_release_manifest(path: Path, *, root: Path) -> dict[str, object]:
         raise TypeError("Release evidence must be a JSON object.")
     if decoded.get("version") != RELEASE_EVIDENCE_VERSION:
         raise ValueError("Unsupported release evidence version.")
+    for field in ("project", "package_version", "source_commit"):
+        value = decoded.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"Release evidence field must be a non-empty string: {field}")
     artifacts = decoded.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:
         raise ValueError("Release evidence must contain artifacts.")
-    seen = set()
+    seen: set[str] = set()
     for raw in artifacts:
         if not isinstance(raw, dict):
             raise TypeError("Release artifact evidence must be an object.")
@@ -97,13 +105,17 @@ def verify_release_manifest(path: Path, *, root: Path) -> dict[str, object]:
             raise ValueError("Release artifact paths must be unique strings.")
         if not isinstance(expected_size, int) or isinstance(expected_size, bool):
             raise TypeError("Release artifact size must be an integer.")
-        if not isinstance(expected_digest, str):
-            raise TypeError("Release artifact digest must be a string.")
+        if not isinstance(expected_digest, str) or not _is_sha256(expected_digest):
+            raise ValueError("Release artifact digest must be a SHA-256 hex string.")
         seen.add(relative)
         actual = digest_file(root / relative, root=root)
         if actual.size != expected_size or actual.sha256 != expected_digest:
             raise ValueError(f"Release artifact verification failed: {relative}")
     return decoded
+
+
+def _is_sha256(value: str) -> bool:
+    return len(value) == 64 and all(character in hexdigits for character in value)
 
 
 __all__ = [
