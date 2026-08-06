@@ -1,6 +1,6 @@
 [project]
 name = "PermutiveAPI"
-version = "6.5.0"
+version = "6.5.1"
 description = "A typed, governed AI-native Python platform for the Permutive API."
 readme = "README.md"
 authors = [{ name = "FaTmamBo33", email = "fatmambo33@gmail.com" }]
