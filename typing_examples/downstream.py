@@ -8,6 +8,7 @@ from PermutiveAPI import (
     QueryExpression,
     all_of,
     event,
+    property_condition,
 )
 from PermutiveAPI.plugins.codex import CodexPlugin
 
@@ -24,7 +25,12 @@ def create_async_client(api_key: str) -> AsyncPermutiveClient:
 
 def create_query() -> QueryExpression:
     """Create one typed query expression."""
-    return all_of([event("Pageview")])
+    return all_of(
+        [
+            event("Pageview"),
+            property_condition("client.country", "equals", "FR"),
+        ]
+    )
 
 
 def preserve_plugin_type(plugin: CodexPlugin) -> CodexPlugin:
