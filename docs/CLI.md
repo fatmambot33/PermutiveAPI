@@ -6,11 +6,13 @@ The `permutiveapi` command provides a small, deterministic lifecycle surface. It
 
 ### `permutiveapi configure`
 
-Interactively writes `PERMUTIVE_API_KEY` and `PERMUTIVE_WORKSPACE_ID` to a local `.env` file. Secret input is not echoed. Existing files are protected unless `--force` is supplied.
+Interactively writes `PERMUTIVE_API_KEY` to a local `.env` file. Secret input is not echoed. Existing files are protected unless `--force` is supplied.
+
+The API key is the only credential required by the canonical SDK and Codex plugin. Workspace identifiers belong in individual API requests when an endpoint requires one; they are not global authentication material.
 
 ### `permutiveapi doctor`
 
-Checks that the local credential file exists, contains the required variables, has restrictive permissions where supported, and is ignored by Git. Credential values are never displayed.
+Checks that the local credential file exists, contains `PERMUTIVE_API_KEY`, has restrictive permissions where supported, and is ignored by Git. Credential values are never displayed.
 
 ## Product commands
 

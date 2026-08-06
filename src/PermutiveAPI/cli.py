@@ -13,7 +13,7 @@ from dotenv import dotenv_values
 
 from .validation import run_validation, validation_succeeded
 
-REQUIRED_VARIABLES = ("PERMUTIVE_API_KEY", "PERMUTIVE_WORKSPACE_ID")
+REQUIRED_VARIABLES = ("PERMUTIVE_API_KEY",)
 DOCUMENTATION_PATHS = (
     "README.md",
     "docs/CLI.md",
@@ -68,7 +68,6 @@ def configure(env_file: Path, *, force: bool = False) -> int:
     print("Credentials remain in this local .env file and are never uploaded.")
     values = {
         "PERMUTIVE_API_KEY": getpass.getpass("Permutive API key: ").strip(),
-        "PERMUTIVE_WORKSPACE_ID": input("Permutive workspace ID: ").strip(),
     }
     missing = [name for name, value in values.items() if not value]
     if missing:
