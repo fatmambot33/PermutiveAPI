@@ -1,0 +1,77 @@
+{
+  "results": [
+    {
+      "category": "discovery",
+      "detail": "A unique capability selects the expected read-only tool.",
+      "name": "tool_selection",
+      "passed": true
+    },
+    {
+      "category": "discovery",
+      "detail": "Unsupported capabilities fail before tool execution.",
+      "name": "unsupported_capability",
+      "passed": true
+    },
+    {
+      "category": "policy",
+      "detail": "Read-only tools execute without write approval.",
+      "name": "read_without_approval",
+      "passed": true
+    },
+    {
+      "category": "policy",
+      "detail": "Mutating tools require explicit approval.",
+      "name": "write_requires_approval",
+      "passed": true
+    },
+    {
+      "category": "policy",
+      "detail": "Tool allow-lists are enforced.",
+      "name": "allow_list_enforced",
+      "passed": true
+    },
+    {
+      "category": "policy",
+      "detail": "Tool deny-lists are enforced.",
+      "name": "deny_list_enforced",
+      "passed": true
+    },
+    {
+      "category": "security",
+      "detail": "Tool failures preserve type information without exception-message secrets.",
+      "name": "failure_redaction",
+      "passed": true
+    },
+    {
+      "category": "reliability",
+      "detail": "Repeated idempotency keys return one completed write result.",
+      "name": "idempotent_write",
+      "passed": true
+    },
+    {
+      "category": "workflow",
+      "detail": "Workflow step limits are enforced.",
+      "name": "workflow_bound",
+      "passed": true
+    },
+    {
+      "category": "workflow",
+      "detail": "Continue-on-error records partial failure and executes the next step.",
+      "name": "partial_failure",
+      "passed": true
+    },
+    {
+      "category": "audit",
+      "detail": "Audit sinks receive one complete structured invocation result.",
+      "name": "audit_completeness",
+      "passed": true
+    }
+  ],
+  "schema_version": 1,
+  "summary": {
+    "failed": 0,
+    "ok": true,
+    "passed": 11,
+    "total": 11
+  }
+}
