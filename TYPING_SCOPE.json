@@ -10,6 +10,7 @@
     "src/PermutiveAPI/config.py",
     "src/PermutiveAPI/credentials.py",
     "src/PermutiveAPI/diagnostics.py",
+    "src/PermutiveAPI/evaluations.py",
     "src/PermutiveAPI/mcp.py",
     "src/PermutiveAPI/models.py",
     "src/PermutiveAPI/plugins/__init__.py",
