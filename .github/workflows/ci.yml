@@ -1,11 +1,14 @@
 name: Python CI
 
 on:
-  workflow_dispatch:
   push:
-    branches: [main, "agent/**"]
+    branches:
+      - main
+      - "agent/**"
   pull_request:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch: {}
 
 permissions:
   contents: read
