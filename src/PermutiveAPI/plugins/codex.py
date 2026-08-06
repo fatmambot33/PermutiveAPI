@@ -6,6 +6,11 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Mapping, cast
 
 from ..agent import PermutiveAgentKit
+from ..capabilities import (
+    CapabilityDescriptor,
+    CapabilityRequirement,
+    descriptor_from_registry,
+)
 from ..client import PermutiveClient
 from ..credentials import (
     CredentialsError,
@@ -24,6 +29,14 @@ def _sdk_version() -> str:
         return version("PermutiveAPI")
     except PackageNotFoundError:  # pragma: no cover
         return "0+unknown"
+
+
+def _negotiation_plugin_api_version() -> str:
+    return (
+        PLUGIN_API_VERSION
+        if "." in PLUGIN_API_VERSION
+        else f"{PLUGIN_API_VERSION}.0"
+    )
 
 
 class CodexPlugin:
@@ -187,6 +200,28 @@ class CodexPlugin:
                 )
             )
         return self._tools
+
+    def capability_descriptor(self) -> CapabilityDescriptor:
+        """Return versioned Codex plugin capability metadata."""
+        interfaces = ["codex_plugin", "json_schema", "openai_tools", "tool_registry"]
+        features = ["local_credentials", "read_write_policy"]
+        if self._mcp is not None:
+            interfaces.append("mcp_client_config")
+            features.append("official_mcp")
+        return descriptor_from_registry(
+            self.tools(),
+            surface="codex_plugin",
+            interfaces=tuple(interfaces),
+            features=tuple(features),
+            plugin_api_version=_negotiation_plugin_api_version(),
+        )
+
+    def negotiate(
+        self,
+        requirement: CapabilityRequirement,
+    ) -> CapabilityDescriptor:
+        """Validate Codex requirements before tool invocation."""
+        return self.capability_descriptor().negotiate(requirement)
 
     def agent_kit(self) -> PermutiveAgentKit:
         """Return one complete agent integration bundle."""
