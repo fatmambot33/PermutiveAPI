@@ -1,10 +1,14 @@
 name: AI-native platform
 
 on:
-  workflow_dispatch:
-  pull_request:
   push:
-    branches: [main, "agent/**"]
+    branches:
+      - main
+      - "agent/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
 
 permissions:
   contents: read
