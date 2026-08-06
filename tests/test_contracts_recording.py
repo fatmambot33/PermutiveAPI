@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from requests import Response
 
+from PermutiveAPI.client import PermutiveClient as ResourceClient
 from PermutiveAPI.contracts import (
     DriftKind,
     SchemaDriftError,
@@ -44,6 +45,29 @@ def test_generated_contract_matches_samples() -> None:
     assert len(endpoint_contracts()) == 25
 
 
+def test_contract_registry_matches_canonical_resource_paths() -> None:
+    """Coverage paths remain identical to the resource client entry points."""
+    client = ResourceClient("local-key")
+    try:
+        resource_paths = {
+            "cohorts": client.cohorts.path,
+            "imports": client.imports.path,
+            "segments": client.segments.path,
+            "sources": client.sources.path,
+            "workspaces": client.workspaces.path,
+        }
+    finally:
+        client.close()
+
+    contracts = endpoint_contracts()
+    assert {contract.name.split(".", 1)[0] for contract in contracts} == set(
+        resource_paths
+    )
+    for contract in contracts:
+        resource = contract.name.split(".", 1)[0]
+        assert contract.path_template.lstrip("/").startswith(resource_paths[resource])
+
+
 def test_additive_and_breaking_schema_drift_are_distinct() -> None:
     """New fields remain compatible while removed fields are breaking."""
     schemas = _manifest()["schemas"]
@@ -73,6 +97,14 @@ def test_additive_and_breaking_schema_drift_are_distinct() -> None:
         schemas,
     )
     assert additive_page.kind is DriftKind.ADDITIVE
+
+    empty_page = classify_response_schema(
+        "cohorts.list",
+        {"items": [], "continuation": "next"},
+        schemas,
+    )
+    assert empty_page.kind is DriftKind.NONE
+    assert empty_page.compatible is True
 
     with pytest.raises(SchemaDriftError) as captured:
         validate_response_schema("cohorts.get", {"id": "cohort"}, schemas)
