@@ -35,9 +35,7 @@ def retry_policy() -> RetryPolicy:
 
 def test_fixture_catalog_matches_committed_version() -> None:
     """The reusable JSON fixture catalog cannot drift from package routes."""
-    committed = json.loads(
-        Path("mock_fixtures/v1.json").read_text(encoding="utf-8")
-    )
+    committed = json.loads(Path("mock_fixtures/v1.json").read_text(encoding="utf-8"))
 
     assert committed == mock_fixture_catalog()
 
