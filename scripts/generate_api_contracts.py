@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Mapping
+from typing import Mapping, cast
 
 from PermutiveAPI.contracts import contract_manifest, endpoint_contracts
 from PermutiveAPI.sdk import JSONValue
@@ -24,7 +24,7 @@ def _samples(path: Path) -> Mapping[str, JSONValue]:
         isinstance(name, str) for name in samples
     ):
         raise TypeError("API samples must be a string-keyed object.")
-    return samples  # type: ignore[return-value]
+    return cast(Mapping[str, JSONValue], samples)
 
 
 def _markdown(manifest: Mapping[str, object]) -> str:
@@ -83,7 +83,11 @@ def main() -> int:
     args = parser.parse_args()
 
     manifest = contract_manifest(_samples(SAMPLES_PATH))
-    manifest_text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+    manifest_text = json.dumps(
+        manifest,
+        sort_keys=True,
+        separators=(",", ":"),
+    ) + "\n"
     coverage_text = _markdown(manifest)
     _write_or_check(MANIFEST_PATH, manifest_text, check=args.check)
     _write_or_check(COVERAGE_PATH, coverage_text, check=args.check)
