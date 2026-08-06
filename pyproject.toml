@@ -67,6 +67,9 @@ include = [
     "docs",
     "README.md",
     "CHANGELOG.md",
+    "ROADMAP.md",
+    "PRODUCT.md",
+    "AI_NATIVE_PLATFORM.yaml",
     "PUBLIC_API.md",
     "API_COVERAGE.md",
     "MIGRATION.md",
@@ -95,6 +98,7 @@ include = [
     "src/PermutiveAPI/resources.py",
     "src/PermutiveAPI/sdk.py",
     "src/PermutiveAPI/tools.py",
+    "src/PermutiveAPI/validation.py",
 ]
 extraPaths = ["src"]
 typeCheckingMode = "strict"
