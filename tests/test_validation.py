@@ -89,7 +89,7 @@ def test_eval_command_prints_machine_readable_scorecard(capsys) -> None:
     ("command", "expected"),
     (
         ("docs", "docs/AI_NATIVE.md"),
-        ("examples", "PermutiveClient"),
+        ("examples", "workspace-inspection"),
         ("upgrade", "pip install --upgrade PermutiveAPI"),
         ("uninstall", "pip uninstall PermutiveAPI"),
     ),
@@ -99,7 +99,7 @@ def test_lifecycle_guidance_commands_are_deterministic(
     expected: str,
     capsys,
 ) -> None:
-    """Lifecycle commands return stable, explicit guidance."""
+    """Lifecycle commands expose stable, explicit guidance."""
     assert main([command]) == 0
 
     assert expected in capsys.readouterr().out

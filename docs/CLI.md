@@ -34,7 +34,41 @@ Prints the canonical repository documentation locations.
 
 ### `permutiveapi examples`
 
-Prints minimal canonical SDK and Codex plugin examples.
+Lists the installed executable recipes by category. Every listed recipe is credential-free and network-free by default.
+
+```bash
+permutiveapi examples
+```
+
+Filter the catalog:
+
+```bash
+permutiveapi examples --category governed
+```
+
+Print one complete copy-paste recipe:
+
+```bash
+permutiveapi examples --name workspace-inspection
+```
+
+Return machine-readable recipe metadata:
+
+```bash
+permutiveapi examples --json
+```
+
+Supported categories are `sdk`, `async`, `queries`, `plugin`, and `governed`. The async recipe requires the `async` extra when executed.
+
+### First-success proof
+
+The installed package exposes a fresh-process first-success measurement:
+
+```bash
+python -m PermutiveAPI.first_success
+```
+
+It imports the installed package and completes the credential-free workspace recipe inside an enforced five-second budget.
 
 ## Environment lifecycle guidance
 
@@ -49,5 +83,5 @@ Prints the exact interpreter-specific `pip uninstall PermutiveAPI` command. It d
 ## Exit codes
 
 - `0`: the command completed successfully.
-- `1`: validation or an evaluation failed, or local configuration needs repair.
-- `2`: required input is missing or an unsafe overwrite was refused.
+- `1`: validation, an evaluation, a recipe, or first success failed, or local configuration needs repair.
+- `2`: required input is missing, no recipe matched, or an unsafe overwrite was refused.

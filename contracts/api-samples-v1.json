@@ -1,0 +1,115 @@
+{
+  "samples": {
+    "cohorts.create": {
+      "id": "cohort",
+      "name": "Example"
+    },
+    "cohorts.delete": null,
+    "cohorts.get": {
+      "id": "cohort",
+      "name": "Example"
+    },
+    "cohorts.list": {
+      "continuation": "next",
+      "items": [
+        {
+          "id": "cohort",
+          "name": "Example"
+        }
+      ]
+    },
+    "cohorts.update": {
+      "id": "cohort",
+      "name": "Example"
+    },
+    "imports.create": {
+      "id": "import",
+      "name": "Example"
+    },
+    "imports.delete": null,
+    "imports.get": {
+      "id": "import",
+      "name": "Example"
+    },
+    "imports.list": {
+      "continuation": "next",
+      "items": [
+        {
+          "id": "import",
+          "name": "Example"
+        }
+      ]
+    },
+    "imports.update": {
+      "id": "import",
+      "name": "Example"
+    },
+    "segments.create": {
+      "id": "segment",
+      "name": "Example"
+    },
+    "segments.delete": null,
+    "segments.get": {
+      "id": "segment",
+      "name": "Example"
+    },
+    "segments.list": {
+      "continuation": "next",
+      "items": [
+        {
+          "id": "segment",
+          "name": "Example"
+        }
+      ]
+    },
+    "segments.update": {
+      "id": "segment",
+      "name": "Example"
+    },
+    "sources.create": {
+      "id": "source",
+      "name": "Example"
+    },
+    "sources.delete": null,
+    "sources.get": {
+      "id": "source",
+      "name": "Example"
+    },
+    "sources.list": {
+      "continuation": "next",
+      "items": [
+        {
+          "id": "source",
+          "name": "Example"
+        }
+      ]
+    },
+    "sources.update": {
+      "id": "source",
+      "name": "Example"
+    },
+    "workspaces.create": {
+      "id": "workspace",
+      "name": "Example"
+    },
+    "workspaces.delete": null,
+    "workspaces.get": {
+      "id": "workspace",
+      "name": "Example"
+    },
+    "workspaces.list": {
+      "continuation": "next",
+      "items": [
+        {
+          "id": "workspace",
+          "name": "Example"
+        }
+      ]
+    },
+    "workspaces.update": {
+      "id": "workspace",
+      "name": "Example"
+    }
+  },
+  "version": 1
+}

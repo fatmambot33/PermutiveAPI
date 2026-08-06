@@ -5,6 +5,7 @@ from __future__ import annotations
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Mapping, cast
 
+from ..actionable_errors import classify_exception
 from ..agent import PermutiveAgentKit
 from ..capabilities import (
     CapabilityDescriptor,
@@ -241,6 +242,37 @@ class CodexPlugin:
         ):
             raise PermissionError(f"Write tool requires explicit confirmation: {name}")
         return definition.invoke(arguments)
+
+    def invoke_safe(
+        self,
+        name: str,
+        arguments: Mapping[str, Any] | None = None,
+        *,
+        confirmed: bool = False,
+    ) -> dict[str, Any]:
+        """Invoke a tool and return secret-safe actionable result metadata."""
+        try:
+            output = self.invoke(name, arguments, confirmed=confirmed)
+        except Exception as exc:  # noqa: BLE001 - plugin boundary returns data
+            guidance = classify_exception(exc, operation=name)
+            return {
+                "ok": False,
+                "output": None,
+                "error_type": type(exc).__name__,
+                "error_code": guidance.code,
+                "retryable": guidance.retryable,
+                "recommended_action": guidance.recommended_action,
+                "safe_context": dict(guidance.safe_context),
+            }
+        return {
+            "ok": True,
+            "output": output,
+            "error_type": None,
+            "error_code": None,
+            "retryable": False,
+            "recommended_action": None,
+            "safe_context": {"operation": name},
+        }
 
     def validate(self) -> ValidationReport:
         """Validate credentials and policy without making an API request."""

@@ -4,35 +4,24 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/PermutiveAPI.svg)](https://pypi.org/project/PermutiveAPI/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-PermutiveAPI is a typed, governed Python SDK and AI-agent platform for the Permutive API.
-
-It provides one canonical synchronous client, optional asynchronous support, typed queries and errors, a safe Codex plugin, OpenAI-compatible tools, deterministic governed-platform evaluations, and optional hosted MCP configuration. Python 3.9 through 3.13 are supported.
+PermutiveAPI is a typed, governed Python SDK and AI-agent platform for the Permutive API. It supports Python 3.9 through 3.13 and provides synchronous and asynchronous clients, typed queries, a safe Codex plugin, deterministic evaluations and scenarios, executable recipes, capability negotiation, generated API contracts, sanitized replay, coordinated runtime resilience, and immutable release evidence.
 
 ## Install
-
-Core SDK and CLI:
 
 ```bash
 python -m pip install --upgrade PermutiveAPI
 ```
 
-Optional asynchronous transport:
+Optional integrations:
 
 ```bash
 python -m pip install --upgrade "PermutiveAPI[async]"
-```
-
-Optional pandas integration:
-
-```bash
 python -m pip install --upgrade "PermutiveAPI[dataframe]"
 ```
 
-The core package does not import or require pandas or HTTPX.
+The core package does not require HTTPX or pandas.
 
 ## Configure safely
-
-Run the local credential wizard from the project where you will use the SDK:
 
 ```bash
 permutiveapi configure
@@ -41,45 +30,25 @@ permutiveapi validate
 permutiveapi eval
 ```
 
-`configure` writes `PERMUTIVE_API_KEY` to a local `.env` file without echoing it. Existing files are not overwritten unless `--force` is supplied. `doctor` checks that the variable is present, the file has restrictive permissions where supported, and `.env` is ignored by Git. `validate` checks the installed SDK, CLI, Python plugin entry point, and tool contract without making a network request or requiring credentials. `eval` prints deterministic JSON evidence for the governed execution guarantees.
+`configure` writes only `PERMUTIVE_API_KEY` to a local `.env` file without echoing it. `doctor` verifies the variable, permissions, and Git ignore policy. `validate` and `eval` are credential-free and network-free.
 
-Credential lookup is deterministic:
+Credential lookup order is explicit input, process environment, project `.env`, then `~/.config/permutive/.env`. Credentials are never uploaded, logged, or included in object representations.
 
-1. Explicit API key passed by the application.
-2. `PERMUTIVE_API_KEY` in the process environment.
-3. `.env` in the current project.
-4. `~/.config/permutive/.env`.
-
-Credentials are never uploaded, logged, or included in object representations.
-
-## First request
-
-`PermutiveClient` is the canonical synchronous entry point:
+## Canonical client
 
 ```python
 from PermutiveAPI import PermutiveClient
 
 with PermutiveClient("api-key") as client:
     cohort = client.cohorts.get("cohort-id")
-    first_page = client.segments.list(page_size=50)
-
-print(cohort)
-print(first_page.items)
+    page = client.segments.list(page_size=50)
 ```
 
-The resource namespaces are:
+Canonical resource namespaces are `cohorts`, `imports`, `segments`, `sources`, and `workspaces`. Their 25 CRUD/list operations and structural response fingerprints are generated in [API_COVERAGE.md](API_COVERAGE.md).
 
-- `client.cohorts`
-- `client.imports`
-- `client.segments`
-- `client.sources`
-- `client.workspaces`
+## Async client
 
-Supported resource operations use consistent `get`, `list`, `create`, `update`, and `delete` methods where the Permutive endpoint supports them. See [API_COVERAGE.md](API_COVERAGE.md) for the maintained endpoint matrix.
-
-## Async usage
-
-Install the `async` extra, then use the asynchronous client as a context manager:
+Install `PermutiveAPI[async]`:
 
 ```python
 import asyncio
@@ -89,47 +58,27 @@ from PermutiveAPI import AsyncPermutiveClient
 
 async def main() -> None:
     async with AsyncPermutiveClient("api-key") as client:
-        cohort = await client.request(
-            "GET",
-            "cohorts-api/v2/cohorts/cohort-id",
-        )
-        print(cohort)
+        result = await client.request("GET", "cohorts-api/v2/cohorts")
+        print(result)
 
 
 asyncio.run(main())
 ```
 
-The async client shares the same typed JSON, error, retry, redaction, pagination, and bounded-batch contracts as the synchronous SDK.
+The async client shares typed JSON, errors, retries, pagination, and bounded-batch semantics with the synchronous SDK.
 
 ## Typed queries
 
-Query helpers compose immutable, deterministic JSON payloads while preserving raw payload compatibility:
-
 ```python
-from PermutiveAPI import all_of, event, property_condition
+from PermutiveAPI import all_of, event, in_segment
 
-query = all_of(
-    [
-        event("Pageview"),
-        property_condition("client.country", "equals", "FR"),
-    ]
-)
-
+query = all_of((event("pageview"), in_segment("high-intent")))
 payload = query.to_json()
 ```
 
-Invalid operator and value combinations fail before the request is sent.
+## Governed agent platform
 
-## Codex plugin
-
-Install the repository-backed Codex marketplace plugin:
-
-```bash
-codex plugin marketplace add fatmambot33/PermutiveAPI --ref main
-codex plugin add permutiveapi@fatmambot33-permutiveapi
-```
-
-The Python plugin surface is also available directly:
+The Codex plugin and Python integration reuse the canonical SDK:
 
 ```python
 from PermutiveAPI.plugins.codex import CodexPlugin
@@ -139,90 +88,116 @@ tools = plugin.tools().as_openai_tools()
 agent_kit = plugin.agent_kit()
 ```
 
-The default policy is read-only. To expose write tools, applications must explicitly select `mode="read_write"`; each mutating invocation still requires `confirmed=True` unless a deliberately approved policy says otherwise.
+Read-only is the default. Write tools require explicit read-write mode and confirmation. Adaptive integrations negotiate capabilities before execution. `CodexPlugin.invoke_safe()` returns stable secret-safe error codes, retryability, recommended actions, and safe context.
 
-```python
-plugin = CodexPlugin.from_env(mode="read_write")
-result = plugin.invoke(
-    "permutive_create_cohort",
-    {"payload": {"name": "Example", "query": {}}},
-    confirmed=True,
-)
-```
-
-The plugin reuses the canonical SDK. It does not duplicate transport, authentication, models, or business rules. See [docs/AI_NATIVE_PLUGIN.md](docs/AI_NATIVE_PLUGIN.md), [docs/AI_NATIVE.md](docs/AI_NATIVE.md), [docs/EVALUATIONS.md](docs/EVALUATIONS.md), and [docs/MCP.md](docs/MCP.md).
-
-## Deterministic AI evaluations
-
-Run the credential-free, network-free scorecard:
+Run deterministic platform proof:
 
 ```bash
 permutiveapi eval
+permutiveapi examples
+permutiveapi examples --name reviewed-cohort-write
 ```
 
-The JSON scorecard verifies deterministic tool selection, unsupported capability rejection, read and write policy, allow-lists, deny-lists, secret redaction, idempotency, workflow bounds, partial failure handling, and audit completeness. The committed evidence is `evals/scorecard.json`; CI fails when runtime behavior and evidence differ.
+The scorecard covers tool selection, unsupported capabilities, approvals, allow and deny policy, redaction, idempotency, workflow bounds, partial failures, and audit completeness. Seven credential-free recipes cover SDK, async, queries, plugin, and governed workflows. A fresh installed interpreter must complete the canonical recipe within five seconds.
 
-## CLI lifecycle
+## Operational reliability
+
+### API drift and replay
+
+```bash
+python scripts/generate_api_contracts.py --check
+python scripts/validate_recordings.py
+```
+
+Versioned samples generate the machine contract and `API_COVERAGE.md`. Additive fields remain compatible; removals and type changes fail validation. Recordings exclude request payloads, query strings, credentials, authorization headers, cookies, and sensitive response values.
+
+### Coordinated limits and rotation
+
+```python
+import requests
+
+from PermutiveAPI import (
+    AtomicCredentials,
+    CoordinatedTransport,
+    PermutiveClient,
+    RateLimitCoordinator,
+)
+
+credentials = AtomicCredentials("initial-key")
+coordinator = RateLimitCoordinator(requests_per_second=10)
+transport = CoordinatedTransport(requests.Session(), credentials, coordinator)
+client = PermutiveClient("managed-placeholder", transport=transport)
+
+client.request("GET", "cohorts-api/v2/cohorts")
+credentials.rotate("rotated-key")
+```
+
+One coordinator can be shared by synchronous and asynchronous transports. Every request attempt receives one immutable credential generation, `Retry-After` deferrals apply across all callers, and transport exceptions redact the real rotating key before reaching the client.
+
+### Performance and releases
+
+```bash
+python scripts/validate_performance.py
+```
+
+Performance budgets detect material local regressions. The release workflow builds once, generates an SBOM and SHA-256 manifest, attests the artifacts, and verifies the exact candidate before PyPI Trusted Publishing and GitHub Release creation.
+
+See [docs/OPERATIONAL_RELIABILITY.md](docs/OPERATIONAL_RELIABILITY.md) for the complete contract.
+
+## CLI
 
 | Command | Purpose |
-| --- | --- |
-| `permutiveapi configure` | Create a protected local `.env` credential file. |
-| `permutiveapi doctor` | Check local credential safety without showing values. |
+|---|---|
+| `permutiveapi configure` | Create a protected local credential file. |
+| `permutiveapi doctor` | Check credential safety without showing values. |
 | `permutiveapi validate` | Validate the installed product surface. |
-| `permutiveapi test` | Run the deterministic installed-package self-test. |
-| `permutiveapi eval` | Print the machine-readable governed-platform scorecard. |
-| `permutiveapi docs` | Print canonical documentation locations. |
-| `permutiveapi examples` | Print minimal SDK and plugin examples. |
-| `permutiveapi upgrade` | Print the explicit interpreter-specific upgrade command. |
-| `permutiveapi uninstall` | Print the explicit interpreter-specific removal command. |
-
-`upgrade` and `uninstall` print commands only. They never mutate the active environment automatically. Full behavior and exit codes are documented in [docs/CLI.md](docs/CLI.md).
-
-## Compatibility
-
-[PUBLIC_API.md](PUBLIC_API.md) is the source of truth for canonical, compatibility, deprecated, and internal exports. Legacy resource classes remain available as compatibility APIs, but new code should use `PermutiveClient`, `AsyncPermutiveClient`, typed queries, and the canonical plugin/tool surfaces.
-
-See [MIGRATION.md](MIGRATION.md) before replacing older call patterns and [COMPATIBILITY_MATRIX.md](COMPATIBILITY_MATRIX.md) for the supported Python and optional-dependency matrix.
+| `permutiveapi test` | Run deterministic installed-package checks. |
+| `permutiveapi eval` | Print governed-platform scorecard JSON. |
+| `permutiveapi docs` | Print canonical documentation paths. |
+| `permutiveapi examples` | Discover or print executable recipes. |
+| `permutiveapi upgrade` | Print the explicit upgrade command. |
+| `permutiveapi uninstall` | Print the explicit removal command. |
 
 ## Development
-
-Clone and install the repository in editable mode:
 
 ```bash
 git clone https://github.com/fatmambot33/PermutiveAPI.git
 cd PermutiveAPI
 python -m pip install -e ".[dev]"
-```
 
-Run the same primary checks used by CI:
-
-```bash
-black --check src tests typing_examples scripts/generate_evaluation_scorecard.py
-pydocstyle src/PermutiveAPI
-python scripts/validate_typing_scope.py
-python scripts/generate_evaluation_scorecard.py --check evals/scorecard.json
-pyright
-pyright typing_examples/downstream.py
-pytest -q
-python scripts/validate_ai_native_platform.py
 python scripts/validate_release_metadata.py
+python scripts/validate_typing_scope.py
+python scripts/generate_api_contracts.py --check
+python scripts/validate_recordings.py
+python scripts/validate_performance.py
+python scripts/generate_evaluation_scorecard.py --check evals/scorecard.json
+black --check --diff src tests typing_examples scripts
+pydocstyle src/PermutiveAPI
+pyright
+pytest -q
 python -m build
 python -m twine check dist/*
 ```
 
-NumPy-style docstrings, strict typing, deterministic network-free tests and evaluations, clean package installation, and secret redaction are required for supported changes.
+Supported changes require NumPy-style docstrings, strict typing, deterministic network-free tests, secret redaction, clean installation, and machine-readable evidence.
 
 ## Project contracts
 
-- [PRODUCT.md](PRODUCT.md) — product mission and decision rules.
-- [PUBLIC_API.md](PUBLIC_API.md) — supported public surface.
-- [API_COVERAGE.md](API_COVERAGE.md) — endpoint coverage.
-- [docs/TYPING.md](docs/TYPING.md) — strict and compatibility implementation boundary.
-- [docs/EVALUATIONS.md](docs/EVALUATIONS.md) — deterministic governed-platform evidence.
-- [ROADMAP.md](ROADMAP.md) — active milestones and non-goals.
-- [SECURITY.md](SECURITY.md) — security reporting and guarantees.
-- [RELEASING.md](RELEASING.md) — validated release process.
+- [PRODUCT.md](PRODUCT.md) — mission and decision rules.
+- [PUBLIC_API.md](PUBLIC_API.md) — canonical and compatibility surfaces.
+- [API_COVERAGE.md](API_COVERAGE.md) — generated endpoint coverage.
+- [MIGRATION.md](MIGRATION.md) — supported migration paths.
+- [docs/AI_NATIVE.md](docs/AI_NATIVE.md) — governed platform architecture.
+- [docs/EVALUATIONS.md](docs/EVALUATIONS.md) — deterministic evidence.
+- [docs/OPERATIONAL_RELIABILITY.md](docs/OPERATIONAL_RELIABILITY.md) — drift, replay, resilience, budgets, and releases.
+- [ROADMAP.md](ROADMAP.md) — completed roadmap and non-goals.
+- [SECURITY.md](SECURITY.md) — reporting and guarantees.
+- [RELEASING.md](RELEASING.md) — immutable publication process.
 - [CHANGELOG.md](CHANGELOG.md) — released behavior.
+
+## Compatibility
+
+[PUBLIC_API.md](PUBLIC_API.md) is the source of truth. Legacy resource classes remain supported as compatibility APIs, but new code should prefer `PermutiveClient`, `AsyncPermutiveClient`, typed queries, and canonical tool surfaces. Review [MIGRATION.md](MIGRATION.md) before replacing older call patterns.
 
 ## License
 

@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "metric": "installed_interpreter_start_to_first_success",
+  "recipe": "workspace-inspection",
+  "budget_seconds": 5.0,
+  "network_required": false,
+  "credentials_required": false
+}

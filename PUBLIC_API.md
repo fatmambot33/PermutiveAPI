@@ -1,122 +1,92 @@
 # Public API Contract
 
-PermutiveAPI exposes one canonical SDK surface and a temporary compatibility surface. This document is the source of truth for public support, deprecation, and removal decisions.
+PermutiveAPI exposes one canonical SDK and governed platform surface plus a temporary compatibility surface. `PermutiveAPI.__all__`, the explicit public API tests, and this document define the support contract.
 
 ## Canonical surface
 
-New code should import these names from `PermutiveAPI`.
+New code should import canonical names from `PermutiveAPI`.
 
-### Synchronous client and resources
+### Clients and resources
 
-- `PermutiveClient`
-- `Resource`
+- `PermutiveClient`, `Resource`
+- `AsyncPermutiveClient`, `AsyncResource`, `AsyncResponse`, `AsyncTransport`
+- `execute_batch`, `execute_async_batch`
+- `Page`, `BatchItem`, `BatchResult`, `RetryPolicy`
 
-### Asynchronous client and resources
+### Typed data and queries
 
-- `AsyncPermutiveClient`
-- `AsyncResource`
-- `AsyncResponse`
-- `AsyncTransport`
-- `execute_async_batch`
+- `JSONObject`, `JSONScalar`, `JSONValue`, `JSONSchema`
+- `AliasPayload`, `IdentityPayload`, `EventPayload`, `SegmentationPayload`, `ContextPayload`
+- `QueryExpression`, `all_of`, `any_of`, `event`, `in_segment`, `property_condition`
 
-### Typed request contracts
+### Configuration and errors
 
-- `AliasPayload`
-- `IdentityPayload`
-- `EventPayload`
-- `SegmentationPayload`
-- `ContextPayload`
+- `PermutiveConfig`, `Secret`
+- `SDKError` and its authentication, authorization, validation, not-found, conflict, rate-limit, server, transport, and decoding subclasses
+- `ErrorGuidance`, `classify_exception`
 
-### Query composition
-
-- `QueryExpression`
-- `all_of`
-- `any_of`
-- `event`
-- `in_segment`
-- `property_condition`
-
-### Configuration and secrets
-
-- `PermutiveConfig`
-- `Secret`
-
-### Typed SDK primitives
-
-- `JSONObject`
-- `JSONScalar`
-- `JSONValue`
-- `Page`
-- `RetryPolicy`
-- `BatchItem`
-- `BatchResult`
-- `execute_batch`
-
-### Agent and tool integration
+### Governed AI and integration
 
 - `PermutiveAgentKit`
-- `JSONSchema`
-- `ToolDefinition`
-- `ToolHandler`
-- `ToolRegistry`
-- `tool`
+- `ToolDefinition`, `ToolHandler`, `ToolRegistry`, `tool`
+- capability descriptor, requirement, negotiation, error, version, and manifest exports
+- `PermutiveMCPConfig` and MCP constants
+- installed recipe and first-success exports
 
-### Capability negotiation
+Capability negotiation is deterministic and secret-free. Mutating execution remains governed by declared policy and explicit approval.
 
-- `CAPABILITY_CONTRACT_VERSION`
-- `CAPABILITY_ERROR_CODES`
-- `TOOL_SCHEMA_VERSION`
-- `CapabilityDescriptor`
-- `CapabilityNegotiationError`
-- `CapabilityRequirement`
-- `capability_contract_manifest`
-- `negotiate_capabilities`
+### API contracts and drift
 
-`ToolRegistry`, `PermutiveAgentKit`, `CodexPlugin`, and `PermutiveMCPConfig` expose compatible `capability_descriptor()` and `negotiate()` operations. Negotiation is deterministic, secret-free, and must complete before tool execution.
+- `API_CONTRACT_VERSION`
+- `EndpointContract`, `ResponseKind`
+- `DriftKind`, `SchemaDrift`, `SchemaDriftError`
+- `endpoint_contract`, `endpoint_contracts`, `contract_manifest`
+- `structural_schema`, `schema_fingerprint`
+- `classify_response_schema`, `validate_response_schema`
 
-### MCP integration
+Additive response fields and variants remain compatible. Removed fields, removed variants, and type changes are breaking.
 
-- `PermutiveMCPConfig`
-- `PERMUTIVE_MCP_DOCUMENTATION_URL`
-- `PERMUTIVE_MCP_SERVER_NAME`
-- `PERMUTIVE_MCP_TOKEN_ENV`
-- `PERMUTIVE_MCP_URL_ENV`
+### Recording and replay
 
-### Canonical errors
+- `RECORDING_FORMAT_VERSION`
+- `RecordedInteraction`, `Recording`, `RecordingTransport`
+- `ReplayTransport`, `ReplayMismatchError`, `sanitize_json`
 
-- `SDKError`
-- `AuthenticationError`
-- `AuthorizationError`
-- `ConflictError`
-- `DecodingError`
-- `NotFoundError`
-- `RateLimitError`
-- `ServerError`
-- `TransportError`
-- `ValidationError`
+Recordings never include request payloads, query parameters, credentials, authorization headers, or cookies.
 
-The canonical surface follows semantic versioning and is implemented only by modules listed in the strict group of `TYPING_SCOPE.json`. Those modules must pass Pyright strict mode.
+### Operational resilience
 
-Backward-compatible additions may ship in minor releases. Breaking changes require a major release.
+- `AtomicCredentials`, `CredentialSnapshot`
+- `RateLimitCoordinator`
+- `CoordinatedTransport`, `CoordinatedAsyncTransport`
+- `SyncTransport`, `AsyncTransportLike`, `AsyncResponseLike`
+
+One credential store and coordinator may be shared across sync and async callers. Every attempt receives one immutable credential generation. `Retry-After` deferrals apply to every caller sharing the coordinator.
+
+### Performance and release evidence
+
+- `PERFORMANCE_CONTRACT_VERSION`
+- `PerformanceBudget`, `PerformanceResult`
+- `load_performance_budgets`, `measure_operation`, `performance_report`, `validate_operation_names`
+- `RELEASE_EVIDENCE_VERSION`
+- `ArtifactDigest`, `digest_file`, `create_release_manifest`, `write_release_manifest`, `verify_release_manifest`
+
+Release evidence is deterministic and verifies artifact path, size, SHA-256, package version, project, and source commit.
 
 ## Compatibility surface
 
-These legacy exports remain supported for existing users while resource operations are migrated to the canonical client:
+These legacy exports remain supported while their implementations delegate toward canonical transport and resource code:
 
 - `Alias`
-- `Cohort`
-- `CohortList`
+- `Cohort`, `CohortList`
 - `ContextSegment`
 - `Event`
 - `Identity`
-- `Import`
-- `ImportList`
-- `Segment`
-- `SegmentList`
+- `Import`, `ImportList`
+- `Segment`, `SegmentList`
 - `Segmentation`
 - `Source`
-- `Workspace`
-- `WorkspaceList`
+- `Workspace`, `WorkspaceList`
 - `PermutiveAPIError`
 - `PermutiveAuthenticationError`
 - `PermutiveBadRequestError`
@@ -124,43 +94,21 @@ These legacy exports remain supported for existing users while resource operatio
 - `PermutiveResourceNotFoundError`
 - `PermutiveServerError`
 
-Compatibility exports may be implemented as thin adapters, but must not define an independent transport contract. Their implementation modules are explicitly listed in the compatibility group of `TYPING_SCOPE.json`; exclusions cannot grow silently.
+Compatibility exports will not be removed without a documented deprecation period and migration path. Their modules are explicitly bounded in `TYPING_SCOPE.json` and cannot grow silently.
 
-They will not be removed without a documented deprecation period and migration path.
+## Stability rules
 
-## Deprecated surface
-
-No package-root export is deprecated at this time.
-
-When an export becomes deprecated, the change must include:
-
-1. a runtime deprecation warning where practical;
-2. migration guidance;
-3. a changelog entry;
-4. the earliest major version in which removal may occur.
+- Canonical APIs follow Semantic Versioning.
+- Backward-compatible additions may ship in minor releases.
+- Breaking changes require a major release and migration guidance.
+- New package-root exports require explicit inventory and classification updates.
+- New modules require strict or compatibility typing classification.
+- Public operations require typed signatures, documented errors, deterministic tests, and examples.
+- Evidence-bearing capabilities require a machine-readable validator.
+- Compatibility code delegates to canonical code rather than creating a second transport contract.
 
 ## Internal surface
 
-Anything not listed in `PermutiveAPI.__all__` is internal unless a public document explicitly states otherwise. Internal helpers may change without notice. Users must not rely on imports from private modules or names prefixed with `_`.
+Anything not listed in `PermutiveAPI.__all__` is internal unless dedicated documentation explicitly declares a secondary surface. Internal helpers and names prefixed with `_` may change without notice.
 
-Documented secondary surfaces such as `PermutiveAPI.plugins.codex.CodexPlugin`, diagnostics wrappers, governed scenario types, and governed AI-native execution types remain supported through their dedicated documentation and strict implementation modules without expanding the package-root namespace indefinitely.
-
-## Decision rules
-
-- Prefer `PermutiveClient` and `Resource` for new synchronous API work.
-- Prefer `AsyncPermutiveClient` and `AsyncResource` for asynchronous work.
-- Prefer typed query helpers over hand-built dictionaries when the schema is supported.
-- Prefer `PermutiveAgentKit`, `ToolRegistry`, and `CodexPlugin` for agent integrations.
-- Negotiate required interfaces and features before adaptive tool execution.
-- Use `PermutiveMCPConfig` for MCP server composition rather than duplicating environment handling.
-- Do not add a second way to perform the same operation without a documented product reason.
-- Public methods require stable names, typed signatures, documented errors, tests, and examples.
-- Compatibility code delegates to canonical code rather than duplicating request logic.
-- New package-root exports require updates to this document and the public API contract tests.
-- New package modules require an explicit strict or compatibility classification.
-
-## Migration direction
-
-Core CRUD resources are available through the canonical client. Identity, user segmentation, and context segmentation remain compatibility actions while their endpoint contracts stabilize. Agent, tool, plugin, capability-negotiation, and MCP integrations are canonical extension surfaces.
-
-`API_COVERAGE.md` records exact endpoint support, `MIGRATION.md` provides supported transitions, and `docs/TYPING.md` explains the strict implementation boundary.
+`API_COVERAGE.md` records generated endpoint support. `docs/OPERATIONAL_RELIABILITY.md` describes drift, replay, coordinated limits, rotation, budgets, live testing, and immutable release evidence. `docs/TYPING.md` explains the strict implementation boundary.

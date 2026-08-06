@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import json
 import os
 import sys
 from pathlib import Path
@@ -12,6 +13,7 @@ from typing import Dict, Optional, Sequence
 from dotenv import dotenv_values
 
 from .evaluations import run_default_evaluations
+from .recipes import RecipeCategory, find_recipes
 from .validation import run_validation, validation_succeeded
 
 REQUIRED_VARIABLES = ("PERMUTIVE_API_KEY",)
@@ -21,6 +23,7 @@ DOCUMENTATION_PATHS = (
     "docs/AI_NATIVE.md",
     "docs/AI_NATIVE_PLUGIN.md",
     "docs/EVALUATIONS.md",
+    "docs/OPERATIONAL_RELIABILITY.md",
     "docs/MCP.md",
 )
 LIFECYCLE_COMMANDS = (
@@ -152,17 +155,37 @@ def docs() -> int:
     return 0
 
 
-def examples() -> int:
-    """Print minimal canonical SDK and plugin examples."""
-    print("PermutiveAPI SDK example")
-    print("from PermutiveAPI import PermutiveClient")
-    print('client = PermutiveClient("api-key")')
-    print('cohort = client.cohorts.get("cohort-id")')
-    print()
-    print("PermutiveAPI Codex plugin example")
-    print("from PermutiveAPI.plugins.codex import CodexPlugin")
-    print("plugin = CodexPlugin.from_env()")
-    print("tools = plugin.tools().as_openai_tools()")
+def examples(
+    *,
+    category: str | None = None,
+    name: str | None = None,
+    as_json: bool = False,
+) -> int:
+    """List or print canonical executable recipes."""
+    recipes = find_recipes(category=category, name=name)
+    if not recipes:
+        print("No recipe matched the requested category and name.")
+        return 2
+    if as_json:
+        print(
+            json.dumps(
+                [recipe.to_dict() for recipe in recipes],
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return 0
+    if name is not None:
+        print(recipes[0].source, end="")
+        return 0
+    print("PermutiveAPI executable recipes")
+    for recipe in recipes:
+        local = "credential-free" if recipe.credential_free else "credentials required"
+        print(
+            f"- [{recipe.category.value}] {recipe.name}: "
+            f"{recipe.description} ({local})"
+        )
+    print("Print one recipe with `permutiveapi examples --name <name>`.")
     return 0
 
 
@@ -190,7 +213,15 @@ def build_parser() -> argparse.ArgumentParser:
     doctor_parser = subparsers.add_parser("doctor")
     doctor_parser.add_argument("--env-file", type=Path, default=Path(".env"))
     for command in LIFECYCLE_COMMANDS:
-        subparsers.add_parser(command)
+        if command != "examples":
+            subparsers.add_parser(command)
+    examples_parser = subparsers.add_parser("examples")
+    examples_parser.add_argument(
+        "--category",
+        choices=[category.value for category in RecipeCategory],
+    )
+    examples_parser.add_argument("--name")
+    examples_parser.add_argument("--json", action="store_true")
     return parser
 
 
@@ -201,12 +232,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return configure(args.env_file, force=args.force)
     if args.command == "doctor":
         return doctor(args.env_file)
+    if args.command == "examples":
+        return examples(
+            category=args.category,
+            name=args.name,
+            as_json=args.json,
+        )
     commands = {
         "validate": validate,
         "test": test,
         "eval": evaluate,
         "docs": docs,
-        "examples": examples,
         "upgrade": upgrade,
         "uninstall": uninstall,
     }

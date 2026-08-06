@@ -1,0 +1,37 @@
+{
+  "interactions": [
+    {
+      "body": {
+        "continuation": "next",
+        "items": [
+          {
+            "id": "cohort",
+            "name": "Example"
+          }
+        ]
+      },
+      "endpoint": "https://api.permutive.test/cohorts-api/v2/cohorts",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Request-ID": "recording-list"
+      },
+      "method": "GET",
+      "status_code": 200
+    },
+    {
+      "body": {
+        "api_key": "[REDACTED]",
+        "id": "created",
+        "name": "Reviewed"
+      },
+      "endpoint": "https://api.permutive.test/cohorts-api/v2/cohorts",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Request-ID": "recording-create"
+      },
+      "method": "POST",
+      "status_code": 201
+    }
+  ],
+  "version": 1
+}

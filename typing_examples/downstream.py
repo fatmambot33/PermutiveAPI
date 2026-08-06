@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from PermutiveAPI import (
     AsyncPermutiveClient,
+    AtomicCredentials,
+    EndpointContract,
     PermutiveClient,
     QueryExpression,
+    RateLimitCoordinator,
+    Recording,
+    ResponseKind,
     all_of,
     event,
     property_condition,
@@ -31,6 +36,28 @@ def create_query() -> QueryExpression:
             property_condition("client.country", "equals", "FR"),
         ]
     )
+
+
+def create_runtime_controls(
+    api_key: str,
+) -> tuple[AtomicCredentials, RateLimitCoordinator]:
+    """Create shared credential and rate-limit controls."""
+    return AtomicCredentials(api_key), RateLimitCoordinator(10.0)
+
+
+def define_endpoint_contract() -> EndpointContract:
+    """Define one supported response contract downstream."""
+    return EndpointContract(
+        "cohorts.list",
+        "GET",
+        "/cohorts-api/v2/cohorts",
+        ResponseKind.PAGE,
+    )
+
+
+def preserve_recording_type(recording: Recording) -> Recording:
+    """Confirm that versioned replay evidence is consumable downstream."""
+    return recording
 
 
 def preserve_plugin_type(plugin: CodexPlugin) -> CodexPlugin:
