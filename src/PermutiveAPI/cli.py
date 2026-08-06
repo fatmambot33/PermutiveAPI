@@ -23,6 +23,7 @@ DOCUMENTATION_PATHS = (
     "docs/AI_NATIVE.md",
     "docs/AI_NATIVE_PLUGIN.md",
     "docs/EVALUATIONS.md",
+    "docs/OPERATIONAL_RELIABILITY.md",
     "docs/MCP.md",
 )
 LIFECYCLE_COMMANDS = (
