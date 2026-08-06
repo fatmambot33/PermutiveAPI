@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - pyproject.toml
+      - CHANGELOG.md
+      - docs/releases/**
+      - scripts/validate_release_metadata.py
       - .github/workflows/release.yml
   workflow_dispatch:
 
@@ -30,6 +33,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+
+      - name: Validate release metadata
+        run: python scripts/validate_release_metadata.py
 
       - name: Resolve release version
         id: version
