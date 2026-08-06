@@ -32,10 +32,10 @@ def main() -> int:
         retry_policy=RetryPolicy(max_attempts=1),
         transport=replay,
     ) as client:
-        listed = client.request("GET", "v1/cohorts")
+        listed = client.request("GET", "cohorts-api/v2/cohorts")
         created = client.request(
             "POST",
-            "v1/cohorts",
+            "cohorts-api/v2/cohorts",
             json={"name": "Reviewed"},
             idempotent=True,
         )
