@@ -44,7 +44,9 @@ class RecordedInteraction:
         if not method:
             raise ValueError("Recorded interaction method must not be empty.")
         if "?" in self.endpoint or "#" in self.endpoint:
-            raise ValueError("Recorded endpoints must not contain query or fragment data.")
+            raise ValueError(
+                "Recorded endpoints must not contain query or fragment data."
+            )
         if self.status_code < 100 or self.status_code > 599:
             raise ValueError("Recorded status codes must be valid HTTP statuses.")
         object.__setattr__(self, "method", method)
@@ -127,8 +129,7 @@ class Recording:
             raise TypeError("Recording interactions must be a list.")
         return cls(
             interactions=tuple(
-                RecordedInteraction.from_dict(_mapping(item))
-                for item in interactions
+                RecordedInteraction.from_dict(_mapping(item)) for item in interactions
             ),
             version=version,
         )
@@ -263,9 +264,7 @@ def _sensitive_key(key: str) -> bool:
 
 
 def _mapping(value: object) -> Mapping[str, object]:
-    if not isinstance(value, dict) or not all(
-        isinstance(key, str) for key in value
-    ):
+    if not isinstance(value, dict) or not all(isinstance(key, str) for key in value):
         raise TypeError("Expected a JSON object.")
     return cast(Mapping[str, object], value)
 
