@@ -214,7 +214,9 @@ class MockPermutiveServer:
     @property
     def base_url(self) -> str:
         """Return the active loopback base URL."""
-        host, port = self._server.server_address
+        address = self._server.server_address
+        host = str(address[0])
+        port = int(address[1])
         return f"http://{host}:{port}"
 
     @property
