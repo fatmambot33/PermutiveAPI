@@ -3,7 +3,7 @@ name: AI-native platform
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, "agent/**"]
 
 permissions:
   contents: read
