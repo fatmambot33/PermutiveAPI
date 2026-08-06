@@ -22,7 +22,7 @@ class _Registry:
         return {
             "tool_count": 3,
             "read_only_tools": 2,
-            "writable_tools": 1,
+            "write_tools": 1,
         }
 
 
@@ -55,7 +55,7 @@ def test_registry_descriptor_is_deterministic() -> None:
     )
     assert descriptor.tool_count == 3
     assert descriptor.read_only_tools == 2
-    assert descriptor.writable_tools == 1
+    assert descriptor.write_tools == 1
 
 
 def test_compatible_requirement_returns_descriptor() -> None:
@@ -68,7 +68,7 @@ def test_compatible_requirement_returns_descriptor() -> None:
         plugin_api_version="1.1",
         tool_count=2,
         read_only_tools=1,
-        writable_tools=1,
+        write_tools=1,
     )
     requirement = CapabilityRequirement(
         contract_version="1.0",
