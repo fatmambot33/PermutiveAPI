@@ -300,14 +300,12 @@ def _shape(value: JSONValue) -> object:
     if isinstance(value, list):
         unique = {_schema_key(_shape(item)): _shape(item) for item in value}
         return {"array": [unique[key] for key in sorted(unique)]}
-    if isinstance(value, dict):
-        return {
-            "object": {
-                key: _shape(item)
-                for key, item in sorted(value.items(), key=lambda pair: pair[0])
-            }
+    return {
+        "object": {
+            key: _shape(item)
+            for key, item in sorted(value.items(), key=lambda pair: pair[0])
         }
-    raise TypeError(f"Unsupported JSON value type: {type(value).__name__}")
+    }
 
 
 def _schema_key(value: object) -> str:
