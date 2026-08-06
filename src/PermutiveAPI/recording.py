@@ -212,7 +212,7 @@ class ReplayTransport:
         response.status_code = interaction.status_code
         response.url = url
         response.headers.update(interaction.headers)
-        response._content = (
+        response._content = (  # pyright: ignore[reportPrivateUsage]
             b""
             if interaction.body is None
             else json.dumps(interaction.body, sort_keys=True).encode("utf-8")
