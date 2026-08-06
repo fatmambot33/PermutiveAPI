@@ -99,7 +99,7 @@ def test_lifecycle_guidance_commands_are_deterministic(
     expected: str,
     capsys,
 ) -> None:
-    """Lifecycle commands return stable, explicit guidance."""
+    """Lifecycle commands expose stable, explicit guidance."""
     assert main([command]) == 0
 
     assert expected in capsys.readouterr().out
