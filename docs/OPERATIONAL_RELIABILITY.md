@@ -8,7 +8,7 @@ PermutiveAPI 6.7 makes upstream contracts, replay safety, coordinated runtime be
 
 - `contracts/api-contract-v1.json` for machine consumers;
 - `API_COVERAGE.md` for maintainers;
-- stable structural fingerprints for each supported operation.
+- stable structural fingerprints for every CRUD/list operation exposed by the canonical resource client.
 
 Validate both generated files with:
 
@@ -43,7 +43,7 @@ client = PermutiveClient(
     retry_policy=RetryPolicy(max_attempts=1),
     transport=transport,
 )
-result = client.request("GET", "v1/cohorts")
+result = client.request("GET", "cohorts-api/v2/cohorts")
 ```
 
 Validate committed recordings with:
@@ -71,12 +71,12 @@ coordinator = RateLimitCoordinator(requests_per_second=10)
 transport = CoordinatedTransport(requests.Session(), credentials, coordinator)
 client = PermutiveClient("managed-placeholder", transport=transport)
 
-client.request("GET", "v1/cohorts")
+client.request("GET", "cohorts-api/v2/cohorts")
 credentials.rotate("rotated-key")
-client.request("GET", "v1/cohorts")
+client.request("GET", "cohorts-api/v2/cohorts")
 ```
 
-The wrapper replaces the placeholder at the transport boundary. Every attempt uses one immutable credential generation. A rotation changes future attempts without mutating an in-flight attempt. HTTP 429 `Retry-After` values defer every caller sharing the coordinator.
+The wrapper replaces the placeholder at the transport boundary. Every attempt uses one immutable credential generation. A rotation changes future attempts without mutating an in-flight attempt. HTTP 429 `Retry-After` values defer every caller sharing the coordinator. Transport exceptions are sanitized before they reach the client, so the real rotated credential cannot survive in the exception chain.
 
 `CoordinatedAsyncTransport` provides the same behavior for `AsyncPermutiveClient`. Cancellation propagates normally and is never converted into a retry.
 
