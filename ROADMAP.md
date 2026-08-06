@@ -6,19 +6,17 @@ PermutiveAPI is moving from a completed first-class SDK and AI-native foundation
 
 Make PermutiveAPI the most trustworthy and easiest way for Python developers and governed AI agents to operate Permutive safely.
 
-## Now — 6.5.1: product truth
+## Completed — 6.5.1: product truth
 
 Tracking issue: #185
 
-Execution:
+- [x] #190 — Local product validation, lifecycle commands, release consistency, and clean-install gates.
+- [x] #191 — Canonical SDK, CLI, credential, and optional-extra onboarding documentation.
+- [x] #192 — Complete supported-surface strict typing and artifact contracts.
 
-- #190 — Local product validation, lifecycle commands, release consistency, and clean-install gates.
-- #191 — Canonical SDK, CLI, credential, and optional-extra onboarding documentation.
-- #192 — Complete supported-surface strict typing and artifact contracts.
+The 6.5.1 patch release establishes verifiable product claims, truthful onboarding, and an explicit canonical typing boundary.
 
-Release 6.5.1 follows only after all three execution issues pass their quality gates.
-
-## Next — 6.6: platform proof
+## Now — 6.6: platform proof
 
 Tracking issue: #186
 
