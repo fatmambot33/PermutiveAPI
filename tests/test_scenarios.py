@@ -46,9 +46,7 @@ def test_scenario_evidence_matches_committed_catalogs() -> None:
     fixtures = json.loads(
         Path("scenarios/fixtures-v1.json").read_text(encoding="utf-8")
     )
-    recipes = json.loads(
-        Path("scenarios/recipes.json").read_text(encoding="utf-8")
-    )
+    recipes = json.loads(Path("scenarios/recipes.json").read_text(encoding="utf-8"))
 
     assert fixtures == scenario_fixture_catalog()
     assert recipes == scenario_recipe_catalog()
