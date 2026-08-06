@@ -8,7 +8,7 @@ Make PermutiveAPI the most trustworthy and easiest way for Python developers and
 
 ## Now — 6.5.1: product truth
 
-Tracking issue: #185
+Tracking issues: #185 and #190
 
 - Align package, changelog, tag, and release metadata.
 - Require automated evidence for every declared AI-native capability.
