@@ -7,7 +7,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Lock, Thread
-from typing import Deque, Dict, Mapping, Optional, Tuple, cast
+from typing import Any, Deque, Dict, Mapping, Optional, Protocol, Tuple, cast
 from urllib.parse import parse_qs, urlsplit
 
 from .sdk import JSONValue
@@ -67,6 +67,99 @@ class MockRequest:
     body: Optional[JSONValue]
 
 
+class _FixtureServerProtocol(Protocol):
+    """Server operations required by the request handler."""
+
+    def response_for(self, method: str, path: str) -> MockResponse:
+        """Return the next response for one request."""
+        ...
+
+    def record(self, request: MockRequest) -> None:
+        """Record one request."""
+        ...
+
+
+class _FixtureRequestHandler(BaseHTTPRequestHandler):
+    """Dispatch HTTP methods to the fixture server."""
+
+    server_version = "PermutiveAPIMock/1"
+
+    def do_GET(self) -> None:  # noqa: N802 - stdlib handler contract
+        self._handle()
+
+    def do_POST(self) -> None:  # noqa: N802 - stdlib handler contract
+        self._handle()
+
+    def do_PUT(self) -> None:  # noqa: N802 - stdlib handler contract
+        self._handle()
+
+    def do_PATCH(self) -> None:  # noqa: N802 - stdlib handler contract
+        self._handle()
+
+    def do_DELETE(self) -> None:  # noqa: N802 - stdlib handler contract
+        self._handle()
+
+    def do_HEAD(self) -> None:  # noqa: N802 - stdlib handler contract
+        self._handle(include_body=False)
+
+    def do_OPTIONS(self) -> None:  # noqa: N802 - stdlib handler contract
+        self._handle()
+
+    def log_message(self, format: str, *args: Any) -> None:
+        """Disable noisy request logging in deterministic tests."""
+        del format, args
+
+    def _handle(self, *, include_body: bool = True) -> None:
+        server = cast(_FixtureServerProtocol, self.server)
+        method = str(self.command)
+        parsed = urlsplit(self.path)
+        body = self._read_body()
+        request = MockRequest(
+            method=method,
+            path=parsed.path,
+            query={
+                key: tuple(values)
+                for key, values in parse_qs(
+                    parsed.query,
+                    keep_blank_values=True,
+                ).items()
+            },
+            headers={str(key): str(value) for key, value in self.headers.items()},
+            body=body,
+        )
+        server.record(request)
+        response = server.response_for(method, parsed.path)
+        encoded = (
+            json.dumps(response.body, sort_keys=True).encode("utf-8")
+            if response.body is not None
+            else b""
+        )
+        self.send_response(response.status_code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(encoded)))
+        for key, value in response.headers.items():
+            self.send_header(key, value)
+        self.end_headers()
+        if include_body and encoded:
+            self.wfile.write(encoded)
+
+    def _read_body(self) -> Optional[JSONValue]:
+        length_value = self.headers.get("Content-Length")
+        if length_value is None:
+            return None
+        try:
+            length = int(length_value)
+        except ValueError:
+            return None
+        if length <= 0:
+            return None
+        raw = self.rfile.read(length).decode("utf-8")
+        try:
+            return cast(JSONValue, json.loads(raw))
+        except json.JSONDecodeError:
+            return raw
+
+
 class _FixtureHTTPServer(ThreadingHTTPServer):
     """Threaded HTTP server with typed route queues and request capture."""
 
@@ -106,85 +199,6 @@ class _FixtureHTTPServer(ThreadingHTTPServer):
             return tuple(self._requests)
 
 
-class _FixtureRequestHandler(BaseHTTPRequestHandler):
-    """Dispatch HTTP methods to the fixture server."""
-
-    server_version = "PermutiveAPIMock/1"
-
-    def do_GET(self) -> None:  # noqa: N802 - stdlib handler contract
-        self._handle()
-
-    def do_POST(self) -> None:  # noqa: N802 - stdlib handler contract
-        self._handle()
-
-    def do_PUT(self) -> None:  # noqa: N802 - stdlib handler contract
-        self._handle()
-
-    def do_PATCH(self) -> None:  # noqa: N802 - stdlib handler contract
-        self._handle()
-
-    def do_DELETE(self) -> None:  # noqa: N802 - stdlib handler contract
-        self._handle()
-
-    def do_HEAD(self) -> None:  # noqa: N802 - stdlib handler contract
-        self._handle(include_body=False)
-
-    def do_OPTIONS(self) -> None:  # noqa: N802 - stdlib handler contract
-        self._handle()
-
-    def log_message(self, _format: str, *_args: object) -> None:
-        """Disable noisy request logging in deterministic tests."""
-
-    def _handle(self, *, include_body: bool = True) -> None:
-        server = cast(_FixtureHTTPServer, self.server)
-        parsed = urlsplit(self.path)
-        body = self._read_body()
-        request = MockRequest(
-            method=self.command,
-            path=parsed.path,
-            query={
-                key: tuple(values)
-                for key, values in parse_qs(
-                    parsed.query,
-                    keep_blank_values=True,
-                ).items()
-            },
-            headers={key: value for key, value in self.headers.items()},
-            body=body,
-        )
-        server.record(request)
-        response = server.response_for(self.command, parsed.path)
-        encoded = (
-            json.dumps(response.body, sort_keys=True).encode("utf-8")
-            if response.body is not None
-            else b""
-        )
-        self.send_response(response.status_code)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(encoded)))
-        for key, value in response.headers.items():
-            self.send_header(key, value)
-        self.end_headers()
-        if include_body and encoded:
-            self.wfile.write(encoded)
-
-    def _read_body(self) -> Optional[JSONValue]:
-        length_value = self.headers.get("Content-Length")
-        if length_value is None:
-            return None
-        try:
-            length = int(length_value)
-        except ValueError:
-            return None
-        if length <= 0:
-            return None
-        raw = self.rfile.read(length).decode("utf-8")
-        try:
-            return cast(JSONValue, json.loads(raw))
-        except json.JSONDecodeError:
-            return raw
-
-
 class MockPermutiveServer:
     """Run deterministic Permutive-like fixtures on a loopback HTTP server."""
 
@@ -200,8 +214,8 @@ class MockPermutiveServer:
     @property
     def base_url(self) -> str:
         """Return the active loopback base URL."""
-        address = cast(Tuple[str, int], self._server.server_address)
-        return f"http://{address[0]}:{address[1]}"
+        host, port = self._server.server_address
+        return f"http://{host}:{port}"
 
     @property
     def requests(self) -> Tuple[MockRequest, ...]:
