@@ -24,7 +24,7 @@ def create_async_client(api_key: str) -> AsyncPermutiveClient:
 
 def create_query() -> QueryExpression:
     """Create one typed query expression."""
-    return all_of(event("Pageview"))
+    return all_of([event("Pageview")])
 
 
 def preserve_plugin_type(plugin: CodexPlugin) -> CodexPlugin:
