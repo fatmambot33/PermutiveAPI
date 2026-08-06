@@ -33,7 +33,7 @@ jobs:
       - name: Evaluation scorecard
         run: python scripts/generate_evaluation_scorecard.py --check evals/scorecard.json
       - name: Format
-        run: black --check src tests typing_examples scripts/generate_evaluation_scorecard.py
+        run: black --check --diff src tests typing_examples scripts/generate_evaluation_scorecard.py
       - name: Docstrings
         run: pydocstyle src/PermutiveAPI
       - name: Types
