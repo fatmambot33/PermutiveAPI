@@ -108,8 +108,10 @@ Query helpers compose immutable, deterministic JSON payloads while preserving ra
 from PermutiveAPI import all_of, event, property_condition
 
 query = all_of(
-    event("Pageview"),
-    property_condition("client.country", "equals", "FR"),
+    [
+        event("Pageview"),
+        property_condition("client.country", "equals", "FR"),
+    ]
 )
 
 payload = query.to_json()
@@ -183,9 +185,11 @@ python -m pip install -e ".[dev]"
 Run the same primary checks used by CI:
 
 ```bash
-black --check src tests
+black --check src tests typing_examples
 pydocstyle src/PermutiveAPI
+python scripts/validate_typing_scope.py
 pyright
+pyright typing_examples/downstream.py
 pytest -q
 python scripts/validate_ai_native_platform.py
 python scripts/validate_release_metadata.py
@@ -200,6 +204,7 @@ NumPy-style docstrings, strict typing, deterministic network-free tests, clean p
 - [PRODUCT.md](PRODUCT.md) — product mission and decision rules.
 - [PUBLIC_API.md](PUBLIC_API.md) — supported public surface.
 - [API_COVERAGE.md](API_COVERAGE.md) — endpoint coverage.
+- [docs/TYPING.md](docs/TYPING.md) — strict and compatibility implementation boundary.
 - [ROADMAP.md](ROADMAP.md) — active milestones and non-goals.
 - [SECURITY.md](SECURITY.md) — security reporting and guarantees.
 - [RELEASING.md](RELEASING.md) — validated release process.
