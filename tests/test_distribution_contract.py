@@ -59,6 +59,7 @@ def test_wheel_contains_typed_package_and_plugin_metadata(tmp_path: Path) -> Non
         "PermutiveAPI/query_dsl.py",
         "PermutiveAPI/resources.py",
         "PermutiveAPI/sdk.py",
+        "PermutiveAPI/testing.py",
         "PermutiveAPI/tools.py",
         "PermutiveAPI/validation.py",
     }

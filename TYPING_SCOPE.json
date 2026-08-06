@@ -20,6 +20,7 @@
     "src/PermutiveAPI/query_dsl.py",
     "src/PermutiveAPI/resources.py",
     "src/PermutiveAPI/sdk.py",
+    "src/PermutiveAPI/testing.py",
     "src/PermutiveAPI/tools.py",
     "src/PermutiveAPI/validation.py"
   ],

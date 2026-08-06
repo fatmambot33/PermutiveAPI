@@ -66,6 +66,7 @@ include = [
     "tests",
     "typing_examples",
     "evals",
+    "mock_fixtures",
     "scripts",
     "docs",
     "README.md",
@@ -106,6 +107,7 @@ include = [
     "src/PermutiveAPI/query_dsl.py",
     "src/PermutiveAPI/resources.py",
     "src/PermutiveAPI/sdk.py",
+    "src/PermutiveAPI/testing.py",
     "src/PermutiveAPI/tools.py",
     "src/PermutiveAPI/validation.py",
 ]

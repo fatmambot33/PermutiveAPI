@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/v1/success",
+      "responses": [
+        {
+          "status_code": 200,
+          "body": {"id": "fixture-success", "state": "ready"},
+          "headers": {}
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v1/create",
+      "responses": [
+        {
+          "status_code": 201,
+          "body": {"id": "fixture-created"},
+          "headers": {}
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v1/validation",
+      "responses": [
+        {
+          "status_code": 400,
+          "body": {"error": "invalid_fixture"},
+          "headers": {}
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v1/authentication",
+      "responses": [
+        {
+          "status_code": 401,
+          "body": {"error": "authentication_failed"},
+          "headers": {}
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v1/not-found",
+      "responses": [
+        {
+          "status_code": 404,
+          "body": {"error": "not_found"},
+          "headers": {}
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/v1/conflict",
+      "responses": [
+        {
+          "status_code": 409,
+          "body": {"error": "conflict"},
+          "headers": {}
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v1/rate-limit",
+      "responses": [
+        {
+          "status_code": 429,
+          "body": {"error": "rate_limited"},
+          "headers": {"Retry-After": "0"}
+        },
+        {
+          "status_code": 200,
+          "body": {"state": "recovered", "attempt": 2},
+          "headers": {}
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v1/server-retry",
+      "responses": [
+        {
+          "status_code": 500,
+          "body": {"error": "temporary_failure"},
+          "headers": {}
+        },
+        {
+          "status_code": 200,
+          "body": {"state": "recovered", "attempt": 2},
+          "headers": {}
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v1/server-failure",
+      "responses": [
+        {
+          "status_code": 500,
+          "body": {"error": "server_failure"},
+          "headers": {}
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v1/pagination",
+      "responses": [
+        {
+          "status_code": 200,
+          "body": {
+            "items": [{"id": "page-1"}],
+            "continuation": "fixture-page-2"
+          },
+          "headers": {}
+        },
+        {
+          "status_code": 200,
+          "body": {"items": [{"id": "page-2"}]},
+          "headers": {}
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/v1/repeated-token",
+      "responses": [
+        {
+          "status_code": 200,
+          "body": {
+            "items": [{"id": "repeat-1"}],
+            "continuation": "fixture-repeat"
+          },
+          "headers": {}
+        },
+        {
+          "status_code": 200,
+          "body": {
+            "items": [{"id": "repeat-2"}],
+            "continuation": "fixture-repeat"
+          },
+          "headers": {}
+        }
+      ]
+    }
+  ]
+}
