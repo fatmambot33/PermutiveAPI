@@ -8,14 +8,15 @@ Make PermutiveAPI the most trustworthy and easiest way for Python developers and
 
 ## Now — 6.5.1: product truth
 
-Tracking issues: #185 and #190
+Tracking issue: #185
 
-- Align package, changelog, tag, and release metadata.
-- Require automated evidence for every declared AI-native capability.
-- Reconcile declared lifecycle commands with the actual CLI.
-- Add one local `permutiveapi validate` product-health command.
-- Expand strict typing and clean-install validation across supported surfaces.
-- Keep the release backward compatible and dependency-light.
+Execution:
+
+- #190 — Local product validation, lifecycle commands, release consistency, and clean-install gates.
+- #191 — Canonical SDK, CLI, credential, and optional-extra onboarding documentation.
+- #192 — Complete supported-surface strict typing and artifact contracts.
+
+Release 6.5.1 follows only after all three execution issues pass their quality gates.
 
 ## Next — 6.6: platform proof
 
