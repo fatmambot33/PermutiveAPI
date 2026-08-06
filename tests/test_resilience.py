@@ -8,15 +8,16 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Mapping
 
 import pytest
-from requests import Response
+from requests import RequestException, Response
 
+from PermutiveAPI.async_client import AsyncPermutiveClient
 from PermutiveAPI.resilience import (
     AtomicCredentials,
     CoordinatedAsyncTransport,
     CoordinatedTransport,
     RateLimitCoordinator,
 )
-from PermutiveAPI.sdk import PermutiveClient, RetryPolicy
+from PermutiveAPI.sdk import PermutiveClient, RetryPolicy, TransportError
 
 
 class FakeClock:
@@ -143,6 +144,38 @@ def test_coordinated_transport_replaces_placeholder_key_after_rotation() -> None
     assert all(value["k"] != "managed-placeholder" for value in raw.params)
 
 
+def test_sync_transport_errors_redact_rotated_credentials() -> None:
+    """Real rotating keys never survive into the client exception chain."""
+
+    class LeakingTransport:
+        def request(self, method: str, url: str, **kwargs: Any) -> Response:
+            del method, url
+            secret = kwargs["params"]["k"]
+            raise RequestException(f"failed request with k={secret}")
+
+        def close(self) -> None:
+            pass
+
+    transport = CoordinatedTransport(
+        LeakingTransport(),
+        AtomicCredentials("rotated-secret"),
+        RateLimitCoordinator(1000.0),
+    )
+    with PermutiveClient(
+        "managed-placeholder",
+        base_url="https://example.test",
+        retry_policy=RetryPolicy(max_attempts=1),
+        transport=transport,
+    ) as client:
+        with pytest.raises(TransportError) as captured:
+            client.request("GET", "v1/cohorts")
+
+    assert "rotated-secret" not in str(captured.value)
+    assert captured.value.__cause__ is not None
+    assert "rotated-secret" not in str(captured.value.__cause__)
+    assert captured.value.__cause__.__cause__ is None
+
+
 def test_rate_limit_response_defers_all_future_callers() -> None:
     """A Retry-After response updates the shared coordinator once."""
     clock = FakeClock()
@@ -195,6 +228,47 @@ async def test_async_wrapper_injects_current_credentials() -> None:
         "async-secret",
         "rotated-async-secret",
     ]
+
+
+@pytest.mark.asyncio
+async def test_async_transport_errors_redact_rotated_credentials() -> None:
+    """Async error chains contain no real rotating credential value."""
+
+    class LeakingTransport:
+        async def request(
+            self,
+            method: str,
+            url: str,
+            **kwargs: Any,
+        ) -> AsyncCapturingTransport:
+            del method, url
+            secret = kwargs["params"]["k"]
+            raise ValueError(f"failed request with k={secret}")
+
+        async def aclose(self) -> None:
+            pass
+
+    transport = CoordinatedAsyncTransport(
+        LeakingTransport(),
+        AtomicCredentials("rotated-async-secret"),
+        RateLimitCoordinator(1000.0),
+    )
+    client = AsyncPermutiveClient(
+        "managed-placeholder",
+        base_url="https://example.test",
+        retry_policy=RetryPolicy(max_attempts=1),
+        transport=transport,
+    )
+    try:
+        with pytest.raises(TransportError) as captured:
+            await client.request("GET", "v1/cohorts")
+    finally:
+        await client.close()
+
+    assert "rotated-async-secret" not in str(captured.value)
+    assert captured.value.__cause__ is not None
+    assert "rotated-async-secret" not in str(captured.value.__cause__)
+    assert captured.value.__cause__.__cause__ is None
 
 
 @pytest.mark.asyncio
