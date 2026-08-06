@@ -83,11 +83,14 @@ def main() -> int:
     args = parser.parse_args()
 
     manifest = contract_manifest(_samples(SAMPLES_PATH))
-    manifest_text = json.dumps(
-        manifest,
-        sort_keys=True,
-        separators=(",", ":"),
-    ) + "\n"
+    manifest_text = (
+        json.dumps(
+            manifest,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+    )
     coverage_text = _markdown(manifest)
     _write_or_check(MANIFEST_PATH, manifest_text, check=args.check)
     _write_or_check(COVERAGE_PATH, coverage_text, check=args.check)
