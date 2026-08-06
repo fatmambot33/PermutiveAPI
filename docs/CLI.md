@@ -24,6 +24,10 @@ Runs installed-package checks for distribution metadata, deterministic Python pl
 
 Runs the deterministic installed-package self-test. Repository contributors should continue to use `pytest` for the complete source test suite.
 
+### `permutiveapi eval`
+
+Prints the versioned governed-platform evaluation scorecard as deterministic JSON. The command verifies tool selection, policy enforcement, secret redaction, idempotency, workflow bounds, partial failures, and audit completeness. It requires no credentials or network access and exits with `1` when any case fails.
+
 ### `permutiveapi docs`
 
 Prints the canonical repository documentation locations.
@@ -45,5 +49,5 @@ Prints the exact interpreter-specific `pip uninstall PermutiveAPI` command. It d
 ## Exit codes
 
 - `0`: the command completed successfully.
-- `1`: validation failed or local configuration needs repair.
+- `1`: validation or an evaluation failed, or local configuration needs repair.
 - `2`: required input is missing or an unsafe overwrite was refused.
