@@ -62,9 +62,7 @@ def test_read_and_bounded_scenarios_use_expected_tools(
     workspace = runner.run(
         ScenarioRequest("Inspect the current workspace", "scenario-workspace")
     )
-    cohorts = runner.run(
-        ScenarioRequest("List available cohorts", "scenario-cohorts")
-    )
+    cohorts = runner.run(ScenarioRequest("List available cohorts", "scenario-cohorts"))
     segments = runner.run(
         ScenarioRequest(
             "Compare the left and right segments",
