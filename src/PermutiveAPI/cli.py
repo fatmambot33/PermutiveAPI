@@ -1,10 +1,11 @@
-"""Local-only credential setup and validation commands for PermutiveAPI."""
+"""Local credential, validation, and lifecycle commands for PermutiveAPI."""
 
 from __future__ import annotations
 
 import argparse
 import getpass
 import os
+import sys
 from pathlib import Path
 from typing import Dict, Optional, Sequence
 
@@ -13,6 +14,12 @@ from dotenv import dotenv_values
 from .validation import run_validation, validation_succeeded
 
 REQUIRED_VARIABLES = ("PERMUTIVE_API_KEY", "PERMUTIVE_WORKSPACE_ID")
+DOCUMENTATION_PATHS = (
+    "README.md",
+    "docs/AI_NATIVE.md",
+    "docs/AI_NATIVE_PLUGIN.md",
+    "docs/MCP.md",
+)
 
 
 def _is_ignored(env_path: Path) -> bool:
@@ -112,6 +119,49 @@ def validate() -> int:
     return 1
 
 
+def test() -> int:
+    """Run the deterministic installed-package self-test."""
+    print("PermutiveAPI installed-package self-test")
+    return validate()
+
+
+def docs() -> int:
+    """Print the canonical documentation locations."""
+    print("PermutiveAPI documentation")
+    for path in DOCUMENTATION_PATHS:
+        print(f"- {path}")
+    print("Repository: https://github.com/fatmambot33/PermutiveAPI")
+    return 0
+
+
+def examples() -> int:
+    """Print minimal canonical SDK and plugin examples."""
+    print("PermutiveAPI SDK example")
+    print("from PermutiveAPI import PermutiveClient")
+    print('client = PermutiveClient("api-key")')
+    print('cohort = client.cohorts.get("cohort-id")')
+    print()
+    print("PermutiveAPI Codex plugin example")
+    print("from PermutiveAPI.plugins.codex import CodexPlugin")
+    print("plugin = CodexPlugin.from_env()")
+    print("tools = plugin.tools().as_openai_tools()")
+    return 0
+
+
+def upgrade() -> int:
+    """Print the explicit environment-safe package upgrade command."""
+    print("Upgrade PermutiveAPI explicitly with:")
+    print(f"{sys.executable} -m pip install --upgrade PermutiveAPI")
+    return 0
+
+
+def uninstall() -> int:
+    """Print the explicit environment-safe package removal command."""
+    print("Uninstall PermutiveAPI explicitly with:")
+    print(f"{sys.executable} -m pip uninstall PermutiveAPI")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(prog="permutiveapi")
@@ -121,7 +171,8 @@ def build_parser() -> argparse.ArgumentParser:
     configure_parser.add_argument("--force", action="store_true")
     doctor_parser = subparsers.add_parser("doctor")
     doctor_parser.add_argument("--env-file", type=Path, default=Path(".env"))
-    subparsers.add_parser("validate")
+    for command in ("validate", "test", "docs", "examples", "upgrade", "uninstall"):
+        subparsers.add_parser(command)
     return parser
 
 
@@ -132,7 +183,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return configure(args.env_file, force=args.force)
     if args.command == "doctor":
         return doctor(args.env_file)
-    return validate()
+    commands = {
+        "validate": validate,
+        "test": test,
+        "docs": docs,
+        "examples": examples,
+        "upgrade": upgrade,
+        "uninstall": uninstall,
+    }
+    return commands[args.command]()
 
 
 if __name__ == "__main__":
