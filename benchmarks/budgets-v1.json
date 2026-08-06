@@ -1,0 +1,25 @@
+{
+  "budgets": [
+    {
+      "iterations": 25,
+      "max_median_seconds": 0.02,
+      "name": "contract-manifest"
+    },
+    {
+      "iterations": 100,
+      "max_median_seconds": 0.005,
+      "name": "query-serialization"
+    },
+    {
+      "iterations": 50,
+      "max_median_seconds": 0.01,
+      "name": "recipe-discovery"
+    },
+    {
+      "iterations": 25,
+      "max_median_seconds": 0.02,
+      "name": "recording-load"
+    }
+  ],
+  "version": 1
+}
