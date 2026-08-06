@@ -27,7 +27,7 @@ plugin:
     local_only: true
     env_file: .env
     env_example: plugins/permutiveapi/.env.example
-    required_variables: [PERMUTIVE_API_KEY, PERMUTIVE_WORKSPACE_ID]
+    required_variables: [PERMUTIVE_API_KEY]
     setup_command: permutiveapi configure
     validation_command: permutiveapi doctor
     policy:
