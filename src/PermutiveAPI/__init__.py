@@ -13,6 +13,16 @@ from .async_client import (
     AsyncTransport,
     execute_async_batch,
 )
+from .capabilities import (
+    CAPABILITY_CONTRACT_VERSION,
+    CAPABILITY_ERROR_CODES,
+    TOOL_SCHEMA_VERSION,
+    CapabilityDescriptor,
+    CapabilityNegotiationError,
+    CapabilityRequirement,
+    capability_contract_manifest,
+    negotiate_capabilities,
+)
 from .client import PermutiveClient
 from .config import PermutiveConfig, Secret
 from .mcp import (
@@ -116,6 +126,11 @@ __all__ = [
     "AuthorizationError",
     "BatchItem",
     "BatchResult",
+    "CAPABILITY_CONTRACT_VERSION",
+    "CAPABILITY_ERROR_CODES",
+    "CapabilityDescriptor",
+    "CapabilityNegotiationError",
+    "CapabilityRequirement",
     "Cohort",
     "CohortList",
     "ConflictError",
@@ -160,6 +175,7 @@ __all__ = [
     "Segmentation",
     "ServerError",
     "Source",
+    "TOOL_SCHEMA_VERSION",
     "ToolDefinition",
     "ToolHandler",
     "ToolRegistry",
@@ -169,10 +185,12 @@ __all__ = [
     "WorkspaceList",
     "all_of",
     "any_of",
+    "capability_contract_manifest",
     "event",
     "execute_async_batch",
     "execute_batch",
     "in_segment",
+    "negotiate_capabilities",
     "property_condition",
     "tool",
 ]
