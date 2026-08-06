@@ -2,6 +2,35 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
+## Unreleased
+
+### Changed
+- Published the active 6.5.1–6.7 roadmap with explicit product rules and non-goals.
+- Started reconciling package metadata, release documentation, CLI behavior, and AI-native evidence.
+
+## 6.5.0 - 2026-08-05
+
+### Added
+- First-class Codex plugin surface with deterministic discovery and explicit read-only or read-write policy.
+- Native Codex marketplace packaging and installation metadata.
+- Local-only `permutiveapi configure` and `permutiveapi doctor` credential workflows.
+- Governed tool execution with allow and deny policies and explicit approvals for mutating tools.
+- Structured invocation results and normalized failures.
+- Deterministic idempotency support for safe retries.
+- Bounded multi-step workflow execution and audit-sink integration.
+- Machine-readable AI-native platform manifest and dedicated CI validation.
+- Issue-driven self-improvement workflow with governed autonomous discovery and PR preparation.
+- Unified AgentKit access across local tools, workflows, and hosted MCP configuration.
+
+### Security
+- Credentials remain local, are never echoed, and must be ignored by Git.
+- Mutating tools require the declared write mode and explicit confirmation.
+- Breaking, security, credential, public API, permission, and release changes require human approval.
+
+### Changed
+- Repositioned the package as a typed, governed AI-native Python platform while preserving the canonical SDK.
+- Adopted the canonical AI-native platform standard at verified revision `67ec7caf19ead3282ea1aad29c43906f59e64d67`.
+
 ## 6.4.1 - 2026-08-05
 
 ### Added
