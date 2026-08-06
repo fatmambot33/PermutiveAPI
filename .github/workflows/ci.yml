@@ -26,6 +26,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e '.[dev]'
+      - name: Release metadata
+        run: python scripts/validate_release_metadata.py
       - name: Format
         run: black --check src tests
       - name: Docstrings
@@ -33,7 +35,7 @@ jobs:
       - name: Types
         run: pyright
       - name: Compile examples
-        run: python -m compileall -q src tests
+        run: python -m compileall -q src tests scripts
 
   tests:
     runs-on: ubuntu-latest
@@ -63,10 +65,28 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: python -m pip install --upgrade build twine
+      - run: python scripts/validate_release_metadata.py
       - run: python -m build
       - run: python -m twine check dist/*
-      - name: Verify clean install
+      - name: Verify core, CLI, and Python plugin install
+        shell: bash
         run: |
-          python -m venv /tmp/permutiveapi-venv
-          /tmp/permutiveapi-venv/bin/pip install dist/*.whl
-          /tmp/permutiveapi-venv/bin/python -c "import PermutiveAPI; print(PermutiveAPI.__all__)"
+          wheel="$(ls dist/*.whl)"
+          python -m venv /tmp/permutiveapi-core
+          /tmp/permutiveapi-core/bin/pip install "$wheel"
+          /tmp/permutiveapi-core/bin/python -c "import PermutiveAPI; print(PermutiveAPI.__all__)"
+          /tmp/permutiveapi-core/bin/permutiveapi validate
+      - name: Verify async extra install
+        shell: bash
+        run: |
+          wheel="$(ls dist/*.whl)"
+          python -m venv /tmp/permutiveapi-async
+          /tmp/permutiveapi-async/bin/pip install "${wheel}[async]"
+          /tmp/permutiveapi-async/bin/python -c "import httpx; from PermutiveAPI import AsyncPermutiveClient"
+      - name: Verify dataframe extra install
+        shell: bash
+        run: |
+          wheel="$(ls dist/*.whl)"
+          python -m venv /tmp/permutiveapi-dataframe
+          /tmp/permutiveapi-dataframe/bin/pip install "${wheel}[dataframe]"
+          /tmp/permutiveapi-dataframe/bin/python -c "import pandas; import PermutiveAPI"
