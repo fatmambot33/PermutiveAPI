@@ -28,14 +28,18 @@ jobs:
           python -m pip install -e '.[dev]'
       - name: Release metadata
         run: python scripts/validate_release_metadata.py
+      - name: Typing scope
+        run: python scripts/validate_typing_scope.py
       - name: Format
-        run: black --check src tests
+        run: black --check src tests typing_examples
       - name: Docstrings
         run: pydocstyle src/PermutiveAPI
       - name: Types
         run: pyright
+      - name: Downstream types
+        run: pyright typing_examples/downstream.py
       - name: Compile examples
-        run: python -m compileall -q src tests scripts
+        run: python -m compileall -q src tests scripts typing_examples
 
   tests:
     runs-on: ubuntu-latest
@@ -66,6 +70,7 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade build twine
       - run: python scripts/validate_release_metadata.py
+      - run: python scripts/validate_typing_scope.py
       - run: python -m build
       - run: python -m twine check dist/*
       - name: Verify core, CLI, and Python plugin install

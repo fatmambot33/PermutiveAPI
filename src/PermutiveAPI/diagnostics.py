@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Dict, Mapping, Optional, Protocol, Tuple
+from typing import Any, Callable, Dict, Mapping, Optional, Protocol, Tuple
 from urllib.parse import urlsplit, urlunsplit
 
 

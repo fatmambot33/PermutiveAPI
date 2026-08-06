@@ -41,14 +41,25 @@ def test_wheel_contains_typed_package_and_plugin_metadata(tmp_path: Path) -> Non
     required_package_files = {
         "PermutiveAPI/__init__.py",
         "PermutiveAPI/agent.py",
+        "PermutiveAPI/ai_native.py",
+        "PermutiveAPI/async_client.py",
+        "PermutiveAPI/cli.py",
         "PermutiveAPI/client.py",
+        "PermutiveAPI/config.py",
+        "PermutiveAPI/credentials.py",
+        "PermutiveAPI/diagnostics.py",
         "PermutiveAPI/mcp.py",
+        "PermutiveAPI/models.py",
+        "PermutiveAPI/plugins/__init__.py",
+        "PermutiveAPI/plugins/base.py",
+        "PermutiveAPI/plugins/codex.py",
+        "PermutiveAPI/plugins/runtime.py",
         "PermutiveAPI/py.typed",
+        "PermutiveAPI/query_dsl.py",
         "PermutiveAPI/resources.py",
         "PermutiveAPI/sdk.py",
         "PermutiveAPI/tools.py",
-        "PermutiveAPI/plugins/__init__.py",
-        "PermutiveAPI/plugins/codex.py",
+        "PermutiveAPI/validation.py",
     }
     assert required_package_files <= names
     assert not any(name.startswith("tests/") for name in names)
