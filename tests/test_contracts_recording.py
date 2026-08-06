@@ -80,18 +80,19 @@ def test_additive_and_breaking_schema_drift_are_distinct() -> None:
     )
     assert additive.kind is DriftKind.ADDITIVE
     assert additive.compatible is True
-    assert validate_response_schema(
-        "cohorts.get",
-        {"id": "cohort", "name": "Example", "description": "New"},
-        schemas,
-    ) == additive
+    assert (
+        validate_response_schema(
+            "cohorts.get",
+            {"id": "cohort", "name": "Example", "description": "New"},
+            schemas,
+        )
+        == additive
+    )
 
     additive_page = classify_response_schema(
         "cohorts.list",
         {
-            "items": [
-                {"id": "cohort", "name": "Example", "description": "New"}
-            ],
+            "items": [{"id": "cohort", "name": "Example", "description": "New"}],
             "continuation": "next",
         },
         schemas,
@@ -157,14 +158,15 @@ def test_recording_replays_through_the_canonical_client() -> None:
         retry_policy=RetryPolicy(max_attempts=1),
         transport=replay,
     ) as client:
-        assert client.request("GET", "cohorts-api/v2/cohorts")[
-            "continuation"
-        ] == "next"
-        assert client.request(
-            "POST",
-            "cohorts-api/v2/cohorts",
-            json={"name": "Reviewed"},
-        )["api_key"] == "[REDACTED]"
+        assert client.request("GET", "cohorts-api/v2/cohorts")["continuation"] == "next"
+        assert (
+            client.request(
+                "POST",
+                "cohorts-api/v2/cohorts",
+                json={"name": "Reviewed"},
+            )["api_key"]
+            == "[REDACTED]"
+        )
     assert replay.remaining == 0
 
 
