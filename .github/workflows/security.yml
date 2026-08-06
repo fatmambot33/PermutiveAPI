@@ -10,6 +10,7 @@ on:
 permissions:
   actions: read
   contents: read
+  security-events: read
 
 jobs:
   codeql-artifact:
@@ -22,11 +23,11 @@ jobs:
       - name: Analyze without duplicating GitHub default setup
         uses: github/codeql-action/analyze@v4
         with:
-          output: ../codeql-results
+          output: codeql-results
           upload: never
       - name: Retain CodeQL SARIF
         uses: actions/upload-artifact@v4
         with:
           name: codeql-sarif-${{ github.sha }}
-          path: ../codeql-results/*.sarif
+          path: codeql-results/*.sarif
           retention-days: 14
