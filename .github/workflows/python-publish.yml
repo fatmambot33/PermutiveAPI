@@ -1,4 +1,4 @@
-# Publishes each package version once through PyPI Trusted Publishing and creates matching release evidence.
+# Publishes each package version once through PyPI Trusted Publishing and creates matching immutable release evidence.
 name: Release Python package
 
 on:
@@ -86,8 +86,16 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - name: Install release tooling
-        run: python -m pip install --upgrade build twine cyclonedx-bom
+      - name: Install release tooling and source package
+        run: |
+          python -m pip install --upgrade build twine cyclonedx-bom
+          python -m pip install -e .
+      - name: Validate release candidate source contracts
+        run: |
+          python scripts/validate_release_metadata.py
+          python scripts/generate_api_contracts.py --check
+          python scripts/validate_recordings.py
+          python scripts/validate_performance.py
       - name: Build and validate distributions
         run: |
           python -m build --outdir release-dist
@@ -105,8 +113,10 @@ jobs:
           import os
           from importlib.metadata import version
 
-          importlib.import_module(os.environ["PACKAGE_IMPORT"])
+          package = importlib.import_module(os.environ["PACKAGE_IMPORT"])
           assert version(os.environ["PROJECT"]) == os.environ["VERSION"]
+          assert package.API_CONTRACT_VERSION == 1
+          assert package.RELEASE_EVIDENCE_VERSION == 1
           PY
           .venv-release/bin/permutiveapi --help >/dev/null
       - name: Generate CycloneDX SBOM
@@ -117,10 +127,28 @@ jobs:
             --output-format JSON \
             --output-reproducible \
             --output-file release-evidence/sbom.cdx.json
+      - name: Build and verify immutable release manifest
+        env:
+          PROJECT: ${{ needs.check.outputs.project }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          python scripts/build_release_manifest.py \
+            --project "$PROJECT" \
+            --version "$VERSION" \
+            --source-commit "$GITHUB_SHA" \
+            --root . \
+            --output release-evidence/release-manifest.json \
+            release-dist/* release-evidence/sbom.cdx.json
+          python scripts/verify_release_manifest.py \
+            release-evidence/release-manifest.json --root .
       - name: Attest package distributions
         uses: actions/attest@v4
         with:
           subject-path: "release-dist/*"
+      - name: Attest release evidence
+        uses: actions/attest@v4
+        with:
+          subject-path: "release-evidence/*"
       - uses: actions/upload-artifact@v4
         with:
           name: python-package-distributions
@@ -136,14 +164,30 @@ jobs:
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
+      contents: read
       id-token: write
     steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
       - uses: actions/download-artifact@v4
         with:
           name: python-package-distributions
-          path: dist
+          path: release-dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-evidence
+          path: release-evidence
+      - name: Verify exact candidate before publication
+        run: |
+          python -m pip install -e .
+          python scripts/verify_release_manifest.py \
+            release-evidence/release-manifest.json --root .
       - name: Publish through PyPI Trusted Publishing
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: release-dist
 
   release:
     needs: [check, build, publish]
@@ -155,6 +199,9 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
       - uses: actions/download-artifact@v4
         with:
           name: python-package-distributions
@@ -163,6 +210,11 @@ jobs:
         with:
           name: release-evidence
           path: release-evidence
+      - name: Verify exact candidate before release creation
+        run: |
+          python -m pip install -e .
+          python scripts/verify_release_manifest.py \
+            release-evidence/release-manifest.json --root .
       - name: Create or reconcile version release
         env:
           GH_TOKEN: ${{ github.token }}
