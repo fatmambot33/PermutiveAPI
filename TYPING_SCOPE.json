@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "strict": [
+    "src/PermutiveAPI/__init__.py",
+    "src/PermutiveAPI/agent.py",
+    "src/PermutiveAPI/ai_native.py",
+    "src/PermutiveAPI/async_client.py",
+    "src/PermutiveAPI/cli.py",
+    "src/PermutiveAPI/client.py",
+    "src/PermutiveAPI/config.py",
+    "src/PermutiveAPI/credentials.py",
+    "src/PermutiveAPI/diagnostics.py",
+    "src/PermutiveAPI/mcp.py",
+    "src/PermutiveAPI/models.py",
+    "src/PermutiveAPI/plugins/__init__.py",
+    "src/PermutiveAPI/plugins/base.py",
+    "src/PermutiveAPI/plugins/codex.py",
+    "src/PermutiveAPI/plugins/runtime.py",
+    "src/PermutiveAPI/query_dsl.py",
+    "src/PermutiveAPI/resources.py",
+    "src/PermutiveAPI/sdk.py",
+    "src/PermutiveAPI/tools.py",
+    "src/PermutiveAPI/validation.py"
+  ],
+  "compatibility": [
+    "src/PermutiveAPI/audience/__init__.py",
+    "src/PermutiveAPI/audience/imports.py",
+    "src/PermutiveAPI/audience/segment.py",
+    "src/PermutiveAPI/audience/source.py",
+    "src/PermutiveAPI/cohort.py",
+    "src/PermutiveAPI/context.py",
+    "src/PermutiveAPI/identify/__init__.py",
+    "src/PermutiveAPI/identify/alias.py",
+    "src/PermutiveAPI/identify/identify.py",
+    "src/PermutiveAPI/query.py",
+    "src/PermutiveAPI/segmentation.py",
+    "src/PermutiveAPI/utils/file.py",
+    "src/PermutiveAPI/utils/http.py",
+    "src/PermutiveAPI/utils/json.py",
+    "src/PermutiveAPI/utils/list.py",
+    "src/PermutiveAPI/workspace.py"
+  ]
+}
