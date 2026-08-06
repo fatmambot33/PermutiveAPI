@@ -1,8 +1,10 @@
-"""Contract tests for local product validation."""
+"""Contract tests for local product validation and lifecycle commands."""
 
 from __future__ import annotations
 
 from typing import List
+
+import pytest
 
 from PermutiveAPI.cli import main
 from PermutiveAPI.validation import (
@@ -55,3 +57,34 @@ def test_validate_cli_reports_failures(monkeypatch, capsys) -> None:
     assert "[FAIL] contract" in output
     assert "contract is invalid" in output
     assert "product validation failed" in output
+
+
+def test_test_command_runs_installed_package_checks(monkeypatch, capsys) -> None:
+    """The test command reuses deterministic installed-package validation."""
+    checks = [ValidationCheck("self_test", True, "self-test passed")]
+    monkeypatch.setattr("PermutiveAPI.cli.run_validation", lambda: checks)
+
+    assert main(["test"]) == 0
+    output = capsys.readouterr().out
+    assert "installed-package self-test" in output
+    assert "[PASS] self_test" in output
+
+
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    (
+        ("docs", "docs/AI_NATIVE.md"),
+        ("examples", "PermutiveClient"),
+        ("upgrade", "pip install --upgrade PermutiveAPI"),
+        ("uninstall", "pip uninstall PermutiveAPI"),
+    ),
+)
+def test_lifecycle_guidance_commands_are_deterministic(
+    command: str,
+    expected: str,
+    capsys,
+) -> None:
+    """Lifecycle commands return stable, explicit guidance."""
+    assert main([command]) == 0
+
+    assert expected in capsys.readouterr().out
