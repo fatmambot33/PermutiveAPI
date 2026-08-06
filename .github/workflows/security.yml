@@ -8,15 +8,25 @@ on:
     - cron: '23 5 * * 1'
 
 permissions:
+  actions: read
   contents: read
-  security-events: write
 
 jobs:
-  codeql:
+  codeql-artifact:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: github/codeql-action/init@v4
         with:
           languages: python
-      - uses: github/codeql-action/analyze@v4
+      - name: Analyze without duplicating GitHub default setup
+        uses: github/codeql-action/analyze@v4
+        with:
+          output: ../codeql-results
+          upload: never
+      - name: Retain CodeQL SARIF
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif-${{ github.sha }}
+          path: ../codeql-results/*.sarif
+          retention-days: 14
