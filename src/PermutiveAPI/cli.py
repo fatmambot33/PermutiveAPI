@@ -16,9 +16,18 @@ from .validation import run_validation, validation_succeeded
 REQUIRED_VARIABLES = ("PERMUTIVE_API_KEY", "PERMUTIVE_WORKSPACE_ID")
 DOCUMENTATION_PATHS = (
     "README.md",
+    "docs/CLI.md",
     "docs/AI_NATIVE.md",
     "docs/AI_NATIVE_PLUGIN.md",
     "docs/MCP.md",
+)
+LIFECYCLE_COMMANDS = (
+    "validate",
+    "test",
+    "docs",
+    "examples",
+    "upgrade",
+    "uninstall",
 )
 
 
@@ -171,7 +180,7 @@ def build_parser() -> argparse.ArgumentParser:
     configure_parser.add_argument("--force", action="store_true")
     doctor_parser = subparsers.add_parser("doctor")
     doctor_parser.add_argument("--env-file", type=Path, default=Path(".env"))
-    for command in ("validate", "test", "docs", "examples", "upgrade", "uninstall"):
+    for command in LIFECYCLE_COMMANDS:
         subparsers.add_parser(command)
     return parser
 
