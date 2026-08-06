@@ -253,6 +253,10 @@ def _classify_shape(expected: object, actual: object) -> DriftKind:
 
 
 def _classify_array(expected_items: list[object], actual_items: list[object]) -> DriftKind:
+    if not actual_items:
+        return DriftKind.NONE
+    if not expected_items:
+        return DriftKind.ADDITIVE
     unmatched = list(actual_items)
     additive = False
     for expected_item in expected_items:
