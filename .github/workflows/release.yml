@@ -1,92 +1,13 @@
-name: Release
+name: Legacy release workflow (disabled)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - pyproject.toml
-      - CHANGELOG.md
-      - docs/releases/**
-      - scripts/validate_release_metadata.py
-      - .github/workflows/release.yml
   workflow_dispatch:
 
-concurrency:
-  group: release
-  cancel-in-progress: false
+permissions:
+  contents: read
 
 jobs:
-  release:
+  disabled:
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/project/PermutiveAPI/
-    permissions:
-      contents: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Validate release metadata
-        run: python scripts/validate_release_metadata.py
-
-      - name: Resolve release version
-        id: version
-        shell: bash
-        run: |
-          version="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
-
-      - name: Check whether release already exists
-        id: existing
-        shell: bash
-        run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "released=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "released=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Install build tooling
-        if: steps.existing.outputs.released != 'true'
-        run: python -m pip install --upgrade build twine
-
-      - name: Build distributions
-        if: steps.existing.outputs.released != 'true'
-        run: python -m build
-
-      - name: Validate distributions
-        if: steps.existing.outputs.released != 'true'
-        run: python -m twine check dist/*
-
-      - name: Publish to PyPI
-        if: steps.existing.outputs.released != 'true'
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-
-      - name: Create tag and GitHub release
-        if: steps.existing.outputs.released != 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.version.outputs.tag }}
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$TAG" "$GITHUB_SHA" -m "PermutiveAPI ${{ steps.version.outputs.version }}"
-          git push origin "$TAG"
-          gh release create "$TAG" --target "$GITHUB_SHA" --generate-notes --title "$TAG"
-
-      - name: Report existing release
-        if: steps.existing.outputs.released == 'true'
-        run: echo "${{ steps.version.outputs.tag }} already exists; skipping publication."
+      - run: echo "Publication is handled by .github/workflows/python-publish.yml."
