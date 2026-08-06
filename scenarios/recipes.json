@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "recipes": [
+    {
+      "request": {
+        "text": "Inspect the current workspace",
+        "run_id": "recipe-workspace",
+        "approved": false
+      },
+      "plan": {
+        "intent": "inspect_workspace",
+        "steps": [
+          {
+            "name": "inspect",
+            "tool_name": "inspect_workspace",
+            "arguments": {},
+            "approved": false,
+            "continue_on_error": false
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "text": "List available cohorts",
+        "run_id": "recipe-cohorts",
+        "approved": false
+      },
+      "plan": {
+        "intent": "list_cohorts",
+        "steps": [
+          {
+            "name": "list",
+            "tool_name": "list_cohorts",
+            "arguments": {},
+            "approved": false,
+            "continue_on_error": false
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "text": "Compare the left and right segments",
+        "run_id": "recipe-segments",
+        "approved": false
+      },
+      "plan": {
+        "intent": "compare_segments",
+        "steps": [
+          {
+            "name": "compare",
+            "tool_name": "compare_segments",
+            "arguments": {},
+            "approved": false,
+            "continue_on_error": false
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "text": "Create a reviewed cohort named example",
+        "run_id": "recipe-create",
+        "approved": true
+      },
+      "plan": {
+        "intent": "create_reviewed_cohort",
+        "steps": [
+          {
+            "name": "create",
+            "tool_name": "create_reviewed_cohort",
+            "arguments": {"name": "example"},
+            "approved": true,
+            "continue_on_error": false
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "text": "Run the bounded workspace overview",
+        "run_id": "recipe-overview",
+        "approved": false
+      },
+      "plan": {
+        "intent": "bounded_overview",
+        "steps": [
+          {
+            "name": "inspect",
+            "tool_name": "inspect_workspace",
+            "arguments": {},
+            "approved": false,
+            "continue_on_error": false
+          },
+          {
+            "name": "list",
+            "tool_name": "list_cohorts",
+            "arguments": {},
+            "approved": false,
+            "continue_on_error": false
+          }
+        ]
+      }
+    }
+  ]
+}
