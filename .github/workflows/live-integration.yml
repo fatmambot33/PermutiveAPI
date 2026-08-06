@@ -1,0 +1,29 @@
+name: Live read-only integration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-read-only:
+    runs-on: ubuntu-latest
+    environment: permutive-live
+    env:
+      PERMUTIVE_API_KEY: ${{ secrets.PERMUTIVE_API_KEY }}
+      PERMUTIVE_LIVE_READ_PATH: ${{ vars.PERMUTIVE_LIVE_READ_PATH }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Require explicit live configuration
+        run: |
+          test -n "$PERMUTIVE_API_KEY"
+          test -n "$PERMUTIVE_LIVE_READ_PATH"
+      - name: Install live-test dependencies
+        run: python -m pip install -e '.[dev]'
+      - name: Run the read-only live contract
+        run: pytest -q -m integration tests/test_live_read_only.py
