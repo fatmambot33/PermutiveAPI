@@ -7,15 +7,22 @@ All notable changes to PermutiveAPI are documented here. The project follows Sem
 ### Added
 - Deterministic governed-platform evaluation types and a versioned machine-readable scorecard.
 - `permutiveapi eval` for credential-free, network-free policy and workflow verification.
-- CI enforcement that runtime evaluations match committed evidence.
+- A dependency-free loopback mock Permutive server with versioned success, error, retry, and pagination fixtures.
+- Deterministic governed end-to-end scenarios over the canonical SDK, policy engine, workflow runner, and audit sink.
+- Versioned capability discovery and negotiation across `ToolRegistry`, `PermutiveAgentKit`, the Codex plugin, and MCP configuration.
+- Stable capability negotiation error codes, committed contract evidence, and cross-surface compatibility tests.
+- CI enforcement for evaluations, scenario evidence, capability evidence, strict typing, and clean-wheel negotiation.
 
 ### Security
 - Governed tool failures retain the exception type but no longer expose raw exception messages.
 - Evaluation runner failures report only the exception type and never persist secret-bearing text.
+- Scenario and capability metadata exclude credentials, bearer tokens, custom MCP header values, and request payloads.
+- Unsupported intents, denied writes, missing approvals, and incompatible capability requirements fail before HTTP or tool execution.
 
 ### Changed
 - Declared AI evaluations as an evidence-backed platform capability.
-- Added the evaluation module to strict typing, wheel-content, and source-distribution contracts.
+- Added evaluation, mock-server, scenario, and capability modules to strict typing, wheel-content, and source-distribution contracts.
+- Preserved the historical Codex plugin API value `1` while exposing the normalized negotiation version `1.0`.
 
 ## 6.5.1 - 2026-08-06
 

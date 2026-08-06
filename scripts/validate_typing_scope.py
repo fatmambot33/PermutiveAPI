@@ -39,7 +39,10 @@ def validate() -> list[str]:
 
     overlap = strict & compatibility
     if overlap:
-        errors.append("modules cannot be both strict and compatibility: " + ", ".join(sorted(overlap)))
+        errors.append(
+            "modules cannot be both strict and compatibility: "
+            + ", ".join(sorted(overlap))
+        )
 
     discovered = {
         path.relative_to(ROOT).as_posix()
@@ -52,7 +55,9 @@ def validate() -> list[str]:
     if missing:
         errors.append("unclassified package modules: " + ", ".join(sorted(missing)))
     if stale:
-        errors.append("typing scope references missing modules: " + ", ".join(sorted(stale)))
+        errors.append(
+            "typing scope references missing modules: " + ", ".join(sorted(stale))
+        )
 
     pyproject = tomllib.loads(PYPROJECT_PATH.read_text(encoding="utf-8"))
     pyright = pyproject.get("tool", {}).get("pyright", {})
@@ -65,9 +70,13 @@ def validate() -> list[str]:
         omitted = strict - set(configured)
         unexpected = set(configured) - strict
         if omitted:
-            errors.append("strict modules omitted from Pyright: " + ", ".join(sorted(omitted)))
+            errors.append(
+                "strict modules omitted from Pyright: " + ", ".join(sorted(omitted))
+            )
         if unexpected:
-            errors.append("Pyright includes undeclared modules: " + ", ".join(sorted(unexpected)))
+            errors.append(
+                "Pyright includes undeclared modules: " + ", ".join(sorted(unexpected))
+            )
 
     if pyright.get("typeCheckingMode") != "strict":
         errors.append("tool.pyright.typeCheckingMode must be strict")

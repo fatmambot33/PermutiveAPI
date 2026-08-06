@@ -1,0 +1,16 @@
+{
+  "contract_version": "1.0",
+  "tool_schema_version": "1.0",
+  "compatibility": {
+    "major": "must match",
+    "minor": "available must be greater than or equal to required",
+    "interfaces": "all required values must be present",
+    "features": "all required values must be present"
+  },
+  "error_codes": [
+    "capability_contract_incompatible",
+    "tool_schema_incompatible",
+    "plugin_api_incompatible",
+    "capability_missing"
+  ]
+}

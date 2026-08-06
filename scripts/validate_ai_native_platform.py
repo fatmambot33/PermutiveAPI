@@ -116,7 +116,9 @@ def validate() -> list[str]:
 
     errors = []
     validator = Draft202012Validator(schema)
-    for error in sorted(validator.iter_errors(data), key=lambda item: list(item.absolute_path)):
+    for error in sorted(
+        validator.iter_errors(data), key=lambda item: list(item.absolute_path)
+    ):
         location = ".".join(str(part) for part in error.absolute_path) or "manifest"
         errors.append(f"schema [{location}]: {error.message}")
 
@@ -147,7 +149,9 @@ def validate() -> list[str]:
                 errors.append("service requires an OpenAPI or SDK interface")
 
     agent = data.get("agent", {})
-    guarantees = set(agent.get("guarantees", [])) if isinstance(agent, Mapping) else set()
+    guarantees = (
+        set(agent.get("guarantees", [])) if isinstance(agent, Mapping) else set()
+    )
     for guarantee in sorted(REQUIRED_GUARANTEES - guarantees):
         errors.append(f"missing agent guarantee: {guarantee}")
 

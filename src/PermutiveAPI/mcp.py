@@ -14,6 +14,12 @@ from types import MappingProxyType
 from typing import Mapping
 from urllib.parse import urlparse
 
+from .capabilities import (
+    CapabilityDescriptor,
+    CapabilityRequirement,
+    installed_sdk_version,
+)
+
 PERMUTIVE_MCP_URL_ENV = "PERMUTIVE_MCP_URL"
 PERMUTIVE_MCP_TOKEN_ENV = "PERMUTIVE_MCP_TOKEN"
 PERMUTIVE_MCP_SERVER_NAME = "permutive"
@@ -104,6 +110,22 @@ class PermutiveMCPConfig:
         if url is None or not url.strip():
             raise ValueError(f"Missing required environment variable: {url_variable}")
         return cls(url=url, token=os.getenv(token_variable), server_name=server_name)
+
+    def capability_descriptor(self) -> CapabilityDescriptor:
+        """Return secret-free versioned MCP composition metadata."""
+        return CapabilityDescriptor(
+            surface="mcp",
+            sdk_version=installed_sdk_version(),
+            interfaces=("mcp_client_config", "mcp_http"),
+            features=("https_transport", "official_mcp"),
+        )
+
+    def negotiate(
+        self,
+        requirement: CapabilityRequirement,
+    ) -> CapabilityDescriptor:
+        """Validate MCP requirements before returning client configuration."""
+        return self.capability_descriptor().negotiate(requirement)
 
     def resolved_headers(self) -> dict[str, str]:
         """Return headers ready for an HTTP MCP client.

@@ -61,6 +61,19 @@ New code should import these names from `PermutiveAPI`.
 - `ToolRegistry`
 - `tool`
 
+### Capability negotiation
+
+- `CAPABILITY_CONTRACT_VERSION`
+- `CAPABILITY_ERROR_CODES`
+- `TOOL_SCHEMA_VERSION`
+- `CapabilityDescriptor`
+- `CapabilityNegotiationError`
+- `CapabilityRequirement`
+- `capability_contract_manifest`
+- `negotiate_capabilities`
+
+`ToolRegistry`, `PermutiveAgentKit`, `CodexPlugin`, and `PermutiveMCPConfig` expose compatible `capability_descriptor()` and `negotiate()` operations. Negotiation is deterministic, secret-free, and must complete before tool execution.
+
 ### MCP integration
 
 - `PermutiveMCPConfig`
@@ -130,7 +143,7 @@ When an export becomes deprecated, the change must include:
 
 Anything not listed in `PermutiveAPI.__all__` is internal unless a public document explicitly states otherwise. Internal helpers may change without notice. Users must not rely on imports from private modules or names prefixed with `_`.
 
-Documented secondary surfaces such as `PermutiveAPI.plugins.codex.CodexPlugin`, diagnostics wrappers, and governed AI-native execution types remain supported through their dedicated documentation and strict implementation modules without expanding the package-root namespace indefinitely.
+Documented secondary surfaces such as `PermutiveAPI.plugins.codex.CodexPlugin`, diagnostics wrappers, governed scenario types, and governed AI-native execution types remain supported through their dedicated documentation and strict implementation modules without expanding the package-root namespace indefinitely.
 
 ## Decision rules
 
@@ -138,6 +151,7 @@ Documented secondary surfaces such as `PermutiveAPI.plugins.codex.CodexPlugin`, 
 - Prefer `AsyncPermutiveClient` and `AsyncResource` for asynchronous work.
 - Prefer typed query helpers over hand-built dictionaries when the schema is supported.
 - Prefer `PermutiveAgentKit`, `ToolRegistry`, and `CodexPlugin` for agent integrations.
+- Negotiate required interfaces and features before adaptive tool execution.
 - Use `PermutiveMCPConfig` for MCP server composition rather than duplicating environment handling.
 - Do not add a second way to perform the same operation without a documented product reason.
 - Public methods require stable names, typed signatures, documented errors, tests, and examples.
@@ -147,6 +161,6 @@ Documented secondary surfaces such as `PermutiveAPI.plugins.codex.CodexPlugin`, 
 
 ## Migration direction
 
-Core CRUD resources are available through the canonical client. Identity, user segmentation, and context segmentation remain compatibility actions while their endpoint contracts stabilize. Agent, tool, plugin, and MCP integrations are canonical extension surfaces.
+Core CRUD resources are available through the canonical client. Identity, user segmentation, and context segmentation remain compatibility actions while their endpoint contracts stabilize. Agent, tool, plugin, capability-negotiation, and MCP integrations are canonical extension surfaces.
 
 `API_COVERAGE.md` records exact endpoint support, `MIGRATION.md` provides supported transitions, and `docs/TYPING.md` explains the strict implementation boundary.
