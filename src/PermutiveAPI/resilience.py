@@ -25,7 +25,12 @@ class AsyncResponseLike(Protocol):
     """Response fields needed by the asynchronous coordinator wrapper."""
 
     status_code: int
+    content: bytes
     headers: Mapping[str, str]
+
+    def json(self) -> Any:
+        """Decode the response body."""
+        ...
 
 
 class AsyncTransportLike(Protocol):
