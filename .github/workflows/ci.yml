@@ -30,10 +30,12 @@ jobs:
         run: python scripts/validate_release_metadata.py
       - name: Typing scope
         run: python scripts/validate_typing_scope.py
+      - name: Capability contract
+        run: python scripts/validate_capability_contract.py
       - name: Evaluation scorecard
         run: python scripts/generate_evaluation_scorecard.py --check evals/scorecard.json
       - name: Format
-        run: black --check src tests typing_examples scripts/generate_evaluation_scorecard.py
+        run: black --check --diff src tests typing_examples scripts
       - name: Docstrings
         run: pydocstyle src/PermutiveAPI
       - name: Types
@@ -73,9 +75,10 @@ jobs:
       - run: python -m pip install --upgrade build twine
       - run: python scripts/validate_release_metadata.py
       - run: python scripts/validate_typing_scope.py
+      - run: python scripts/validate_capability_contract.py
       - run: python -m build
       - run: python -m twine check dist/*
-      - name: Verify core, CLI, Python plugin, and evaluations
+      - name: Verify core, CLI, plugin, evaluations, and capabilities
         shell: bash
         run: |
           wheel="$(ls dist/*.whl)"
@@ -85,6 +88,7 @@ jobs:
           /tmp/permutiveapi-core/bin/permutiveapi validate
           /tmp/permutiveapi-core/bin/permutiveapi eval > /tmp/permutiveapi-scorecard.json
           /tmp/permutiveapi-core/bin/python -c 'import json; assert json.load(open("/tmp/permutiveapi-scorecard.json"))["summary"]["ok"]'
+          /tmp/permutiveapi-core/bin/python -c 'from PermutiveAPI import CapabilityRequirement, ToolRegistry; ToolRegistry().negotiate(CapabilityRequirement(interfaces=("tool_registry",)))'
       - name: Verify async extra install
         shell: bash
         run: |
