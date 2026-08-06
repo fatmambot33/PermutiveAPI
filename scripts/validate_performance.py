@@ -40,10 +40,7 @@ def main() -> int:
     }
     budgets = load_performance_budgets(BUDGETS_PATH)
     validate_operation_names(budgets, operations)
-    results = [
-        measure_operation(operations[budget.name], budget)
-        for budget in budgets
-    ]
+    results = [measure_operation(operations[budget.name], budget) for budget in budgets]
     report = performance_report(results)
     print(json.dumps(report, indent=2, sort_keys=True))
     if not report["ok"]:
