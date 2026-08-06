@@ -252,16 +252,32 @@ def _classify_shape(expected: object, actual: object) -> DriftKind:
             actual_items = actual["array"]
             if not isinstance(expected_items, list) or not isinstance(actual_items, list):
                 return DriftKind.BREAKING
-            expected_keys = {_schema_key(item) for item in expected_items}
-            actual_keys = {_schema_key(item) for item in actual_items}
-            if not expected_keys.issubset(actual_keys):
-                return DriftKind.BREAKING
-            return (
-                DriftKind.ADDITIVE
-                if actual_keys - expected_keys
-                else DriftKind.NONE
-            )
+            return _classify_array(expected_items, actual_items)
     return DriftKind.BREAKING
+
+
+def _classify_array(expected_items: list[object], actual_items: list[object]) -> DriftKind:
+    unmatched = list(actual_items)
+    additive = False
+    for expected_item in expected_items:
+        match_index: int | None = None
+        match_kind = DriftKind.BREAKING
+        for index, actual_item in enumerate(unmatched):
+            kind = _classify_shape(expected_item, actual_item)
+            if kind is DriftKind.NONE:
+                match_index = index
+                match_kind = kind
+                break
+            if kind is DriftKind.ADDITIVE and match_index is None:
+                match_index = index
+                match_kind = kind
+        if match_index is None:
+            return DriftKind.BREAKING
+        unmatched.pop(match_index)
+        additive = additive or match_kind is DriftKind.ADDITIVE
+    if unmatched:
+        additive = True
+    return DriftKind.ADDITIVE if additive else DriftKind.NONE
 
 
 def _shape(value: JSONValue) -> object:
