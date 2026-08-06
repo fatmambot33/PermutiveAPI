@@ -6,7 +6,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Mapping, Sequence
+from typing import Mapping
 
 from .sdk import JSONValue
 
@@ -19,6 +19,14 @@ class ResponseKind(str, Enum):
     OBJECT = "object"
     PAGE = "page"
     EMPTY = "empty"
+
+
+class DriftKind(str, Enum):
+    """Compatibility classifications for structural response drift."""
+
+    NONE = "none"
+    ADDITIVE = "additive"
+    BREAKING = "breaking"
 
 
 @dataclass(frozen=True)
@@ -48,6 +56,31 @@ class EndpointContract:
             "path_template": self.path_template,
             "response_kind": self.response_kind.value,
             "mutating": self.mutating,
+        }
+
+
+@dataclass(frozen=True)
+class SchemaDrift:
+    """Describe value-free compatibility evidence for one response shape."""
+
+    endpoint: str
+    kind: DriftKind
+    expected_fingerprint: str
+    actual_fingerprint: str
+
+    @property
+    def compatible(self) -> bool:
+        """Return whether consumers remain structurally compatible."""
+        return self.kind is not DriftKind.BREAKING
+
+    def to_dict(self) -> dict[str, object]:
+        """Return deterministic machine-readable drift evidence."""
+        return {
+            "endpoint": self.endpoint,
+            "kind": self.kind.value,
+            "compatible": self.compatible,
+            "expected_fingerprint": self.expected_fingerprint,
+            "actual_fingerprint": self.actual_fingerprint,
         }
 
 
@@ -88,33 +121,28 @@ _ENDPOINTS = (
 
 
 class SchemaDriftError(ValueError):
-    """Report one deterministic structural response incompatibility."""
+    """Report one deterministic breaking response incompatibility."""
 
-    def __init__(
-        self,
-        endpoint: str,
-        *,
-        expected: str,
-        actual: str,
-    ) -> None:
-        self.endpoint = endpoint
-        self.expected = expected
-        self.actual = actual
+    def __init__(self, drift: SchemaDrift) -> None:
+        self.drift = drift
         super().__init__(
-            f"Response schema drift for {endpoint}: expected {expected}, got {actual}."
+            f"Breaking response schema drift for {drift.endpoint}: "
+            f"expected {drift.expected_fingerprint}, "
+            f"got {drift.actual_fingerprint}."
         )
 
-    def to_dict(self) -> dict[str, str]:
+    def to_dict(self) -> dict[str, object]:
         """Return structured drift metadata without payload values."""
-        return {
-            "code": "response_schema_drift",
-            "endpoint": self.endpoint,
-            "expected": self.expected,
-            "actual": self.actual,
-            "recommended_action": (
-                "Review the upstream response contract and regenerate schema evidence."
-            ),
-        }
+        result = self.drift.to_dict()
+        result.update(
+            {
+                "code": "breaking_response_schema_drift",
+                "recommended_action": (
+                    "Review the upstream response contract and regenerate schema evidence."
+                ),
+            }
+        )
+        return result
 
 
 def endpoint_contracts() -> tuple[EndpointContract, ...]:
@@ -142,8 +170,9 @@ def schema_fingerprint(value: JSONValue) -> str:
 
 def contract_manifest(samples: Mapping[str, JSONValue]) -> dict[str, object]:
     """Build versioned endpoint and schema evidence from representative samples."""
-    missing = {contract.name for contract in endpoint_contracts()} - set(samples)
-    extra = set(samples) - {contract.name for contract in endpoint_contracts()}
+    expected_names = {contract.name for contract in endpoint_contracts()}
+    missing = expected_names - set(samples)
+    extra = set(samples) - expected_names
     if missing:
         raise ValueError("Missing schema samples: " + ", ".join(sorted(missing)))
     if extra:
@@ -161,25 +190,78 @@ def contract_manifest(samples: Mapping[str, JSONValue]) -> dict[str, object]:
     }
 
 
+def classify_response_schema(
+    endpoint: str,
+    payload: JSONValue,
+    expected_schemas: Mapping[str, Mapping[str, str]],
+) -> SchemaDrift:
+    """Classify one actual response as unchanged, additive, or breaking."""
+    expected = expected_schemas.get(endpoint)
+    if expected is None:
+        raise KeyError(f"No committed schema for endpoint: {endpoint}")
+    expected_schema = expected.get("schema")
+    expected_fingerprint = expected.get("fingerprint")
+    if expected_schema is None or expected_fingerprint is None:
+        raise ValueError(f"Schema evidence is incomplete: {endpoint}")
+    expected_shape: object = json.loads(expected_schema)
+    actual_shape = _shape(payload)
+    return SchemaDrift(
+        endpoint=endpoint,
+        kind=_classify_shape(expected_shape, actual_shape),
+        expected_fingerprint=expected_fingerprint,
+        actual_fingerprint=schema_fingerprint(payload),
+    )
+
+
 def validate_response_schema(
     endpoint: str,
     payload: JSONValue,
     expected_schemas: Mapping[str, Mapping[str, str]],
-) -> None:
-    """Raise when one response shape differs from committed evidence."""
-    expected = expected_schemas.get(endpoint)
-    if expected is None:
-        raise KeyError(f"No committed schema for endpoint: {endpoint}")
-    expected_fingerprint = expected.get("fingerprint")
-    if expected_fingerprint is None:
-        raise ValueError(f"Schema evidence has no fingerprint: {endpoint}")
-    actual_fingerprint = schema_fingerprint(payload)
-    if actual_fingerprint != expected_fingerprint:
-        raise SchemaDriftError(
-            endpoint,
-            expected=expected_fingerprint,
-            actual=actual_fingerprint,
-        )
+) -> SchemaDrift:
+    """Return drift evidence and raise only for breaking response changes."""
+    drift = classify_response_schema(endpoint, payload, expected_schemas)
+    if drift.kind is DriftKind.BREAKING:
+        raise SchemaDriftError(drift)
+    return drift
+
+
+def _classify_shape(expected: object, actual: object) -> DriftKind:
+    if expected == actual:
+        return DriftKind.NONE
+    if isinstance(expected, dict) and isinstance(actual, dict):
+        if set(expected) != set(actual):
+            return DriftKind.BREAKING
+        if "object" in expected and "object" in actual:
+            expected_fields = expected["object"]
+            actual_fields = actual["object"]
+            if not isinstance(expected_fields, dict) or not isinstance(actual_fields, dict):
+                return DriftKind.BREAKING
+            if not set(expected_fields).issubset(actual_fields):
+                return DriftKind.BREAKING
+            kinds = [
+                _classify_shape(expected_fields[key], actual_fields[key])
+                for key in expected_fields
+            ]
+            if DriftKind.BREAKING in kinds:
+                return DriftKind.BREAKING
+            if set(actual_fields) - set(expected_fields) or DriftKind.ADDITIVE in kinds:
+                return DriftKind.ADDITIVE
+            return DriftKind.NONE
+        if "array" in expected and "array" in actual:
+            expected_items = expected["array"]
+            actual_items = actual["array"]
+            if not isinstance(expected_items, list) or not isinstance(actual_items, list):
+                return DriftKind.BREAKING
+            expected_keys = {_schema_key(item) for item in expected_items}
+            actual_keys = {_schema_key(item) for item in actual_items}
+            if not expected_keys.issubset(actual_keys):
+                return DriftKind.BREAKING
+            return (
+                DriftKind.ADDITIVE
+                if actual_keys - expected_keys
+                else DriftKind.NONE
+            )
+    return DriftKind.BREAKING
 
 
 def _shape(value: JSONValue) -> object:
@@ -212,9 +294,12 @@ def _schema_key(value: object) -> str:
 
 __all__ = [
     "API_CONTRACT_VERSION",
+    "DriftKind",
     "EndpointContract",
     "ResponseKind",
+    "SchemaDrift",
     "SchemaDriftError",
+    "classify_response_schema",
     "contract_manifest",
     "endpoint_contract",
     "endpoint_contracts",
