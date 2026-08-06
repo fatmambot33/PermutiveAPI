@@ -46,7 +46,9 @@ def main() -> int:
         raise SystemExit("Replay response was not redacted.")
     if replay.remaining:
         raise SystemExit("Replay did not consume every recorded interaction.")
-    print(f"Recording validation passed for {len(recording.interactions)} interactions.")
+    print(
+        f"Recording validation passed for {len(recording.interactions)} interactions."
+    )
     return 0
 
 
