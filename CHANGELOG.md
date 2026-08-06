@@ -2,7 +2,7 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
-## Unreleased
+## 6.7.0 - 2026-08-06
 
 ### Added
 - Deterministic governed-platform evaluation types and a versioned machine-readable scorecard.
@@ -16,20 +16,33 @@ All notable changes to PermutiveAPI are documented here. The project follows Sem
 - Seven executable credential-free recipes across SDK, async, queries, plugin, and governed workflow categories.
 - CLI recipe discovery, filtering, source printing, and machine-readable JSON output.
 - A committed installation-to-first-success metric with a five-second fresh-process budget.
-- CI enforcement for evaluations, scenarios, capabilities, recipes, first success, strict typing, and clean-wheel execution.
+- Versioned endpoint contracts, generated API coverage, and additive-versus-breaking response drift classification.
+- Secret-safe HTTP recording and deterministic replay through the canonical client.
+- A manual, protected, read-only live integration workflow with no committed credential or endpoint.
+- Shared synchronous and asynchronous rate-limit coordination with `Retry-After` propagation.
+- Atomic credential generations and transport wrappers for safe rotation without mutating in-flight attempts.
+- Deterministic performance budgets for contract generation, query serialization, recipes, and recordings.
+- Immutable release manifests containing source commit, artifact size, and SHA-256 evidence.
+- CI enforcement for evaluations, scenarios, capabilities, recipes, first success, contracts, replay, performance, strict typing, and clean-wheel execution.
 
 ### Security
 - Governed tool failures retain the exception type but no longer expose raw exception messages.
 - Evaluation runner failures report only the exception type and never persist secret-bearing text.
 - Scenario and capability metadata exclude credentials, bearer tokens, custom MCP header values, and request payloads.
 - Actionable errors exclude credentials, payloads, raw messages, and URL query strings.
+- Recordings exclude request payloads, query parameters, authorization headers, cookies, and recursively sensitive response values.
+- Atomic credential snapshots are redacted in representations and never written to evidence.
 - Unsupported intents, denied writes, missing approvals, and incompatible capability requirements fail before HTTP or tool execution.
+- Live integration remains opt-in, read-only, and environment-gated.
 
 ### Changed
 - Declared AI evaluations as an evidence-backed platform capability.
-- Added evaluation, mock-server, scenario, capability, actionable-error, recipe, and first-success modules to strict typing, wheel-content, and source-distribution contracts.
+- Added evaluation, mock-server, scenario, capability, actionable-error, recipe, first-success, contract, recording, resilience, performance, and release-evidence modules to strict typing and package contracts.
 - Preserved the historical Codex plugin API value `1` while exposing the normalized negotiation version `1.0`.
 - Made `permutiveapi examples` an executable installed-product surface rather than a static path listing.
+- Generated `API_COVERAGE.md` from maintained samples and canonical endpoint metadata.
+- Made PyPI and GitHub Release consume the exact artifact set verified after build.
+- Enabled the same protected validation jobs for agent-authored branches.
 
 ## 6.5.1 - 2026-08-06
 
