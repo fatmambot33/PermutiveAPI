@@ -10,7 +10,7 @@
           }
         ]
       },
-      "endpoint": "https://api.permutive.test/v1/cohorts",
+      "endpoint": "https://api.permutive.test/cohorts-api/v2/cohorts",
       "headers": {
         "Content-Type": "application/json",
         "X-Request-ID": "recording-list"
@@ -24,7 +24,7 @@
         "id": "created",
         "name": "Reviewed"
       },
-      "endpoint": "https://api.permutive.test/v1/cohorts",
+      "endpoint": "https://api.permutive.test/cohorts-api/v2/cohorts",
       "headers": {
         "Content-Type": "application/json",
         "X-Request-ID": "recording-create"
