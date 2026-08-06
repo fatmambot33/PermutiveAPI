@@ -5,6 +5,7 @@
     "src/PermutiveAPI/agent.py",
     "src/PermutiveAPI/ai_native.py",
     "src/PermutiveAPI/async_client.py",
+    "src/PermutiveAPI/capabilities.py",
     "src/PermutiveAPI/cli.py",
     "src/PermutiveAPI/client.py",
     "src/PermutiveAPI/config.py",
