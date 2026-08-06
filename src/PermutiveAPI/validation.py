@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from importlib import metadata
-from typing import Callable, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence
 
 
 @dataclass(frozen=True)
@@ -54,12 +54,20 @@ def _package_metadata_check() -> ValidationCheck:
 
 def _plugin_entry_point_check() -> ValidationCheck:
     """Validate the built-in Python plugin entry point."""
-    matches = list(
-        metadata.entry_points().select(
-            group="permutiveapi.plugins",
-            name="codex",
+    entry_points: Any = metadata.entry_points()
+    if hasattr(entry_points, "select"):
+        matches = list(
+            entry_points.select(
+                group="permutiveapi.plugins",
+                name="codex",
+            )
         )
-    )
+    else:  # pragma: no cover - Python 3.9 importlib.metadata compatibility
+        matches = [
+            entry_point
+            for entry_point in entry_points.get("permutiveapi.plugins", ())
+            if entry_point.name == "codex"
+        ]
     if len(matches) != 1:
         return ValidationCheck(
             name="plugin_entry_point",
