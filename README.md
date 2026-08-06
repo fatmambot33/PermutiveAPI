@@ -1,508 +1,210 @@
 # PermutiveAPI
+
 [![PyPI version](https://img.shields.io/pypi/v/PermutiveAPI.svg)](https://pypi.org/project/PermutiveAPI/)
 [![Python versions](https://img.shields.io/pypi/pyversions/PermutiveAPI.svg)](https://pypi.org/project/PermutiveAPI/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-PermutiveAPI is a Python module to interact with the Permutive API. It provides a set of classes and methods to manage users, imports, cohorts, and workspaces within the Permutive ecosystem.
+PermutiveAPI is a typed, governed Python SDK and AI-agent platform for the Permutive API.
 
-## Table of Contents
+It provides one canonical synchronous client, optional asynchronous support, typed queries and errors, a safe Codex plugin, OpenAI-compatible tools, and optional hosted MCP configuration. Python 3.9 through 3.13 are supported.
 
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-  - [Importing the Module](#importing-the-module)
-  - [Managing Workspaces](#managing-workspaces)
-  - [Managing Cohorts](#managing-cohorts)
-  - [Managing Segments](#managing-segments)
-- [Managing Imports](#managing-imports)
-- [Managing Users](#managing-users)
-- [Evaluating Segmentation](#evaluating-segmentation)
-- [Evaluating Context Segmentation](#evaluating-context-segmentation)
-- [Working with pandas DataFrames](#working-with-pandas-dataframes)
-- [Batch Helpers and Progress Callbacks](#batch-helpers-and-progress-callbacks)
-- [Error Handling](#error-handling)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+## Install
 
-## Installation
+Core SDK and CLI:
 
-You can install the PermutiveAPI module using pip:
-
-```sh
-pip install PermutiveAPI --upgrade
+```bash
+python -m pip install --upgrade PermutiveAPI
 ```
 
-> **Note**
-> PermutiveAPI depends on [`pandas`](https://pandas.pydata.org/) for its DataFrame
-> export helpers. The dependency is installed automatically with the package,
-> but make sure your runtime environment includes it before using the
-> `to_pd_dataframe` utilities described below.
+Optional asynchronous transport:
 
-## Configuration
+```bash
+python -m pip install --upgrade "PermutiveAPI[async]"
+```
 
-Before using the library, you need to configure your credentials.
+Optional pandas integration:
 
-1.  **Copy the environment file**:
-    ```sh
-    cp _env .env
-    ```
-2.  **Set your credentials path**:
-    Edit the `.env` file and set the `PERMUTIVE_APPLICATION_CREDENTIALS` environment variable to the absolute path of your workspace JSON file.
-    ```sh
-    PERMUTIVE_APPLICATION_CREDENTIALS="/absolute/path/to/your/workspace.json"
-    ```
-The workspace credentials JSON can be downloaded from the Permutive dashboard under **Settings → API keys**. Save the file somewhere secure. The `apiKey` inside this JSON is used to authenticate API calls.
+```bash
+python -m pip install --upgrade "PermutiveAPI[dataframe]"
+```
 
-## Usage
+The core package does not import or require pandas or HTTPX.
 
-### Importing the Module
+## Configure safely
 
-To use the PermutiveAPI module, import the necessary classes. The main classes are exposed at the top level of the `PermutiveAPI` package:
+Run the local credential wizard from the project where you will use the SDK:
+
+```bash
+permutiveapi configure
+permutiveapi doctor
+permutiveapi validate
+```
+
+`configure` writes `PERMUTIVE_API_KEY` to a local `.env` file without echoing it. Existing files are not overwritten unless `--force` is supplied. `doctor` checks that the variable is present, the file has restrictive permissions where supported, and `.env` is ignored by Git. `validate` checks the installed SDK, CLI, Python plugin entry point, and tool contract without making a network request or requiring credentials.
+
+Credential lookup is deterministic:
+
+1. Explicit API key passed by the application.
+2. `PERMUTIVE_API_KEY` in the process environment.
+3. `.env` in the current project.
+4. `~/.config/permutive/.env`.
+
+Credentials are never uploaded, logged, or included in object representations.
+
+## First request
+
+`PermutiveClient` is the canonical synchronous entry point:
 
 ```python
-from PermutiveAPI import (
-    Alias,
-    Cohort,
-    Identity,
-    Import,
-    Segment,
-    Source,
-    Workspace,
-    ContextSegment,
+from PermutiveAPI import PermutiveClient
+
+with PermutiveClient("api-key") as client:
+    cohort = client.cohorts.get("cohort-id")
+    first_page = client.segments.list(page_size=50)
+
+print(cohort)
+print(first_page.items)
+```
+
+The resource namespaces are:
+
+- `client.cohorts`
+- `client.imports`
+- `client.segments`
+- `client.sources`
+- `client.workspaces`
+
+Supported resource operations use consistent `get`, `list`, `create`, `update`, and `delete` methods where the Permutive endpoint supports them. See [API_COVERAGE.md](API_COVERAGE.md) for the maintained endpoint matrix.
+
+## Async usage
+
+Install the `async` extra, then use the asynchronous client as a context manager:
+
+```python
+import asyncio
+
+from PermutiveAPI import AsyncPermutiveClient
+
+
+async def main() -> None:
+    async with AsyncPermutiveClient("api-key") as client:
+        cohort = await client.request(
+            "GET",
+            "cohorts-api/v2/cohorts/cohort-id",
+        )
+        print(cohort)
+
+
+asyncio.run(main())
+```
+
+The async client shares the same typed JSON, error, retry, redaction, pagination, and bounded-batch contracts as the synchronous SDK.
+
+## Typed queries
+
+Query helpers compose immutable, deterministic JSON payloads while preserving raw payload compatibility:
+
+```python
+from PermutiveAPI import all_of, event, property_condition
+
+query = all_of(
+    event("Pageview"),
+    property_condition("client.country", "equals", "FR"),
+)
+
+payload = query.to_json()
+```
+
+Invalid operator and value combinations fail before the request is sent.
+
+## Codex plugin
+
+Install the repository-backed Codex marketplace plugin:
+
+```bash
+codex plugin marketplace add fatmambot33/PermutiveAPI --ref main
+codex plugin add permutiveapi@fatmambot33-permutiveapi
+```
+
+The Python plugin surface is also available directly:
+
+```python
+from PermutiveAPI.plugins.codex import CodexPlugin
+
+plugin = CodexPlugin.from_env()
+tools = plugin.tools().as_openai_tools()
+agent_kit = plugin.agent_kit()
+```
+
+The default policy is read-only. To expose write tools, applications must explicitly select `mode="read_write"`; each mutating invocation still requires `confirmed=True` unless a deliberately approved policy says otherwise.
+
+```python
+plugin = CodexPlugin.from_env(mode="read_write")
+result = plugin.invoke(
+    "permutive_create_cohort",
+    {"payload": {"name": "Example", "query": {}}},
+    confirmed=True,
 )
 ```
 
-### Managing Workspaces
+The plugin reuses the canonical SDK. It does not duplicate transport, authentication, models, or business rules. See [docs/AI_NATIVE_PLUGIN.md](docs/AI_NATIVE_PLUGIN.md), [docs/AI_NATIVE.md](docs/AI_NATIVE.md), and [docs/MCP.md](docs/MCP.md).
 
-The `Workspace` class is the main entry point for interacting with your Permutive workspace.
+## CLI lifecycle
 
-```python
-# Create a workspace instance
-workspace = Workspace(
-    name="Main",
-    organisation_id="your-org-id",
-    workspace_id="your-workspace-id",
-    api_key="your-api-key",
-)
+| Command | Purpose |
+| --- | --- |
+| `permutiveapi configure` | Create a protected local `.env` credential file. |
+| `permutiveapi doctor` | Check local credential safety without showing values. |
+| `permutiveapi validate` | Validate the installed product surface. |
+| `permutiveapi test` | Run the deterministic installed-package self-test. |
+| `permutiveapi docs` | Print canonical documentation locations. |
+| `permutiveapi examples` | Print minimal SDK and plugin examples. |
+| `permutiveapi upgrade` | Print the explicit interpreter-specific upgrade command. |
+| `permutiveapi uninstall` | Print the explicit interpreter-specific removal command. |
 
-# List cohorts in the workspace (including child workspaces)
-all_cohorts = workspace.cohorts()
-print(f"Found {len(all_cohorts)} cohorts.")
+`upgrade` and `uninstall` print commands only. They never mutate the active environment automatically. Full behavior and exit codes are documented in [docs/CLI.md](docs/CLI.md).
 
-# List imports in the workspace
-all_imports = workspace.imports()
-print(f"Found {len(all_imports)} imports.")
+## Compatibility
 
-# List segments for a specific import
-segments_in_import = workspace.segments(import_id="your-import-id")
-print(f"Found {len(segments_in_import)} segments.")
-```
+[PUBLIC_API.md](PUBLIC_API.md) is the source of truth for canonical, compatibility, deprecated, and internal exports. Legacy resource classes remain available as compatibility APIs, but new code should use `PermutiveClient`, `AsyncPermutiveClient`, typed queries, and the canonical plugin/tool surfaces.
 
-### Managing Cohorts
-
-You can create, retrieve, and list cohorts using the `Cohort` class.
-
-```python
-# List all cohorts
-all_cohorts = Cohort.list(api_key="your_api_key")
-print(f"Found {len(all_cohorts)} cohorts.")
-
-# Get a specific cohort by ID
-cohort_id = "your-cohort-id"
-cohort = Cohort.get_by_id(id=cohort_id, api_key="your_api_key")
-print(f"Retrieved cohort: {cohort.name}")
-
-# Create a new cohort
-new_cohort = Cohort(
-    name="High-Value Customers",
-    query={"type": "segment", "id": "segment-id-for-high-value-customers"}
-)
-new_cohort.create(api_key="your_api_key")
-print(f"Created cohort with ID: {new_cohort.id}")
-```
-
-### Managing Segments
-
-The `Segment` class allows you to interact with audience segments.
-
-```python
-# List all segments for a given import
-import_id = "your-import-id"
-segments = Segment.list(api_key="your_api_key", import_id=import_id)
-print(f"Found {len(segments)} segments in import {import_id}.")
-
-# Get a specific segment by ID
-segment_id = "your-segment-id"
-segment = Segment.get_by_id(import_id=import_id, segment_id=segment_id, api_key="your_api_key")
-print(f"Retrieved segment: {segment.name}")
-```
-
-### Managing Imports
-
-You can list and retrieve imports using the `Import` class.
-
-```python
-# List all imports
-all_imports = Import.list(api_key="your_api_key")
-for imp in all_imports:
-    print(f"Import ID: {imp.id}, Code: {imp.code}, Source Type: {imp.source.type}")
-
-# Get a specific import by ID
-import_id = "your-import-id"
-import_instance = Import.get_by_id(id=import_id, api_key="your_api_key")
-print(f"Retrieved import: {import_instance.id}, Source Type: {import_instance.source.type}")
-```
-
-### Managing Users
-
-The `Identity` and `Alias` classes are used to manage user profiles.
-
-```python
-# Create an alias for a user
-alias = Alias(id="user@example.com", tag="email", priority=1)
-
-# Create an identity for the user
-identity = Identity(user_id="internal-user-id-123", aliases=[alias])
-
-# Send the identity information to Permutive
-try:
-    identity.identify(api_key="your-api-key")
-    print("Successfully identified user.")
-except Exception as e:
-    print(f"Error identifying user: {e}")
-
-```
-
-### Evaluating Segmentation
-
-The segmentation helpers expose the low-level CCS segmentation endpoint so you
-can evaluate arbitrary event streams against your configured audiences. Start by
-describing each event with the `Event` dataclass and then submit the request with
-the `Segmentation` helper.
-
-```python
-from PermutiveAPI import Alias, Event, Segmentation
-
-
-event = Event(
-    name="SlotViewable",
-    time="2025-07-01T15:39:11.594Z",
-    properties={"campaign_id": "3747123491"},
-)
-
-request = Segmentation(
-    alias=Alias(id="user@example.com", tag="email", priority=1),
-    events=[event],
-)
-
-# Submit the request to retrieve segment membership
-response = request.send(api_key="your-api-key")
-print(response["segments"])  # [{"id": "segment-id", "name": "Segment Name"}, ...]
-```
-
-The segmentation endpoint accepts two optional query parameters that you can
-control directly from the helper:
-
-| Parameter | Default | What it does |
-|-----------|---------|--------------|
-| `activations` | `False` | Include any activated cohorts in the response payload. |
-| `synchronous-validation` | `False` | Validate events against their schemas before segmentation, which is useful for debugging but adds latency. |
-
-Set them when constructing the request or override them per call:
-
-```python
-# Opt in for activations and synchronous validation on every request
-request = Segmentation(
-    user_id="user-123",
-    events=[event],
-    activations=True,
-    synchronous_validation=True,
-)
-
-# Or override when sending if you only need them occasionally
-response = request.send(
-    api_key="your-api-key",
-    activations=True,
-    synchronous_validation=True,
-)
-```
-
-`Event.session_id` and `Event.view_id` are optional—include them only when you
-need to tie events together across sessions or page views. When present, they
-are forwarded as part of the event payload.
-
-For high-volume workloads, use `Segmentation.batch_send` to process multiple
-requests concurrently. The helper integrates with the shared batch runner
-described in the next section so you can surface throughput metrics via
-`progress_callback` while respecting rate limits.
-
-
-### Evaluating Context Segmentation
-
-Use the `ContextSegment` helper to call the Context API endpoint
-(`https://api.permutive.com/ctx/v1/segment`) with a page URL and page
-properties payload.
-
-```python
-from PermutiveAPI import ContextSegment
-
-request = ContextSegment(
-    url="https://example.com/article/sports-news",
-    page_properties={
-        "client": {
-            "url": "https://example.com/article/sports-news",
-            "domain": "example.com",
-            "referrer": "https://example.com",
-            "type": "web",
-            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-            "title": "Latest Sports News",
-        },
-        "category": "sports",
-        "tags": ["football", "premier-league"],
-    },
-)
-
-response = request.send(api_key="your-api-key")
-print(response["segments"])
-```
-
-### Working with pandas DataFrames
-
-The list models expose helpers for quick DataFrame exports when you need to
-analyze your data using pandas. Each list class provides a `to_pd_dataframe`
-method that returns a `pandas.DataFrame` populated with the model attributes:
-
-```python
-from PermutiveAPI import Cohort, CohortList
-
-cohorts = CohortList(
-    [
-        Cohort(name="C1", id="1", code="c1", tags=["t1"]),
-        Cohort(name="C2", id="2", description="second cohort"),
-    ]
-)
-
-df = cohorts.to_pd_dataframe()
-print(df[["id", "name"]])
-```
-
-The same helper is available on `SegmentList` and `ImportList` for consistency
-across the API.
-
-### Batch Helpers and Progress Callbacks
-
-High-volume workflows often rely on the ``batch_*`` helpers to run requests
-concurrently. Every helper accepts an optional ``progress_callback`` that is
-invoked after each request completes with a
-`PermutiveAPI.utils.http.Progress` snapshot describing aggregate
-throughput. The dataclass includes counters for completed requests, failure
-totals, elapsed time, and the estimated seconds required to process 1,000
-requests, making it straightforward to surface both reliability and latency
-trends in dashboards or logs. Most workloads achieve a good balance between
-throughput and API friendliness with ``max_workers=4``. Increase the pool size
-gradually (for example to 6 or 8 workers) only after observing stable latency
-and error rates because the Permutive API enforces rate limits.
-
-```python
-from PermutiveAPI import Cohort
-from PermutiveAPI.utils.http import Progress
-
-
-def on_progress(progress: Progress) -> None:
-    """Render a concise progress snapshot."""
-    avg = progress.average_per_thousand_seconds
-    avg_display = f"{avg:.2f}s" if avg is not None else "n/a"
-    print(
-        f"{progress.completed}/{progress.total} completed; "
-        f"errors: {progress.errors}, avg/1k: {avg_display}"
-    )
-
-
-cohorts = [
-    Cohort(name="VIP Customers", query={"type": "users"}),
-    Cohort(name="Returning Visitors", query={"type": "visitors"}),
-]
-
-responses, failures = Cohort.batch_create(
-    cohorts,
-    api_key="your-api-key",
-    max_workers=4,  # recommended starting point for concurrent writes
-    progress_callback=on_progress,
-)
-
-if failures:
-    print(f"Encountered {len(failures)} failures.")
-```
-
-The same callback shape is shared across helpers such as
-``Identity.batch_identify`` and ``Segment.batch_create``, enabling reuse of
-progress reporting utilities that surface throughput, error counts, and
-latency projections. The helpers delegate to
-`PermutiveAPI.utils.http.process_batch`, so they automatically benefit
-from the shared retry/backoff configuration used by the underlying request
-helpers. When the API responds with ``HTTP 429`` (rate limiting), the helper
-retries using the exponential backoff already built into the package before
-surfacing the error in the ``failures`` list. The segmentation helper,
-``Segmentation.batch_send``, also consumes the same callback so you can track
-progress consistently across segmentation workloads.
-
-#### Configuring batch defaults
-
-Two environment variables allow you to tune the default behaviour without
-touching application code:
-
-- ``PERMUTIVE_BATCH_MAX_WORKERS`` controls the worker pool size used by the
-  shared batch runner when ``max_workers`` is omitted. Provide a positive
-  integer to cap concurrency or leave it unset to use Python's default
-  heuristic.
-- ``PERMUTIVE_BATCH_TIMEOUT_SECONDS`` controls the default timeout applied to
-  each `PermutiveAPI.utils.http.BatchRequest`. Set it to a positive
-  float (in seconds) to align the HTTP timeout with your infrastructure's
-  expectations.
-
-Invalid values raise ``ValueError`` during initialisation to surface mistakes
-early in the development cycle.
-
-#### Configuring retry defaults
-
-Transient failure handling can also be adjusted through environment variables.
-When unset, the package uses the standard ``RetryConfig`` defaults.
-
-- ``PERMUTIVE_RETRY_MAX_RETRIES`` sets the number of attempts performed by the
-  HTTP helpers before surfacing an error. Provide a positive integer.
-- ``PERMUTIVE_RETRY_BACKOFF_FACTOR`` controls the exponential multiplier applied
-  after each failed attempt. Provide a positive number (floats are accepted).
-- ``PERMUTIVE_RETRY_INITIAL_DELAY_SECONDS`` specifies the starting delay in
-  seconds before retrying. Provide a positive number.
-
-Supplying invalid values for any of these variables raises ``ValueError`` when
-the retry configuration is evaluated, helping catch misconfiguration early.
-
-Segmentation workflows follow the same pattern. For example, you can create
-multiple segments for a given import in one request batch while reporting
-progress back to an observability system:
-
-```python
-from PermutiveAPI import Segment
-
-
-segments = [
-    Segment(
-        import_id="import-123",
-        name="Frequent Flyers",
-        query={"type": "users", "filter": {"country": "US"}},
-    ),
-    Segment(
-        import_id="import-123",
-        name="Dormant Subscribers",
-        query={"type": "users", "filter": {"status": "inactive"}},
-    ),
-]
-
-segment_responses, segment_failures = Segment.batch_create(
-    segments,
-    api_key="your-api-key",
-    max_workers=4,
-    progress_callback=on_progress,
-)
-
-if segment_failures:
-    print(f"Encountered {len(segment_failures)} failures during segment creation.")
-```
-
-You can also evaluate multiple users in parallel while reporting progress back
-to an observability system:
-
-```python
-from PermutiveAPI import Alias, Event, Segmentation
-
-
-events = [
-    Event(
-        name="SlotViewable",
-        time="2025-07-01T15:39:11.594Z",
-        properties={"campaign_id": "3747123491"},
-        session_id="f19199e4-1654-4869-b740-703fd5bafb6f",
-        view_id="d30ccfc5-c621-4ac4-a282-9a30ac864c8a",
-    )
-]
-
-requests = [
-    Segmentation(user_id="user-1", events=events),
-    Segmentation(user_id="user-2", events=events),
-]
-
-segmentation_responses, segmentation_failures = Segmentation.batch_send(
-    requests,
-    api_key="your-api-key",
-    max_workers=4,
-    progress_callback=on_progress,
-)
-
-if segmentation_failures:
-    print(f"Encountered {len(segmentation_failures)} failures during segmentation.")
-```
-
-### Error Handling
-
-The package raises purpose-specific exceptions that are also available at the
-top level of the package for convenience:
-
-```python
-from PermutiveAPI import (
-    PermutiveAPIError,
-    PermutiveAuthenticationError,
-    PermutiveBadRequestError,
-    PermutiveRateLimitError,
-    PermutiveResourceNotFoundError,
-    PermutiveServerError,
-)
-
-try:
-    # make an API call via the high-level classes
-    Cohort.list(api_key="your_api_key")
-except PermutiveBadRequestError as e:
-    # e.status, e.url, and e.response are available for debugging
-    print(e.status, e.url, e)
-except PermutiveAPIError as e:
-    print("Unhandled API error:", e)
-```
+See [MIGRATION.md](MIGRATION.md) before replacing older call patterns and [COMPATIBILITY_MATRIX.md](COMPATIBILITY_MATRIX.md) for the supported Python and optional-dependency matrix.
 
 ## Development
 
-To set up a development environment, install the development dependencies:
+Clone and install the repository in editable mode:
 
-```sh
-pip install -e ".[dev]"
+```bash
+git clone https://github.com/fatmambot33/PermutiveAPI.git
+cd PermutiveAPI
+python -m pip install -e ".[dev]"
 ```
 
-### Running Tests
+Run the same primary checks used by CI:
 
-Before committing any changes, please run the following checks to ensure code quality and correctness.
-
-**Style Checks:**
 ```bash
+black --check src tests
 pydocstyle src/PermutiveAPI
-black --check .
+pyright
+pytest -q
+python scripts/validate_ai_native_platform.py
+python scripts/validate_release_metadata.py
+python -m build
+python -m twine check dist/*
 ```
 
-**Static Type Analysis:**
-```bash
-pyright src/PermutiveAPI
-```
+NumPy-style docstrings, strict typing, deterministic network-free tests, clean package installation, and secret redaction are required for supported changes.
 
-**Unit Tests and Coverage:**
-```bash
-pytest -q --cov=src/PermutiveAPI --cov-report=term-missing --cov-fail-under=70
-```
+## Project contracts
 
-All checks must pass before a pull request can be merged.
-
-## Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and pull request guidelines.
+- [PRODUCT.md](PRODUCT.md) — product mission and decision rules.
+- [PUBLIC_API.md](PUBLIC_API.md) — supported public surface.
+- [API_COVERAGE.md](API_COVERAGE.md) — endpoint coverage.
+- [ROADMAP.md](ROADMAP.md) — active milestones and non-goals.
+- [SECURITY.md](SECURITY.md) — security reporting and guarantees.
+- [RELEASING.md](RELEASING.md) — validated release process.
+- [CHANGELOG.md](CHANGELOG.md) — released behavior.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+MIT. See [LICENSE](LICENSE).
