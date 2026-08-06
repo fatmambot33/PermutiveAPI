@@ -58,9 +58,7 @@ def test_runner_failure_does_not_expose_exception_message() -> None:
     def leak() -> EvaluationObservation:
         raise RuntimeError("evaluation-secret-must-not-escape")
 
-    scorecard = run_evaluations(
-        (EvaluationCase("redaction", "security", leak),)
-    )
+    scorecard = run_evaluations((EvaluationCase("redaction", "security", leak),))
     serialized = scorecard.to_json()
 
     assert scorecard.ok is False
