@@ -6,7 +6,7 @@ import json
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Deque, Mapping, Sequence
+from typing import Any, Deque, Mapping, cast
 from urllib.parse import urlsplit, urlunsplit
 
 from requests import Response
@@ -79,7 +79,13 @@ class RecordedInteraction:
         ):
             raise TypeError("Recorded headers must be a string mapping.")
         body = _json_value(value.get("body"))
-        return cls(method, endpoint, status_code, headers, body)
+        return cls(
+            method,
+            endpoint,
+            status_code,
+            cast(Mapping[str, str], headers),
+            body,
+        )
 
 
 @dataclass(frozen=True)
@@ -160,6 +166,12 @@ class RecordingTransport:
         """Return an immutable snapshot of captured interactions."""
         return Recording(tuple(self._interactions))
 
+    def close(self) -> None:
+        """Close the wrapped transport when supported."""
+        close = getattr(self.transport, "close", None)
+        if callable(close):
+            close()
+
 
 class ReplayMismatchError(AssertionError):
     """Report deterministic request/replay mismatches."""
@@ -182,7 +194,7 @@ class ReplayTransport:
         del kwargs
         if not self._remaining:
             raise ReplayMismatchError("Recording is exhausted.")
-        interaction = self._remaining.popleft()
+        interaction = self._remaining[0]
         actual_method = method.upper()
         actual_endpoint = _safe_endpoint(url)
         if (
@@ -194,6 +206,7 @@ class ReplayTransport:
                 f"expected {interaction.method} {interaction.endpoint}, "
                 f"got {actual_method} {actual_endpoint}."
             )
+        self._remaining.popleft()
         response = Response()
         response.status_code = interaction.status_code
         response.url = url
@@ -205,6 +218,9 @@ class ReplayTransport:
         )
         return response
 
+    def close(self) -> None:
+        """Close the in-memory replay transport."""
+
 
 def sanitize_json(value: JSONValue) -> JSONValue:
     """Redact sensitive keys recursively while preserving response structure."""
@@ -212,11 +228,7 @@ def sanitize_json(value: JSONValue) -> JSONValue:
         return [sanitize_json(item) for item in value]
     if isinstance(value, dict):
         return {
-            key: (
-                "[REDACTED]"
-                if _sensitive_key(key)
-                else sanitize_json(item)
-            )
+            key: "[REDACTED]" if _sensitive_key(key) else sanitize_json(item)
             for key, item in value.items()
         }
     return value
@@ -255,7 +267,7 @@ def _mapping(value: object) -> Mapping[str, object]:
         isinstance(key, str) for key in value
     ):
         raise TypeError("Expected a JSON object.")
-    return value
+    return cast(Mapping[str, object], value)
 
 
 def _json_value(value: object) -> JSONValue:
@@ -266,7 +278,8 @@ def _json_value(value: object) -> JSONValue:
     if isinstance(value, dict):
         if not all(isinstance(key, str) for key in value):
             raise TypeError("JSON object keys must be strings.")
-        return {str(key): _json_value(item) for key, item in value.items()}
+        mapping = cast(Mapping[str, object], value)
+        return {key: _json_value(item) for key, item in mapping.items()}
     raise TypeError(f"Unsupported JSON value type: {type(value).__name__}")
 
 
