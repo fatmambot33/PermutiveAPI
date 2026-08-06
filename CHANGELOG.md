@@ -2,14 +2,29 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
-## Unreleased
+## 6.5.1 - 2026-08-06
+
+### Added
+- Deterministic `permutiveapi validate`, `test`, `docs`, `examples`, `upgrade`, and `uninstall` lifecycle commands.
+- Secret-free installed-product checks for package metadata, Python plugin discovery, and the public tool contract.
+- AI-native evidence validation for declared commands and conditional evaluation or benchmark claims.
+- Release metadata consistency checks for package version, changelog headings, release notes, and release tags.
+- Clean-install validation for the core SDK, CLI, Python plugin, async extra, and dataframe extra.
+- Versioned `TYPING_SCOPE.json` with strict and compatibility module classifications.
+- Downstream strict type-consumption examples and complete canonical wheel-content checks.
 
 ### Changed
 - Published the active 6.5.1–6.7 roadmap with explicit product rules and non-goals.
-- Added deterministic installed-product, AI-native evidence, release metadata, and clean-install validation gates.
 - Replaced legacy onboarding with one canonical guide for the sync SDK, async extra, dataframe extra, CLI, Codex plugin, and project contracts.
 - Simplified local credential setup to require only `PERMUTIVE_API_KEY`, the credential consumed by the SDK and plugin.
-- Explicitly labelled legacy resource classes as compatibility surfaces rather than the recommended entry point.
+- Reconciled `PUBLIC_API.md` with the complete 6.5 package-root surface.
+- Made strict Pyright coverage exactly match the declared canonical module group.
+- Explicitly bounded legacy compatibility exclusions so new modules cannot silently escape typing review.
+
+### Fixed
+- Removed an unused diagnostics type import exposed by complete strict analysis.
+- Corrected typed query examples to pass an iterable of expressions to `all_of`.
+- Prevented machine-readable platform declarations from claiming unevidenced evaluations or benchmarks.
 
 ## 6.5.0 - 2026-08-05
 
