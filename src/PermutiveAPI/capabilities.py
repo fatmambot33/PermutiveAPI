@@ -67,7 +67,7 @@ class CapabilityDescriptor:
     plugin_api_version: Optional[str] = None
     tool_count: int = 0
     read_only_tools: int = 0
-    writable_tools: int = 0
+    write_tools: int = 0
 
     def __post_init__(self) -> None:
         """Normalize and validate descriptor values."""
@@ -77,10 +77,10 @@ class CapabilityDescriptor:
         _parse_version(self.tool_schema_version)
         if self.plugin_api_version is not None:
             _parse_version(self.plugin_api_version)
-        if min(self.tool_count, self.read_only_tools, self.writable_tools) < 0:
+        if min(self.tool_count, self.read_only_tools, self.write_tools) < 0:
             raise ValueError("tool counts must be non-negative.")
-        if self.read_only_tools + self.writable_tools != self.tool_count:
-            raise ValueError("read-only and writable counts must equal tool_count.")
+        if self.read_only_tools + self.write_tools != self.tool_count:
+            raise ValueError("read-only and write counts must equal tool_count.")
         object.__setattr__(self, "interfaces", _normalized(self.interfaces))
         object.__setattr__(self, "features", _normalized(self.features))
 
@@ -96,7 +96,7 @@ class CapabilityDescriptor:
             "features": list(self.features),
             "tool_count": self.tool_count,
             "read_only_tools": self.read_only_tools,
-            "writable_tools": self.writable_tools,
+            "write_tools": self.write_tools,
         }
 
     def negotiate(self, requirement: CapabilityRequirement) -> "CapabilityDescriptor":
@@ -153,13 +153,13 @@ def descriptor_from_registry(
     metadata = registry.capabilities()
     tool_count = _integer(metadata, "tool_count")
     read_only = _integer(metadata, "read_only_tools")
-    writable = _integer(metadata, "writable_tools")
+    write_count = _integer(metadata, "write_tools")
     derived = list(features)
     if tool_count:
         derived.extend(("tool_discovery", "tool_invocation"))
     if read_only:
         derived.append("read_tools")
-    if writable:
+    if write_count:
         derived.append("write_tools")
     return CapabilityDescriptor(
         surface=surface,
@@ -169,7 +169,7 @@ def descriptor_from_registry(
         plugin_api_version=plugin_api_version,
         tool_count=tool_count,
         read_only_tools=read_only,
-        writable_tools=writable,
+        write_tools=write_count,
     )
 
 
