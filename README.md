@@ -6,7 +6,7 @@
 
 PermutiveAPI is a typed, governed Python SDK and AI-agent platform for the Permutive API.
 
-It provides one canonical synchronous client, optional asynchronous support, typed queries and errors, a safe Codex plugin, OpenAI-compatible tools, and optional hosted MCP configuration. Python 3.9 through 3.13 are supported.
+It provides one canonical synchronous client, optional asynchronous support, typed queries and errors, a safe Codex plugin, OpenAI-compatible tools, deterministic governed-platform evaluations, and optional hosted MCP configuration. Python 3.9 through 3.13 are supported.
 
 ## Install
 
@@ -38,9 +38,10 @@ Run the local credential wizard from the project where you will use the SDK:
 permutiveapi configure
 permutiveapi doctor
 permutiveapi validate
+permutiveapi eval
 ```
 
-`configure` writes `PERMUTIVE_API_KEY` to a local `.env` file without echoing it. Existing files are not overwritten unless `--force` is supplied. `doctor` checks that the variable is present, the file has restrictive permissions where supported, and `.env` is ignored by Git. `validate` checks the installed SDK, CLI, Python plugin entry point, and tool contract without making a network request or requiring credentials.
+`configure` writes `PERMUTIVE_API_KEY` to a local `.env` file without echoing it. Existing files are not overwritten unless `--force` is supplied. `doctor` checks that the variable is present, the file has restrictive permissions where supported, and `.env` is ignored by Git. `validate` checks the installed SDK, CLI, Python plugin entry point, and tool contract without making a network request or requiring credentials. `eval` prints deterministic JSON evidence for the governed execution guarantees.
 
 Credential lookup is deterministic:
 
@@ -149,7 +150,17 @@ result = plugin.invoke(
 )
 ```
 
-The plugin reuses the canonical SDK. It does not duplicate transport, authentication, models, or business rules. See [docs/AI_NATIVE_PLUGIN.md](docs/AI_NATIVE_PLUGIN.md), [docs/AI_NATIVE.md](docs/AI_NATIVE.md), and [docs/MCP.md](docs/MCP.md).
+The plugin reuses the canonical SDK. It does not duplicate transport, authentication, models, or business rules. See [docs/AI_NATIVE_PLUGIN.md](docs/AI_NATIVE_PLUGIN.md), [docs/AI_NATIVE.md](docs/AI_NATIVE.md), [docs/EVALUATIONS.md](docs/EVALUATIONS.md), and [docs/MCP.md](docs/MCP.md).
+
+## Deterministic AI evaluations
+
+Run the credential-free, network-free scorecard:
+
+```bash
+permutiveapi eval
+```
+
+The JSON scorecard verifies deterministic tool selection, unsupported capability rejection, read and write policy, allow-lists, deny-lists, secret redaction, idempotency, workflow bounds, partial failure handling, and audit completeness. The committed evidence is `evals/scorecard.json`; CI fails when runtime behavior and evidence differ.
 
 ## CLI lifecycle
 
@@ -159,6 +170,7 @@ The plugin reuses the canonical SDK. It does not duplicate transport, authentica
 | `permutiveapi doctor` | Check local credential safety without showing values. |
 | `permutiveapi validate` | Validate the installed product surface. |
 | `permutiveapi test` | Run the deterministic installed-package self-test. |
+| `permutiveapi eval` | Print the machine-readable governed-platform scorecard. |
 | `permutiveapi docs` | Print canonical documentation locations. |
 | `permutiveapi examples` | Print minimal SDK and plugin examples. |
 | `permutiveapi upgrade` | Print the explicit interpreter-specific upgrade command. |
@@ -185,9 +197,10 @@ python -m pip install -e ".[dev]"
 Run the same primary checks used by CI:
 
 ```bash
-black --check src tests typing_examples
+black --check src tests typing_examples scripts/generate_evaluation_scorecard.py
 pydocstyle src/PermutiveAPI
 python scripts/validate_typing_scope.py
+python scripts/generate_evaluation_scorecard.py --check evals/scorecard.json
 pyright
 pyright typing_examples/downstream.py
 pytest -q
@@ -197,7 +210,7 @@ python -m build
 python -m twine check dist/*
 ```
 
-NumPy-style docstrings, strict typing, deterministic network-free tests, clean package installation, and secret redaction are required for supported changes.
+NumPy-style docstrings, strict typing, deterministic network-free tests and evaluations, clean package installation, and secret redaction are required for supported changes.
 
 ## Project contracts
 
@@ -205,6 +218,7 @@ NumPy-style docstrings, strict typing, deterministic network-free tests, clean p
 - [PUBLIC_API.md](PUBLIC_API.md) — supported public surface.
 - [API_COVERAGE.md](API_COVERAGE.md) — endpoint coverage.
 - [docs/TYPING.md](docs/TYPING.md) — strict and compatibility implementation boundary.
+- [docs/EVALUATIONS.md](docs/EVALUATIONS.md) — deterministic governed-platform evidence.
 - [ROADMAP.md](ROADMAP.md) — active milestones and non-goals.
 - [SECURITY.md](SECURITY.md) — security reporting and guarantees.
 - [RELEASING.md](RELEASING.md) — validated release process.
