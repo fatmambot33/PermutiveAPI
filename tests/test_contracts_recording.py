@@ -41,7 +41,7 @@ def test_generated_contract_matches_samples() -> None:
     assert isinstance(samples, dict)
 
     assert contract_manifest(samples) == _manifest()
-    assert len(endpoint_contracts()) == 9
+    assert len(endpoint_contracts()) == 25
 
 
 def test_additive_and_breaking_schema_drift_are_distinct() -> None:
@@ -100,10 +100,13 @@ def test_recording_sanitizes_nested_secrets_and_query_data() -> None:
             return response
 
     transport = RecordingTransport(Transport())
-    transport.request("GET", "https://example.test/v1/cohorts?k=secret#fragment")
+    transport.request(
+        "GET",
+        "https://example.test/cohorts-api/v2/cohorts?k=secret#fragment",
+    )
     interaction = transport.recording.interactions[0]
 
-    assert interaction.endpoint == "https://example.test/v1/cohorts"
+    assert interaction.endpoint == "https://example.test/cohorts-api/v2/cohorts"
     assert "Authorization" not in interaction.headers
     assert interaction.body == {
         "id": "cohort",
@@ -122,10 +125,14 @@ def test_recording_replays_through_the_canonical_client() -> None:
         retry_policy=RetryPolicy(max_attempts=1),
         transport=replay,
     ) as client:
-        assert client.request("GET", "v1/cohorts")["continuation"] == "next"
-        assert client.request("POST", "v1/cohorts", json={"name": "Reviewed"})[
-            "api_key"
-        ] == "[REDACTED]"
+        assert client.request("GET", "cohorts-api/v2/cohorts")[
+            "continuation"
+        ] == "next"
+        assert client.request(
+            "POST",
+            "cohorts-api/v2/cohorts",
+            json={"name": "Reviewed"},
+        )["api_key"] == "[REDACTED]"
     assert replay.remaining == 0
 
 
@@ -135,7 +142,7 @@ def test_replay_rejects_order_or_endpoint_drift() -> None:
         (
             RecordedInteraction(
                 "GET",
-                "https://example.test/v1/cohorts",
+                "https://example.test/cohorts-api/v2/cohorts",
                 200,
                 body={"items": []},
             ),
@@ -144,4 +151,4 @@ def test_replay_rejects_order_or_endpoint_drift() -> None:
     replay = ReplayTransport(recording)
 
     with pytest.raises(ReplayMismatchError):
-        replay.request("POST", "https://example.test/v1/cohorts")
+        replay.request("POST", "https://example.test/cohorts-api/v2/cohorts")
