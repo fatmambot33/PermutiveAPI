@@ -152,7 +152,7 @@ class GovernedToolExecutor:
                 run_id=context.run_id,
                 ok=False,
                 error_type=type(exc).__name__,
-                error_message=str(exc),
+                error_message=f"Tool execution failed with {type(exc).__name__}.",
                 started_at=started_at,
                 finished_at=datetime.now(timezone.utc).isoformat(),
                 idempotency_key=key,
