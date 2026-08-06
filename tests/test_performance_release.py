@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -73,11 +74,59 @@ def test_release_manifest_verifies_exact_files_and_detects_tampering(
     write_release_manifest(manifest, manifest_path)
 
     verified = verify_release_manifest(manifest_path, root=tmp_path)
+    assert verified["project"] == "PermutiveAPI"
+    assert verified["package_version"] == "6.7.0"
     assert verified["source_commit"] == "abc123"
     assert len(verified["artifacts"]) == 3
 
     wheel.write_bytes(b"tampered")
     with pytest.raises(ValueError, match="verification failed"):
+        verify_release_manifest(manifest_path, root=tmp_path)
+
+
+def test_release_manifest_rejects_duplicate_files(tmp_path: Path) -> None:
+    """One candidate file cannot appear more than once in evidence."""
+    wheel = tmp_path / "package.whl"
+    wheel.write_bytes(b"wheel")
+
+    with pytest.raises(ValueError, match="must be unique"):
+        create_release_manifest(
+            project="PermutiveAPI",
+            version="6.7.0",
+            source_commit="abc123",
+            files=(wheel, wheel),
+            root=tmp_path,
+        )
+
+
+def test_release_manifest_rejects_invalid_identity_or_digest(tmp_path: Path) -> None:
+    """Verification requires complete release identity and valid SHA-256 data."""
+    artifact = tmp_path / "package.whl"
+    artifact.write_bytes(b"wheel")
+    manifest = create_release_manifest(
+        project="PermutiveAPI",
+        version="6.7.0",
+        source_commit="abc123",
+        files=(artifact,),
+        root=tmp_path,
+    )
+    manifest["project"] = ""
+    manifest_path = tmp_path / "release-manifest.json"
+    write_release_manifest(manifest, manifest_path)
+    with pytest.raises(ValueError, match="non-empty string"):
+        verify_release_manifest(manifest_path, root=tmp_path)
+
+    manifest["project"] = "PermutiveAPI"
+    artifacts = manifest["artifacts"]
+    assert isinstance(artifacts, list)
+    raw_artifact = artifacts[0]
+    assert isinstance(raw_artifact, dict)
+    raw_artifact["sha256"] = "not-a-digest"
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="SHA-256"):
         verify_release_manifest(manifest_path, root=tmp_path)
 
 
