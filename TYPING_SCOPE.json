@@ -19,6 +19,8 @@
     "src/PermutiveAPI/plugins/runtime.py",
     "src/PermutiveAPI/query_dsl.py",
     "src/PermutiveAPI/resources.py",
+    "src/PermutiveAPI/scenario_fixtures.py",
+    "src/PermutiveAPI/scenarios.py",
     "src/PermutiveAPI/sdk.py",
     "src/PermutiveAPI/testing.py",
     "src/PermutiveAPI/tools.py",
