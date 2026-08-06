@@ -64,6 +64,7 @@ packages = ["src/PermutiveAPI"]
 include = [
     "src/PermutiveAPI",
     "tests",
+    "typing_examples",
     "docs",
     "README.md",
     "CHANGELOG.md",
