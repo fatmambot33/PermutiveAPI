@@ -37,7 +37,9 @@ def digest_file(path: Path, *, root: Path) -> ArtifactDigest:
     with resolved.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
-    return ArtifactDigest(relative.as_posix(), resolved.stat().st_size, digest.hexdigest())
+    return ArtifactDigest(
+        relative.as_posix(), resolved.stat().st_size, digest.hexdigest()
+    )
 
 
 def create_release_manifest(
@@ -90,7 +92,9 @@ def verify_release_manifest(path: Path, *, root: Path) -> dict[str, object]:
     for field in ("project", "package_version", "source_commit"):
         value = decoded.get(field)
         if not isinstance(value, str) or not value.strip():
-            raise ValueError(f"Release evidence field must be a non-empty string: {field}")
+            raise ValueError(
+                f"Release evidence field must be a non-empty string: {field}"
+            )
     artifacts = decoded.get("artifacts")
     if not isinstance(artifacts, list) or not artifacts:
         raise ValueError("Release evidence must contain artifacts.")
