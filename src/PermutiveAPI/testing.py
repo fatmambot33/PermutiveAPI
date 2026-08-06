@@ -76,7 +76,8 @@ class _FixtureHTTPServer(ThreadingHTTPServer):
         super().__init__(("127.0.0.1", 0), _FixtureRequestHandler)
         self._lock = Lock()
         self._routes: Dict[Tuple[str, str], Deque[MockResponse]] = {
-            (route.method.upper(), route.path): deque(route.responses) for route in routes
+            (route.method.upper(), route.path): deque(route.responses)
+            for route in routes
         }
         self._requests: list[MockRequest] = []
 
