@@ -44,8 +44,10 @@ class EndpointContract:
         method = self.method.upper()
         if method not in {"GET", "POST", "PUT", "PATCH", "DELETE"}:
             raise ValueError(f"Unsupported endpoint method: {method}")
-        if not self.path_template.startswith("/v1/"):
-            raise ValueError("Endpoint paths must start with /v1/.")
+        if not self.path_template.startswith("/"):
+            raise ValueError("Endpoint paths must be absolute API paths.")
+        if "?" in self.path_template or "#" in self.path_template:
+            raise ValueError("Endpoint paths must not contain query or fragment data.")
         object.__setattr__(self, "method", method)
 
     def to_dict(self) -> dict[str, object]:
@@ -84,39 +86,33 @@ class SchemaDrift:
         }
 
 
-_ENDPOINTS = (
-    EndpointContract("cohorts.list", "GET", "/v1/cohorts", ResponseKind.PAGE),
-    EndpointContract("cohorts.get", "GET", "/v1/cohorts/{id}", ResponseKind.OBJECT),
+_RESOURCE_PATHS: Mapping[str, str] = {
+    "cohorts": "/cohorts-api/v2/cohorts",
+    "imports": "/audiences-api/v1/imports",
+    "segments": "/audiences-api/v1/segments",
+    "sources": "/audiences-api/v1/sources",
+    "workspaces": "/workspaces-api/v1/workspaces",
+}
+_RESOURCE_OPERATIONS: tuple[
+    tuple[str, str, str, ResponseKind, bool],
+    ...,
+] = (
+    ("list", "GET", "", ResponseKind.PAGE, False),
+    ("get", "GET", "/{id}", ResponseKind.OBJECT, False),
+    ("create", "POST", "", ResponseKind.OBJECT, True),
+    ("update", "PATCH", "/{id}", ResponseKind.OBJECT, True),
+    ("delete", "DELETE", "/{id}", ResponseKind.EMPTY, True),
+)
+_ENDPOINTS = tuple(
     EndpointContract(
-        "cohorts.create",
-        "POST",
-        "/v1/cohorts",
-        ResponseKind.OBJECT,
-        mutating=True,
-    ),
-    EndpointContract(
-        "cohorts.update",
-        "PUT",
-        "/v1/cohorts/{id}",
-        ResponseKind.OBJECT,
-        mutating=True,
-    ),
-    EndpointContract(
-        "cohorts.delete",
-        "DELETE",
-        "/v1/cohorts/{id}",
-        ResponseKind.EMPTY,
-        mutating=True,
-    ),
-    EndpointContract("segments.list", "GET", "/v1/segments", ResponseKind.PAGE),
-    EndpointContract("segments.get", "GET", "/v1/segments/{id}", ResponseKind.OBJECT),
-    EndpointContract("workspaces.list", "GET", "/v1/workspaces", ResponseKind.PAGE),
-    EndpointContract(
-        "workspaces.get",
-        "GET",
-        "/v1/workspaces/{id}",
-        ResponseKind.OBJECT,
-    ),
+        name=f"{resource}.{operation}",
+        method=method,
+        path_template=f"{path}{suffix}",
+        response_kind=response_kind,
+        mutating=mutating,
+    )
+    for resource, path in _RESOURCE_PATHS.items()
+    for operation, method, suffix, response_kind, mutating in _RESOURCE_OPERATIONS
 )
 
 
