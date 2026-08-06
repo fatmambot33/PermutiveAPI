@@ -1,4 +1,4 @@
-"""Local-only credential setup commands for PermutiveAPI."""
+"""Local-only credential setup and validation commands for PermutiveAPI."""
 
 from __future__ import annotations
 
@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Dict, Optional, Sequence
 
 from dotenv import dotenv_values
+
+from .validation import run_validation, validation_succeeded
 
 REQUIRED_VARIABLES = ("PERMUTIVE_API_KEY", "PERMUTIVE_WORKSPACE_ID")
 
@@ -96,6 +98,20 @@ def doctor(env_file: Path) -> int:
     return 0
 
 
+def validate() -> int:
+    """Validate the installed product surface without requiring credentials."""
+    results = run_validation()
+    print("PermutiveAPI product validation")
+    for result in results:
+        status = "PASS" if result.passed else "FAIL"
+        print(f"- [{status}] {result.name}: {result.detail}")
+    if validation_succeeded(results):
+        print("PermutiveAPI product validation passed.")
+        return 0
+    print("PermutiveAPI product validation failed.")
+    return 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(prog="permutiveapi")
@@ -105,6 +121,7 @@ def build_parser() -> argparse.ArgumentParser:
     configure_parser.add_argument("--force", action="store_true")
     doctor_parser = subparsers.add_parser("doctor")
     doctor_parser.add_argument("--env-file", type=Path, default=Path(".env"))
+    subparsers.add_parser("validate")
     return parser
 
 
@@ -113,7 +130,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "configure":
         return configure(args.env_file, force=args.force)
-    return doctor(args.env_file)
+    if args.command == "doctor":
+        return doctor(args.env_file)
+    return validate()
 
 
 if __name__ == "__main__":
