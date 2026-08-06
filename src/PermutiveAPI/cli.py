@@ -11,6 +11,7 @@ from typing import Dict, Optional, Sequence
 
 from dotenv import dotenv_values
 
+from .evaluations import run_default_evaluations
 from .validation import run_validation, validation_succeeded
 
 REQUIRED_VARIABLES = ("PERMUTIVE_API_KEY",)
@@ -19,11 +20,13 @@ DOCUMENTATION_PATHS = (
     "docs/CLI.md",
     "docs/AI_NATIVE.md",
     "docs/AI_NATIVE_PLUGIN.md",
+    "docs/EVALUATIONS.md",
     "docs/MCP.md",
 )
 LIFECYCLE_COMMANDS = (
     "validate",
     "test",
+    "eval",
     "docs",
     "examples",
     "upgrade",
@@ -133,6 +136,13 @@ def test() -> int:
     return validate()
 
 
+def evaluate() -> int:
+    """Print the deterministic governed-platform evaluation scorecard."""
+    scorecard = run_default_evaluations()
+    print(scorecard.to_json(), end="")
+    return 0 if scorecard.ok else 1
+
+
 def docs() -> int:
     """Print the canonical documentation locations."""
     print("PermutiveAPI documentation")
@@ -194,6 +204,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     commands = {
         "validate": validate,
         "test": test,
+        "eval": evaluate,
         "docs": docs,
         "examples": examples,
         "upgrade": upgrade,

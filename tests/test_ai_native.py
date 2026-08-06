@@ -115,6 +115,34 @@ def test_workflow_stops_after_failure() -> None:
     assert result.steps[-1].error_type == "RuntimeError"
 
 
+def test_governed_failures_do_not_expose_exception_messages() -> None:
+    """Structured failures retain the type without payload-derived secret text."""
+    registry = _registry()
+
+    def fail() -> None:
+        raise RuntimeError("secret-token-must-not-escape")
+
+    registry.register(
+        ToolDefinition(
+            name="fail_secret",
+            description="Fail with secret-bearing text.",
+            input_schema={"type": "object", "properties": {}},
+            handler=fail,
+        )
+    )
+
+    result = GovernedToolExecutor(registry).invoke(
+        "fail_secret",
+        {},
+        context=InvocationContext(run_id="run-redaction"),
+    )
+
+    assert result.ok is False
+    assert result.error_type == "RuntimeError"
+    assert result.error_message == "Tool execution failed with RuntimeError."
+    assert "secret-token-must-not-escape" not in str(result.to_dict())
+
+
 def test_manifest_is_machine_readable_and_governed() -> None:
     manifest = platform_manifest(_registry())
 

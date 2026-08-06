@@ -20,11 +20,13 @@ The 6.5.1 patch release establishes verifiable product claims, truthful onboardi
 
 Tracking issue: #186
 
-- Add deterministic agent and policy evaluations.
-- Add a local mock Permutive server and end-to-end workflow tests.
-- Publish machine-readable evaluation results.
-- Version tool, plugin, and MCP capability negotiation.
-- Improve actionable errors and executable examples.
+- [ ] #196 — Deterministic policy, tool-selection, security, workflow, and audit scorecards.
+- [ ] #197 — Local mock Permutive server and reusable fixtures.
+- [ ] #198 — End-to-end governed agent scenarios.
+- [ ] #199 — Versioned capability negotiation across tools, plugin, and MCP.
+- [ ] #200 — Actionable errors, executable recipes, and first-success budget.
+
+The first slice makes agent guarantees executable and machine readable before adding broader integration scenarios.
 
 ## Then — 6.7: operational reliability
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import List
 
 import pytest
@@ -68,6 +69,20 @@ def test_test_command_runs_installed_package_checks(monkeypatch, capsys) -> None
     output = capsys.readouterr().out
     assert "installed-package self-test" in output
     assert "[PASS] self_test" in output
+
+
+def test_eval_command_prints_machine_readable_scorecard(capsys) -> None:
+    """The eval command emits passing deterministic JSON evidence."""
+    assert main(["eval"]) == 0
+
+    scorecard = json.loads(capsys.readouterr().out)
+    assert scorecard["schema_version"] == 1
+    assert scorecard["summary"] == {
+        "failed": 0,
+        "ok": True,
+        "passed": 11,
+        "total": 11,
+    }
 
 
 @pytest.mark.parametrize(

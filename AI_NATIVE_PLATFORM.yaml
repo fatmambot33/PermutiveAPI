@@ -38,8 +38,8 @@ plugin:
       require_local_env: true
 
 commands:
-  required: [configure, doctor, validate, test, docs, examples, upgrade, uninstall]
-  recommended: [eval, benchmark]
+  required: [configure, doctor, validate, test, eval, docs, examples, upgrade, uninstall]
+  recommended: [benchmark]
 
 interfaces:
   sdk: true
@@ -56,7 +56,7 @@ quality:
   examples: true
   security_scan: true
   compatibility_tests: true
-  ai_evaluations: false
+  ai_evaluations: true
   benchmark: false
 
 self_improvement:
