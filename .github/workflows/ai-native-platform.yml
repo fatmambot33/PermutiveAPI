@@ -16,6 +16,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install PyYAML
+          cache: pip
+      - name: Install validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . PyYAML
       - name: Validate declarations and repository evidence
         run: python scripts/validate_ai_native_platform.py
+      - name: Validate installed product surface
+        run: permutiveapi validate
+      - name: Validate release metadata
+        run: python scripts/validate_release_metadata.py
