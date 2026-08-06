@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "samples": {
+    "cohorts.list": {
+      "items": [{"id": "cohort", "name": "Example"}],
+      "continuation": "next"
+    },
+    "cohorts.get": {"id": "cohort", "name": "Example"},
+    "cohorts.create": {"id": "cohort", "name": "Example"},
+    "cohorts.update": {"id": "cohort", "name": "Example"},
+    "cohorts.delete": null,
+    "segments.list": {
+      "items": [{"id": "segment", "name": "Example"}],
+      "continuation": "next"
+    },
+    "segments.get": {"id": "segment", "name": "Example"},
+    "workspaces.list": {
+      "items": [{"id": "workspace", "name": "Example"}],
+      "continuation": "next"
+    },
+    "workspaces.get": {"id": "workspace", "name": "Example"}
+  }
+}
