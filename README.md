@@ -44,7 +44,7 @@ with PermutiveClient("api-key") as client:
     page = client.segments.list(page_size=50)
 ```
 
-Canonical resource namespaces are `cohorts`, `imports`, `segments`, `sources`, and `workspaces`. See [API_COVERAGE.md](API_COVERAGE.md) for generated endpoint and schema evidence.
+Canonical resource namespaces are `cohorts`, `imports`, `segments`, `sources`, and `workspaces`. Their 25 CRUD/list operations and structural response fingerprints are generated in [API_COVERAGE.md](API_COVERAGE.md).
 
 ## Async client
 
@@ -58,7 +58,7 @@ from PermutiveAPI import AsyncPermutiveClient
 
 async def main() -> None:
     async with AsyncPermutiveClient("api-key") as client:
-        result = await client.request("GET", "v1/cohorts")
+        result = await client.request("GET", "cohorts-api/v2/cohorts")
         print(result)
 
 
@@ -128,11 +128,11 @@ coordinator = RateLimitCoordinator(requests_per_second=10)
 transport = CoordinatedTransport(requests.Session(), credentials, coordinator)
 client = PermutiveClient("managed-placeholder", transport=transport)
 
-client.request("GET", "v1/cohorts")
+client.request("GET", "cohorts-api/v2/cohorts")
 credentials.rotate("rotated-key")
 ```
 
-One coordinator can be shared by synchronous and asynchronous transports. Every request attempt receives one immutable credential generation, and `Retry-After` deferrals apply across all callers.
+One coordinator can be shared by synchronous and asynchronous transports. Every request attempt receives one immutable credential generation, `Retry-After` deferrals apply across all callers, and transport exceptions redact the real rotating key before reaching the client.
 
 ### Performance and releases
 
