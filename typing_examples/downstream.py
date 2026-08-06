@@ -50,7 +50,7 @@ def define_endpoint_contract() -> EndpointContract:
     return EndpointContract(
         "cohorts.list",
         "GET",
-        "/v1/cohorts",
+        "/cohorts-api/v2/cohorts",
         ResponseKind.PAGE,
     )
 
