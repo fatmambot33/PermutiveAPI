@@ -20,13 +20,13 @@ The 6.5.1 patch release establishes verifiable product claims, truthful onboardi
 
 Tracking issue: #186
 
-- [ ] #196 — Deterministic policy, tool-selection, security, workflow, and audit scorecards.
+- [x] #196 — Deterministic policy, tool-selection, security, workflow, and audit scorecards.
 - [ ] #197 — Local mock Permutive server and reusable fixtures.
 - [ ] #198 — End-to-end governed agent scenarios.
 - [ ] #199 — Versioned capability negotiation across tools, plugin, and MCP.
 - [ ] #200 — Actionable errors, executable recipes, and first-success budget.
 
-The first slice makes agent guarantees executable and machine readable before adding broader integration scenarios.
+The scorecard now proves local governance. The active slice adds realistic HTTP behavior without requiring live credentials or external network access.
 
 ## Then — 6.7: operational reliability
 
