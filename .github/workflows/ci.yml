@@ -34,10 +34,16 @@ jobs:
         run: python scripts/validate_scenario_evidence.py
       - name: Capability contract
         run: python scripts/validate_capability_contract.py
+      - name: API contracts
+        run: python scripts/generate_api_contracts.py --check
+      - name: Sanitized recordings
+        run: python scripts/validate_recordings.py
       - name: Executable recipes
         run: python scripts/validate_recipes.py
       - name: First success
         run: python scripts/validate_first_success.py
+      - name: Performance budgets
+        run: python scripts/validate_performance.py
       - name: Evaluation scorecard
         run: python scripts/generate_evaluation_scorecard.py --check evals/scorecard.json
       - name: Format
@@ -86,11 +92,14 @@ jobs:
       - run: python scripts/validate_typing_scope.py
       - run: python scripts/validate_scenario_evidence.py
       - run: python scripts/validate_capability_contract.py
+      - run: python scripts/generate_api_contracts.py --check
+      - run: python scripts/validate_recordings.py
       - run: python scripts/validate_recipes.py
       - run: python scripts/validate_first_success.py
+      - run: python scripts/validate_performance.py
       - run: python -m build
       - run: python -m twine check dist/*
-      - name: Verify core, CLI, plugin, evaluations, capabilities, and first success
+      - name: Verify installed 6.7 core surface
         shell: bash
         run: |
           wheel="$(ls dist/*.whl)"
@@ -103,7 +112,7 @@ jobs:
           /tmp/permutiveapi-core/bin/python -m PermutiveAPI.first_success
           /tmp/permutiveapi-core/bin/permutiveapi eval > /tmp/permutiveapi-scorecard.json
           /tmp/permutiveapi-core/bin/python -c 'import json; assert json.load(open("/tmp/permutiveapi-scorecard.json"))["summary"]["ok"]'
-          /tmp/permutiveapi-core/bin/python -c 'from PermutiveAPI import CapabilityRequirement, ToolRegistry; ToolRegistry().negotiate(CapabilityRequirement(interfaces=("tool_registry",)))'
+          /tmp/permutiveapi-core/bin/python -c 'from PermutiveAPI import API_CONTRACT_VERSION, AtomicCredentials, CapabilityRequirement, RateLimitCoordinator, Recording, ToolRegistry; assert API_CONTRACT_VERSION == 1; assert AtomicCredentials("key").generation == 1; assert RateLimitCoordinator(10).reserve_delay() >= 0; ToolRegistry().negotiate(CapabilityRequirement(interfaces=("tool_registry",))); assert Recording(())'
       - name: Verify async extra and recipe
         shell: bash
         run: |
