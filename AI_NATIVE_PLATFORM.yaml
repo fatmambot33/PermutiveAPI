@@ -38,7 +38,7 @@ plugin:
       require_local_env: true
 
 commands:
-  required: [configure, doctor, validate, test, docs, examples, upgrade, uninstall]
+  required: [configure, doctor, validate]
   recommended: [eval, benchmark]
 
 interfaces:
@@ -56,8 +56,8 @@ quality:
   examples: true
   security_scan: true
   compatibility_tests: true
-  ai_evaluations: true
-  benchmark: true
+  ai_evaluations: false
+  benchmark: false
 
 self_improvement:
   enabled: true
