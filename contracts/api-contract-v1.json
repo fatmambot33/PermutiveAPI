@@ -1,0 +1,106 @@
+{
+  "endpoints": [
+    {
+      "method": "POST",
+      "mutating": true,
+      "name": "cohorts.create",
+      "path_template": "/v1/cohorts",
+      "response_kind": "object"
+    },
+    {
+      "method": "DELETE",
+      "mutating": true,
+      "name": "cohorts.delete",
+      "path_template": "/v1/cohorts/{id}",
+      "response_kind": "empty"
+    },
+    {
+      "method": "GET",
+      "mutating": false,
+      "name": "cohorts.get",
+      "path_template": "/v1/cohorts/{id}",
+      "response_kind": "object"
+    },
+    {
+      "method": "GET",
+      "mutating": false,
+      "name": "cohorts.list",
+      "path_template": "/v1/cohorts",
+      "response_kind": "page"
+    },
+    {
+      "method": "PUT",
+      "mutating": true,
+      "name": "cohorts.update",
+      "path_template": "/v1/cohorts/{id}",
+      "response_kind": "object"
+    },
+    {
+      "method": "GET",
+      "mutating": false,
+      "name": "segments.get",
+      "path_template": "/v1/segments/{id}",
+      "response_kind": "object"
+    },
+    {
+      "method": "GET",
+      "mutating": false,
+      "name": "segments.list",
+      "path_template": "/v1/segments",
+      "response_kind": "page"
+    },
+    {
+      "method": "GET",
+      "mutating": false,
+      "name": "workspaces.get",
+      "path_template": "/v1/workspaces/{id}",
+      "response_kind": "object"
+    },
+    {
+      "method": "GET",
+      "mutating": false,
+      "name": "workspaces.list",
+      "path_template": "/v1/workspaces",
+      "response_kind": "page"
+    }
+  ],
+  "schemas": {
+    "cohorts.create": {
+      "fingerprint": "3a9df7d7022c491096f7dfc26269ffe36dd595bb9c9ce6d5df6c0c286310ebc2",
+      "schema": "{\"object\":{\"id\":\"string\",\"name\":\"string\"}}"
+    },
+    "cohorts.delete": {
+      "fingerprint": "f072cbec3bf8841871d4284230c5e983dc211a56837aed862487148f947d1a1f",
+      "schema": "\"null\""
+    },
+    "cohorts.get": {
+      "fingerprint": "3a9df7d7022c491096f7dfc26269ffe36dd595bb9c9ce6d5df6c0c286310ebc2",
+      "schema": "{\"object\":{\"id\":\"string\",\"name\":\"string\"}}"
+    },
+    "cohorts.list": {
+      "fingerprint": "0522ca745f6e313c681318bc49d20e271e38b0dd994c1c6a3b7d767043ea66f2",
+      "schema": "{\"object\":{\"continuation\":\"string\",\"items\":{\"array\":[{\"object\":{\"id\":\"string\",\"name\":\"string\"}}]}}}"
+    },
+    "cohorts.update": {
+      "fingerprint": "3a9df7d7022c491096f7dfc26269ffe36dd595bb9c9ce6d5df6c0c286310ebc2",
+      "schema": "{\"object\":{\"id\":\"string\",\"name\":\"string\"}}"
+    },
+    "segments.get": {
+      "fingerprint": "3a9df7d7022c491096f7dfc26269ffe36dd595bb9c9ce6d5df6c0c286310ebc2",
+      "schema": "{\"object\":{\"id\":\"string\",\"name\":\"string\"}}"
+    },
+    "segments.list": {
+      "fingerprint": "0522ca745f6e313c681318bc49d20e271e38b0dd994c1c6a3b7d767043ea66f2",
+      "schema": "{\"object\":{\"continuation\":\"string\",\"items\":{\"array\":[{\"object\":{\"id\":\"string\",\"name\":\"string\"}}]}}}"
+    },
+    "workspaces.get": {
+      "fingerprint": "3a9df7d7022c491096f7dfc26269ffe36dd595bb9c9ce6d5df6c0c286310ebc2",
+      "schema": "{\"object\":{\"id\":\"string\",\"name\":\"string\"}}"
+    },
+    "workspaces.list": {
+      "fingerprint": "0522ca745f6e313c681318bc49d20e271e38b0dd994c1c6a3b7d767043ea66f2",
+      "schema": "{\"object\":{\"continuation\":\"string\",\"items\":{\"array\":[{\"object\":{\"id\":\"string\",\"name\":\"string\"}}]}}}"
+    }
+  },
+  "version": 1
+}
