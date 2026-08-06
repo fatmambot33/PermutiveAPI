@@ -6,7 +6,10 @@ All notable changes to PermutiveAPI are documented here. The project follows Sem
 
 ### Changed
 - Published the active 6.5.1–6.7 roadmap with explicit product rules and non-goals.
-- Started reconciling package metadata, release documentation, CLI behavior, and AI-native evidence.
+- Added deterministic installed-product, AI-native evidence, release metadata, and clean-install validation gates.
+- Replaced legacy onboarding with one canonical guide for the sync SDK, async extra, dataframe extra, CLI, Codex plugin, and project contracts.
+- Simplified local credential setup to require only `PERMUTIVE_API_KEY`, the credential consumed by the SDK and plugin.
+- Explicitly labelled legacy resource classes as compatibility surfaces rather than the recommended entry point.
 
 ## 6.5.0 - 2026-08-05
 
