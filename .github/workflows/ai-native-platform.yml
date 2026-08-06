@@ -25,6 +25,8 @@ jobs:
         run: python scripts/validate_ai_native_platform.py
       - name: Validate installed product surface
         run: permutiveapi validate
+      - name: Validate capability negotiation
+        run: python scripts/validate_capability_contract.py
       - name: Run governed-platform evaluations
         run: |
           permutiveapi eval > /tmp/permutiveapi-scorecard.json
