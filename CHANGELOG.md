@@ -2,6 +2,21 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
+## Unreleased
+
+### Added
+- Deterministic governed-platform evaluation types and a versioned machine-readable scorecard.
+- `permutiveapi eval` for credential-free, network-free policy and workflow verification.
+- CI enforcement that runtime evaluations match committed evidence.
+
+### Security
+- Governed tool failures retain the exception type but no longer expose raw exception messages.
+- Evaluation runner failures report only the exception type and never persist secret-bearing text.
+
+### Changed
+- Declared AI evaluations as an evidence-backed platform capability.
+- Added the evaluation module to strict typing, wheel-content, and source-distribution contracts.
+
 ## 6.5.1 - 2026-08-06
 
 ### Added
