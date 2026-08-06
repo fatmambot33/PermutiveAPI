@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from importlib import metadata
-from typing import Callable, List, Sequence
+from typing import Callable, List, Optional, Sequence
 
 
 @dataclass(frozen=True)
@@ -13,11 +13,11 @@ class ValidationCheck:
 
     Parameters
     ----------
-    name:
+    name
         Stable machine-readable check name.
-    passed:
+    passed
         Whether the check passed.
-    detail:
+    detail
         Human-readable result without credential or payload values.
     """
 
@@ -54,16 +54,12 @@ def _package_metadata_check() -> ValidationCheck:
 
 def _plugin_entry_point_check() -> ValidationCheck:
     """Validate the built-in Python plugin entry point."""
-    entry_points = metadata.entry_points()
-    if hasattr(entry_points, "select"):
-        candidates = entry_points.select(group="permutiveapi.plugins", name="codex")
-    else:  # pragma: no cover - compatibility for older importlib metadata APIs
-        candidates = [
-            entry_point
-            for entry_point in entry_points.get("permutiveapi.plugins", [])
-            if entry_point.name == "codex"
-        ]
-    matches = list(candidates)
+    matches = list(
+        metadata.entry_points().select(
+            group="permutiveapi.plugins",
+            name="codex",
+        )
+    )
     if len(matches) != 1:
         return ValidationCheck(
             name="plugin_entry_point",
@@ -92,7 +88,7 @@ def _plugin_entry_point_check() -> ValidationCheck:
 
 
 def _public_tools_check() -> ValidationCheck:
-    """Validate that public OpenAI tool schemas are available."""
+    """Validate that the public tool registry surface is available."""
     try:
         from PermutiveAPI.tools import ToolRegistry
     except ImportError as error:
@@ -118,13 +114,13 @@ def _public_tools_check() -> ValidationCheck:
 
 
 def run_validation(
-    checks: Sequence[CheckRunner] | None = None,
+    checks: Optional[Sequence[CheckRunner]] = None,
 ) -> List[ValidationCheck]:
     """Run deterministic local product validation.
 
     Parameters
     ----------
-    checks:
+    checks
         Optional check runners for deterministic testing.
 
     Returns
