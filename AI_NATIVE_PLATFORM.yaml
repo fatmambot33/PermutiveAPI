@@ -38,7 +38,7 @@ plugin:
       require_local_env: true
 
 commands:
-  required: [configure, doctor, validate]
+  required: [configure, doctor, validate, test, docs, examples, upgrade, uninstall]
   recommended: [eval, benchmark]
 
 interfaces:
