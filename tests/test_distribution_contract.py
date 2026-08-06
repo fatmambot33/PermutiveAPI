@@ -48,6 +48,7 @@ def test_wheel_contains_typed_package_and_plugin_metadata(tmp_path: Path) -> Non
         "PermutiveAPI/config.py",
         "PermutiveAPI/credentials.py",
         "PermutiveAPI/diagnostics.py",
+        "PermutiveAPI/evaluations.py",
         "PermutiveAPI/mcp.py",
         "PermutiveAPI/models.py",
         "PermutiveAPI/plugins/__init__.py",
