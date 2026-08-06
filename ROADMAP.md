@@ -1,6 +1,6 @@
 # Roadmap
 
-PermutiveAPI is moving from a completed first-class SDK and AI-native foundation to a verifiably trustworthy operating platform.
+PermutiveAPI has completed its first-class SDK, governed AI-native platform, platform-proof, and operational-reliability roadmap.
 
 ## Product objective
 
@@ -14,7 +14,7 @@ Tracking issue: #185
 - [x] #191 — Canonical SDK, CLI, credential, and optional-extra onboarding documentation.
 - [x] #192 — Complete supported-surface strict typing and artifact contracts.
 
-The 6.5.1 patch release establishes verifiable product claims, truthful onboarding, and an explicit canonical typing boundary.
+The 6.5.1 patch established verifiable product claims, truthful onboarding, and an explicit canonical typing boundary.
 
 ## Completed — 6.6: platform proof
 
@@ -28,13 +28,20 @@ Tracking issue: #186
 
 The 6.6 platform proves governed behavior from tool discovery through realistic local HTTP execution. Adaptive integrations negotiate capabilities before execution, failures provide secret-safe next actions, and a fresh installed interpreter reaches a useful result inside an enforced five-second budget.
 
-## Now — 6.7: operational reliability
+## Completed — 6.7.0: operational reliability
 
 Tracking issue: #187
 
-- [ ] #204 — Generated API coverage, schema-drift detection, sanitized recording, and deterministic replay.
-- [ ] #205 — Coordinated rate limits, atomic credential rotation, and sync/async stress safety.
-- [ ] #206 — Performance budgets and immutable release-artifact validation.
+- [x] #204 — Generated API coverage, additive-versus-breaking schema drift, sanitized recording, deterministic replay, and opt-in live validation.
+- [x] #205 — Shared sync/async rate limits, atomic credential rotation, concurrency stress, and cancellation safety.
+- [x] #206 — Performance budgets and immutable release-candidate validation from build through publication.
+- [x] #210 — Exact-artifact 6.7.0 release with SBOM, attestations, PyPI Trusted Publishing, tag, and GitHub Release evidence.
+
+The 6.7 platform detects upstream contract changes, coordinates operational limits across client types, rotates credentials without mutating in-flight work, blocks material performance regressions, and publishes only the artifact set that passed release validation.
+
+## Roadmap status
+
+The planned roadmap is complete. New work should be driven by verified user demand, upstream Permutive API changes, security findings, or measured reliability regressions rather than speculative breadth.
 
 ## Non-goals until demonstrated demand
 
@@ -54,5 +61,6 @@ Tracking issue: #187
 5. Keep credentials local and never echo, commit, or remotely store them.
 6. Keep mutations governed by the declared approval policy.
 7. Keep `main` releasable after every merge.
+8. Require a measured problem and acceptance criteria before extending the roadmap.
 
 The canonical roadmap index is issue #188.
