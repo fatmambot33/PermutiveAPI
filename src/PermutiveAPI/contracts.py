@@ -230,7 +230,9 @@ def _classify_shape(expected: object, actual: object) -> DriftKind:
         if "object" in expected and "object" in actual:
             expected_fields = expected["object"]
             actual_fields = actual["object"]
-            if not isinstance(expected_fields, dict) or not isinstance(actual_fields, dict):
+            if not isinstance(expected_fields, dict) or not isinstance(
+                actual_fields, dict
+            ):
                 return DriftKind.BREAKING
             if not set(expected_fields).issubset(actual_fields):
                 return DriftKind.BREAKING
@@ -246,13 +248,17 @@ def _classify_shape(expected: object, actual: object) -> DriftKind:
         if "array" in expected and "array" in actual:
             expected_items = expected["array"]
             actual_items = actual["array"]
-            if not isinstance(expected_items, list) or not isinstance(actual_items, list):
+            if not isinstance(expected_items, list) or not isinstance(
+                actual_items, list
+            ):
                 return DriftKind.BREAKING
             return _classify_array(expected_items, actual_items)
     return DriftKind.BREAKING
 
 
-def _classify_array(expected_items: list[object], actual_items: list[object]) -> DriftKind:
+def _classify_array(
+    expected_items: list[object], actual_items: list[object]
+) -> DriftKind:
     if not actual_items:
         return DriftKind.NONE
     if not expected_items:
