@@ -61,10 +61,11 @@ class CapturingTransport:
 
 
 class AsyncCapturingTransport:
-    """Capture asynchronous request parameters."""
+    """Capture asynchronous request parameters and act as a response."""
 
     def __init__(self) -> None:
         self.params: list[dict[str, object]] = []
+        self.content = b'{"ok": true}'
 
     async def request(
         self,
@@ -83,6 +84,9 @@ class AsyncCapturingTransport:
     @property
     def headers(self) -> Mapping[str, str]:
         return {}
+
+    def json(self) -> dict[str, bool]:
+        return {"ok": True}
 
     async def aclose(self) -> None:
         pass
