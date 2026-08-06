@@ -6,6 +6,12 @@ import inspect
 from dataclasses import dataclass
 from typing import Any, Callable, Mapping, Sequence, get_type_hints
 
+from .capabilities import (
+    CapabilityDescriptor,
+    CapabilityRequirement,
+    descriptor_from_registry,
+)
+
 JSONSchema = dict[str, Any]
 ToolHandler = Callable[..., Any]
 
@@ -92,7 +98,7 @@ class ToolRegistry:
         return self.get(name).invoke(arguments)
 
     def capabilities(self) -> dict[str, Any]:
-        """Return a machine-readable capability summary."""
+        """Return the backward-compatible capability summary."""
         tools = self.list()
         return {
             "agent_tools": bool(tools),
@@ -101,6 +107,21 @@ class ToolRegistry:
             "write_tools": sum(not tool.read_only for tool in tools),
             "tags": sorted({tag for tool in tools for tag in tool.tags}),
         }
+
+    def capability_descriptor(self) -> CapabilityDescriptor:
+        """Return the versioned registry capability descriptor."""
+        return descriptor_from_registry(
+            self,
+            surface="tool_registry",
+            interfaces=("json_schema", "openai_tools", "tool_registry"),
+        )
+
+    def negotiate(
+        self,
+        requirement: CapabilityRequirement,
+    ) -> CapabilityDescriptor:
+        """Validate required capabilities before any tool execution."""
+        return self.capability_descriptor().negotiate(requirement)
 
     def as_openai_tools(self) -> list[dict[str, Any]]:
         """Export all tools for OpenAI-compatible agents."""

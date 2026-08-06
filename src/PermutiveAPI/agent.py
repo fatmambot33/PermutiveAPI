@@ -15,6 +15,11 @@ from .ai_native import (
     WorkflowStep,
     platform_manifest,
 )
+from .capabilities import (
+    CapabilityDescriptor,
+    CapabilityRequirement,
+    descriptor_from_registry,
+)
 from .mcp import PermutiveMCPConfig
 from .tools import ToolRegistry
 
@@ -52,7 +57,7 @@ class PermutiveAgentKit:
         self.workflows = AgentWorkflowRunner(self.executor)
 
     def capabilities(self) -> dict[str, Any]:
-        """Return machine-readable capabilities for adaptive agents."""
+        """Return the backward-compatible adaptive-agent summary."""
         capabilities = self.tools.capabilities()
         capabilities.update(
             {
@@ -64,6 +69,32 @@ class PermutiveAgentKit:
             }
         )
         return capabilities
+
+    def capability_descriptor(self) -> CapabilityDescriptor:
+        """Return the versioned AgentKit capability descriptor."""
+        interfaces = ["agent_kit", "json_schema", "openai_tools", "tool_registry"]
+        features = [
+            "governed_execution",
+            "idempotency",
+            "structured_results",
+            "workflow_runner",
+        ]
+        if self.mcp is not None:
+            interfaces.append("mcp_client_config")
+            features.append("official_mcp")
+        return descriptor_from_registry(
+            self.tools,
+            surface="agent_kit",
+            interfaces=tuple(interfaces),
+            features=tuple(features),
+        )
+
+    def negotiate(
+        self,
+        requirement: CapabilityRequirement,
+    ) -> CapabilityDescriptor:
+        """Validate required capabilities before agent execution."""
+        return self.capability_descriptor().negotiate(requirement)
 
     def manifest(self) -> dict[str, Any]:
         """Return the portable AI-native platform manifest."""
