@@ -62,6 +62,18 @@ def test_additive_and_breaking_schema_drift_are_distinct() -> None:
         schemas,
     ) == additive
 
+    additive_page = classify_response_schema(
+        "cohorts.list",
+        {
+            "items": [
+                {"id": "cohort", "name": "Example", "description": "New"}
+            ],
+            "continuation": "next",
+        },
+        schemas,
+    )
+    assert additive_page.kind is DriftKind.ADDITIVE
+
     with pytest.raises(SchemaDriftError) as captured:
         validate_response_schema("cohorts.get", {"id": "cohort"}, schemas)
     assert captured.value.drift.kind is DriftKind.BREAKING
