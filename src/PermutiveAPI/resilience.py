@@ -8,7 +8,41 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
-from typing import Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable, Mapping, Optional, Protocol
+
+from requests import Response
+
+
+class SyncTransport(Protocol):
+    """Minimal synchronous transport accepted by the coordinator wrapper."""
+
+    def request(self, method: str, url: str, **kwargs: Any) -> Response:
+        """Send one HTTP request."""
+        ...
+
+
+class AsyncResponseLike(Protocol):
+    """Response fields needed by the asynchronous coordinator wrapper."""
+
+    status_code: int
+    headers: Mapping[str, str]
+
+
+class AsyncTransportLike(Protocol):
+    """Minimal asynchronous transport accepted by the coordinator wrapper."""
+
+    async def request(
+        self,
+        method: str,
+        url: str,
+        **kwargs: Any,
+    ) -> AsyncResponseLike:
+        """Send one asynchronous HTTP request."""
+        ...
+
+    async def aclose(self) -> None:
+        """Close asynchronous transport resources."""
+        ...
 
 
 @dataclass(frozen=True)
@@ -26,8 +60,8 @@ class CredentialSnapshot:
 class AtomicCredentials:
     """Provide lock-protected credential snapshots and atomic rotation.
 
-    Every request takes one snapshot before transport execution. Rotating the
-    key therefore affects future requests without changing credentials already
+    Every transport attempt takes one snapshot before execution. Rotating the
+    key therefore affects future attempts without changing credentials already
     held by an in-flight request.
     """
 
@@ -138,6 +172,79 @@ class RateLimitCoordinator:
             self._blocked_until = 0.0
 
 
+class CoordinatedTransport:
+    """Inject rotating credentials and shared pacing into a sync transport."""
+
+    def __init__(
+        self,
+        transport: SyncTransport,
+        credentials: AtomicCredentials,
+        coordinator: RateLimitCoordinator,
+    ) -> None:
+        self._transport = transport
+        self.credentials = credentials
+        self.coordinator = coordinator
+
+    def request(self, method: str, url: str, **kwargs: Any) -> Response:
+        """Reserve a slot, inject one credential snapshot, and observe deferrals."""
+        self.coordinator.acquire()
+        snapshot = self.credentials.snapshot()
+        kwargs["params"] = _credential_params(kwargs.get("params"), snapshot.api_key)
+        response = self._transport.request(method, url, **kwargs)
+        if response.status_code == 429:
+            self.coordinator.observe_retry_after(response.headers.get("Retry-After"))
+        return response
+
+    def close(self) -> None:
+        """Close the wrapped transport when it exposes a close method."""
+        close = getattr(self._transport, "close", None)
+        if callable(close):
+            close()
+
+
+class CoordinatedAsyncTransport:
+    """Inject rotating credentials and shared pacing into an async transport."""
+
+    def __init__(
+        self,
+        transport: AsyncTransportLike,
+        credentials: AtomicCredentials,
+        coordinator: RateLimitCoordinator,
+    ) -> None:
+        self._transport = transport
+        self.credentials = credentials
+        self.coordinator = coordinator
+
+    async def request(
+        self,
+        method: str,
+        url: str,
+        **kwargs: Any,
+    ) -> AsyncResponseLike:
+        """Reserve a slot, inject one credential snapshot, and observe deferrals."""
+        await self.coordinator.acquire_async()
+        snapshot = self.credentials.snapshot()
+        kwargs["params"] = _credential_params(kwargs.get("params"), snapshot.api_key)
+        response = await self._transport.request(method, url, **kwargs)
+        if response.status_code == 429:
+            self.coordinator.observe_retry_after(response.headers.get("Retry-After"))
+        return response
+
+    async def aclose(self) -> None:
+        """Close the wrapped asynchronous transport."""
+        await self._transport.aclose()
+
+
+def _credential_params(value: object, api_key: str) -> dict[str, object]:
+    params: dict[str, object]
+    if isinstance(value, Mapping):
+        params = {str(key): item for key, item in value.items()}
+    else:
+        params = {}
+    params["k"] = api_key
+    return params
+
+
 def _retry_after_seconds(value: str) -> Optional[float]:
     normalized = value.strip()
     if not normalized:
@@ -156,7 +263,12 @@ def _retry_after_seconds(value: str) -> Optional[float]:
 
 
 __all__ = [
+    "AsyncResponseLike",
+    "AsyncTransportLike",
     "AtomicCredentials",
+    "CoordinatedAsyncTransport",
+    "CoordinatedTransport",
     "CredentialSnapshot",
     "RateLimitCoordinator",
+    "SyncTransport",
 ]
