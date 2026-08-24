@@ -2,6 +2,12 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
+## 6.7.1 - 2026-08-24
+
+### Fixed
+- Republished the completed 6.7 release line as a new immutable patch version after the public PyPI index no longer exposed 6.7.0.
+- Kept the 6.7.0 product, API, security, typing, and operational-reliability behavior unchanged.
+
 ## 6.7.0 - 2026-08-06
 
 ### Added
