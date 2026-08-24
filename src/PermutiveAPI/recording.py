@@ -237,7 +237,10 @@ def sanitize_json(value: JSONValue) -> JSONValue:
 
 def _safe_endpoint(url: str) -> str:
     parsed = urlsplit(url)
-    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
+    # User information is unusual in API URLs, but retaining it would leak
+    # embedded credentials into an artifact whose contract is secret-safe.
+    safe_netloc = parsed.netloc.rsplit("@", 1)[-1]
+    return urlunsplit((parsed.scheme, safe_netloc, parsed.path, "", ""))
 
 
 def _safe_headers(headers: Mapping[str, str]) -> dict[str, str]:

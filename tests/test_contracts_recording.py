@@ -135,7 +135,7 @@ def test_recording_sanitizes_nested_secrets_and_query_data() -> None:
     transport = RecordingTransport(Transport())
     transport.request(
         "GET",
-        "https://example.test/cohorts-api/v2/cohorts?k=secret#fragment",
+        "https://user:password@example.test/cohorts-api/v2/cohorts?k=secret#fragment",
     )
     interaction = transport.recording.interactions[0]
 
