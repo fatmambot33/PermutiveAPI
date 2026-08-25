@@ -8,7 +8,26 @@ from typing import Final, Tuple
 
 @dataclass(frozen=True)
 class ResourceOperation:
-    """Describe one operation supported by a canonical resource."""
+    """Describe one operation supported by a canonical resource.
+
+    Parameters
+    ----------
+    name : str
+        Stable operation name.
+    method : str
+        HTTP method used by the operation.
+    suffix : str
+        Path suffix appended to the canonical resource path.
+    response_kind : str
+        High-level response shape: object, page, or empty.
+    mutating : bool, default=False
+        Whether the operation changes server-side state.
+
+    Methods
+    -------
+    to_dict()
+        Return deterministic machine-readable operation metadata.
+    """
 
     name: str
     method: str
@@ -40,7 +59,22 @@ class ResourceOperation:
 
 @dataclass(frozen=True)
 class ResourceDefinition:
-    """Describe one canonical Permutive resource surface."""
+    """Describe one canonical Permutive resource surface.
+
+    Parameters
+    ----------
+    name : str
+        Stable resource name exposed by ``PermutiveClient``.
+    path : str
+        Absolute canonical API path for the resource.
+    operations : tuple[ResourceOperation, ...]
+        Supported operations for the resource.
+
+    Methods
+    -------
+    to_dict()
+        Return deterministic machine-readable resource metadata.
+    """
 
     name: str
     path: str

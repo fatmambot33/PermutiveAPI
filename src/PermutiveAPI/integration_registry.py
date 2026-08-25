@@ -10,7 +10,24 @@ INTEGRATION_REGISTRY_VERSION = 1
 
 @dataclass(frozen=True)
 class IntegrationSurface:
-    """Describe one supported extension surface without framework coupling."""
+    """Describe one supported extension surface without framework coupling.
+
+    Parameters
+    ----------
+    name : str
+        Stable integration surface name.
+    interface : str
+        Public interface that implements the surface.
+    features : tuple[str, ...]
+        Machine-readable features provided by the surface.
+    governed : bool, default=True
+        Whether invocation through this surface enforces governance checks.
+
+    Methods
+    -------
+    to_dict()
+        Return deterministic machine-readable integration metadata.
+    """
 
     name: str
     interface: str
@@ -38,6 +55,7 @@ _SURFACES = (
         "tools",
         "ToolRegistry",
         ("discovery", "typed_schema", "invocation"),
+        governed=False,
     ),
     IntegrationSurface(
         "agent",
