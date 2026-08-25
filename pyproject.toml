@@ -1,6 +1,6 @@
 [project]
 name = "PermutiveAPI"
-version = "6.7.1"
+version = "6.8.0"
 description = "A typed, governed AI-native Python platform for the Permutive API."
 readme = "README.md"
 authors = [{ name = "FaTmamBo33", email = "fatmambo33@gmail.com" }]
@@ -103,11 +103,13 @@ include = [
     "src/PermutiveAPI/cli.py",
     "src/PermutiveAPI/client.py",
     "src/PermutiveAPI/config.py",
+    "src/PermutiveAPI/consolidation.py",
     "src/PermutiveAPI/contracts.py",
     "src/PermutiveAPI/credentials.py",
     "src/PermutiveAPI/diagnostics.py",
     "src/PermutiveAPI/evaluations.py",
     "src/PermutiveAPI/first_success.py",
+    "src/PermutiveAPI/integration_registry.py",
     "src/PermutiveAPI/mcp.py",
     "src/PermutiveAPI/models.py",
     "src/PermutiveAPI/performance.py",
@@ -115,11 +117,13 @@ include = [
     "src/PermutiveAPI/plugins/base.py",
     "src/PermutiveAPI/plugins/codex.py",
     "src/PermutiveAPI/plugins/runtime.py",
+    "src/PermutiveAPI/public_surface.py",
     "src/PermutiveAPI/query_dsl.py",
     "src/PermutiveAPI/recipes.py",
     "src/PermutiveAPI/recording.py",
     "src/PermutiveAPI/release_evidence.py",
     "src/PermutiveAPI/resilience.py",
+    "src/PermutiveAPI/resource_registry.py",
     "src/PermutiveAPI/resources.py",
     "src/PermutiveAPI/scenario_fixtures.py",
     "src/PermutiveAPI/scenarios.py",
