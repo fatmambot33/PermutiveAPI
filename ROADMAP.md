@@ -1,47 +1,48 @@
 # Roadmap
 
-PermutiveAPI has completed its first-class SDK, governed AI-native platform, platform-proof, and operational-reliability roadmap.
+PermutiveAPI is a typed, governed AI-native Python platform for the Permutive API. The 6.8 roadmap focuses on consolidation rather than speculative breadth.
 
 ## Product objective
 
-Make PermutiveAPI the most trustworthy and easiest way for Python developers and governed AI agents to operate Permutive safely.
+Make PermutiveAPI the most trustworthy and easiest way for Python developers and governed AI agents to operate Permutive safely, with one canonical contract per capability.
 
-## Completed — 6.5.1: product truth
+## 6.8.0 — lean first-class SDK consolidation
 
-Tracking issue: #185
+Tracking issue: #218
 
-- [x] #190 — Local product validation, lifecycle commands, release consistency, and clean-install gates.
-- [x] #191 — Canonical SDK, CLI, credential, and optional-extra onboarding documentation.
-- [x] #192 — Complete supported-surface strict typing and artifact contracts.
+- [x] #219 — Classify and protect the canonical package-root SDK surface.
+- [x] #220 — Add a single typed registry for canonical resources and operations.
+- [x] #221 — Keep all new consolidation modules in strict Pyright scope and protect downstream typing boundaries.
+- [x] #222 — Add one typed registry for tool, agent, plugin, and MCP integration metadata.
+- [x] #223 — Preserve one shared secret-safe resilience and diagnostic policy across the existing sync/async runtime.
+- [x] #224 — Produce deterministic combined consolidation evidence and fingerprints.
+- [x] #225 — Add regression tests for contract drift, duplicate operations, classification completeness, and reproducibility.
+- [x] #226 — Reuse the existing protected CI/release gates for the exact 6.8 candidate rather than adding another workflow family.
+- [x] #227 — Publish one concise 6.8 consolidation/release guide while preserving canonical workflow documentation.
+- [x] #228 — Prepare the exact 6.8.0 release candidate; close only after public PyPI verification succeeds.
 
-The 6.5.1 patch established verifiable product claims, truthful onboarding, and an explicit canonical typing boundary.
+### 6.8 design rules
 
-## Completed — 6.6: platform proof
+1. No second client, transport, resource facade, query DSL, plugin runtime, or governance model.
+2. New public behavior must be strictly typed and backward compatible within 6.x.
+3. Generated evidence must be deterministic and derived from executable contracts.
+4. Integration metadata may be shared only where semantics are genuinely common.
+5. Compatibility APIs remain available but are not allowed to define new canonical behavior.
+6. Security, release, and public-PyPI verification gates remain mandatory.
 
-Tracking issue: #186
+## Completed foundations
 
-- [x] #196 — Deterministic policy, tool-selection, security, workflow, and audit scorecards.
-- [x] #197 — Local mock Permutive server and reusable fixtures.
-- [x] #198 — End-to-end governed agent scenarios.
-- [x] #199 — Versioned capability negotiation across tools, plugin, AgentKit, and MCP.
-- [x] #200 — Actionable errors, executable recipes, and first-success budget.
+### 6.5.1 — product truth
 
-The 6.6 platform proves governed behavior from tool discovery through realistic local HTTP execution. Adaptive integrations negotiate capabilities before execution, failures provide secret-safe next actions, and a fresh installed interpreter reaches a useful result inside an enforced five-second budget.
+Established verifiable product claims, truthful onboarding, lifecycle validation, clean-install checks, and an explicit canonical typing boundary.
 
-## Completed — 6.7.0: operational reliability
+### 6.6 — platform proof
 
-Tracking issue: #187
+Proved governed behavior from tool discovery through realistic local HTTP execution, with capability negotiation, actionable failures, executable recipes, and a measured first-success budget.
 
-- [x] #204 — Generated API coverage, additive-versus-breaking schema drift, sanitized recording, deterministic replay, and opt-in live validation.
-- [x] #205 — Shared sync/async rate limits, atomic credential rotation, concurrency stress, and cancellation safety.
-- [x] #206 — Performance budgets and immutable release-candidate validation from build through publication.
-- [x] #210 — Exact-artifact 6.7.0 release with SBOM, attestations, PyPI Trusted Publishing, tag, and GitHub Release evidence.
+### 6.7 — operational reliability
 
-The 6.7 platform detects upstream contract changes, coordinates operational limits across client types, rotates credentials without mutating in-flight work, blocks material performance regressions, and publishes only the artifact set that passed release validation.
-
-## Roadmap status
-
-The planned roadmap is complete. New work should be driven by verified user demand, upstream Permutive API changes, security findings, or measured reliability regressions rather than speculative breadth.
+Added generated API coverage, structural response drift detection, sanitized recording/replay, shared rate-limit coordination, atomic credential rotation, performance budgets, and immutable release evidence.
 
 ## Non-goals until demonstrated demand
 
@@ -62,5 +63,3 @@ The planned roadmap is complete. New work should be driven by verified user dema
 6. Keep mutations governed by the declared approval policy.
 7. Keep `main` releasable after every merge.
 8. Require a measured problem and acceptance criteria before extending the roadmap.
-
-The canonical roadmap index is issue #188.
