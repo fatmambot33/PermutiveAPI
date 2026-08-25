@@ -6,7 +6,7 @@ PermutiveAPI is a typed, governed AI-native Python platform for the Permutive AP
 
 Make PermutiveAPI the most trustworthy and easiest way for Python developers and governed AI agents to operate Permutive safely, with one canonical contract per capability.
 
-## 6.8.0 — lean first-class SDK consolidation
+## 6.8 — lean first-class SDK consolidation
 
 Tracking issue: #218
 
@@ -19,7 +19,13 @@ Tracking issue: #218
 - [x] #225 — Add regression tests for contract drift, duplicate operations, classification completeness, and reproducibility.
 - [x] #226 — Reuse the existing protected CI/release gates for the exact 6.8 candidate rather than adding another workflow family.
 - [x] #227 — Publish one concise 6.8 consolidation/release guide while preserving canonical workflow documentation.
-- [x] #228 — Prepare the exact 6.8.0 release candidate; close only after public PyPI verification succeeds.
+- [ ] #228 — Publish and publicly verify the corrected 6.8.1 recovery patch before closing the 6.8 roadmap.
+
+### 6.8 release status
+
+- 6.8.0 was published from the consolidation commit before the five post-merge review fixes on `main` were included.
+- 6.8.1 is the canonical recovery patch that packages the corrected post-review `main` state.
+- #218 and #228 close only after 6.8.1 is installable from public PyPI and its GitHub release evidence matches the published artifact.
 
 ### 6.8 design rules
 
