@@ -2,6 +2,24 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
+## 6.8.0 - 2026-08-25
+
+### Added
+- A typed canonical resource registry covering the five supported resource families and 25 CRUD/list operations.
+- Deterministic package-root public-surface classification for canonical, integration, and compatibility exports.
+- A shared typed integration registry for tools, AgentKit, the Codex plugin, and MCP composition.
+- Reproducible consolidation evidence combining public API, resource, integration, and capability contracts with a stable SHA-256 fingerprint.
+- Regression tests for resource-contract drift, duplicate operations, public-export classification completeness, governed integration metadata, and evidence reproducibility.
+
+### Changed
+- Added all 6.8 consolidation modules to the strict Pyright and typing-scope contracts.
+- Consolidated the roadmap around one canonical contract per capability rather than adding speculative integrations.
+- Reused the existing protected CI, security, artifact, Trusted Publishing, and public-PyPI verification gates for the exact 6.8 candidate.
+
+### Compatibility
+- No supported 6.x package-root import is removed.
+- Legacy resources remain explicit compatibility APIs while canonical sync, async, query, plugin, MCP, and governance behavior remains unchanged.
+
 ## 6.7.1 - 2026-08-24
 
 ### Fixed
