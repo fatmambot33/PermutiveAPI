@@ -180,9 +180,14 @@ def public_surface_manifest(exports: Iterable[str]) -> dict[str, object]:
     unknown = set(values) - set(_CLASSIFICATIONS)
     missing = set(_CLASSIFICATIONS) - set(values)
     if unknown:
-        raise ValueError("Unclassified package-root exports: " + ", ".join(sorted(unknown)))
+        raise ValueError(
+            "Unclassified package-root exports: " + ", ".join(sorted(unknown))
+        )
     if missing:
-        raise ValueError("Classified exports missing from package root: " + ", ".join(sorted(missing)))
+        raise ValueError(
+            "Classified exports missing from package root: "
+            + ", ".join(sorted(missing))
+        )
     classified = {
         category: sorted(
             name for name in values if classify_public_export(name) == category
