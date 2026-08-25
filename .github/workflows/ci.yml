@@ -102,13 +102,14 @@ jobs:
       - run: python scripts/validate_performance.py
       - run: python -m build
       - run: python -m twine check dist/*
-      - name: Verify installed 6.7 core surface
+      - name: Verify installed 6.8 core surface
         shell: bash
         run: |
           wheel="$(ls dist/*.whl)"
           python -m venv /tmp/permutiveapi-core
           /tmp/permutiveapi-core/bin/pip install "$wheel"
           /tmp/permutiveapi-core/bin/python -c "import PermutiveAPI; print(PermutiveAPI.__all__)"
+          /tmp/permutiveapi-core/bin/python -c 'import importlib; [importlib.import_module(name) for name in ("PermutiveAPI.consolidation", "PermutiveAPI.integration_registry", "PermutiveAPI.public_surface", "PermutiveAPI.resource_registry")]'
           /tmp/permutiveapi-core/bin/permutiveapi validate
           /tmp/permutiveapi-core/bin/permutiveapi examples --json > /tmp/permutiveapi-recipes.json
           /tmp/permutiveapi-core/bin/python -c 'import json; assert len(json.load(open("/tmp/permutiveapi-recipes.json"))) >= 7'
