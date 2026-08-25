@@ -78,7 +78,9 @@ _RESOURCES: Final[Tuple[ResourceDefinition, ...]] = (
     ResourceDefinition("imports", "/audiences-api/v1/imports", _CANONICAL_OPERATIONS),
     ResourceDefinition("segments", "/audiences-api/v1/segments", _CANONICAL_OPERATIONS),
     ResourceDefinition("sources", "/audiences-api/v1/sources", _CANONICAL_OPERATIONS),
-    ResourceDefinition("workspaces", "/workspaces-api/v1/workspaces", _CANONICAL_OPERATIONS),
+    ResourceDefinition(
+        "workspaces", "/workspaces-api/v1/workspaces", _CANONICAL_OPERATIONS
+    ),
 )
 
 
