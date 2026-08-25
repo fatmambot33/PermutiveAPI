@@ -2,6 +2,19 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
+## 6.8.1 - 2026-08-25
+
+### Fixed
+- Published the five post-merge 6.8 review fixes that landed on `main` after the immutable 6.8.0 artifact had already been built.
+- Made canonical sync resource facades derive their transport paths from the typed resource registry instead of duplicating endpoint strings.
+- Corrected integration governance metadata so plain tool discovery is not mislabeled as governed invocation.
+- Strengthened public-surface classification and consolidation tests to prevent export drift and incomplete compatibility classification.
+- Extended clean-wheel CI validation to import the 6.8 consolidation modules from the built distribution.
+
+### Release integrity
+- 6.8.1 is the canonical corrected 6.8 patch and is built from the post-review `main` state.
+- 6.8.0 remains immutable and valid as published, but does not contain the post-merge review fixes above.
+
 ## 6.8.0 - 2026-08-25
 
 ### Added
