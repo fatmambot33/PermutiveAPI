@@ -2,57 +2,49 @@
 
 from __future__ import annotations
 
-import json
+import ast
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any, Callable
 
-import yaml
+ROOT = Path(__file__).resolve().parents[1]
+VALIDATOR = ROOT / "scripts" / "validate_ai_native_platform.py"
+BASE_EVIDENCE = {"readme", "tests", "agent_instructions", "typing", "ci"}
 
-from scripts import validate_ai_native_platform as validator
 
-
-def _validate_security_evidence(
-    tmp_path: Path,
-    monkeypatch,
-    evidence_key: str,
-) -> list[str]:
-    """Validate a minimal manifest using one security evidence key."""
-    evidence = tmp_path / "evidence"
-    evidence.write_text("repository evidence\n", encoding="utf-8")
-    manifest = tmp_path / "AI_NATIVE_PLATFORM.yaml"
-    schema = tmp_path / "schema.json"
-    data = {
-        "standard": {"ref": "v0.2.0"},
-        "quality": {"security_scan": True},
-        "agent": {"guarantees": sorted(validator.REQUIRED_GUARANTEES)},
-        "evidence": {
-            "paths": {
-                "readme": "evidence",
-                "tests": "evidence",
-                "agent_instructions": "evidence",
-                "typing": "evidence",
-                "ci": "evidence",
-                evidence_key: "evidence",
-            }
-        },
+def _required_evidence() -> Callable[[Mapping[str, Any]], set[str]]:
+    """Load the vendored ``required_evidence`` function without tool dependencies."""
+    tree = ast.parse(VALIDATOR.read_text(encoding="utf-8"))
+    function = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "required_evidence"
+    )
+    module = ast.Module(body=[function], type_ignores=[])
+    namespace: dict[str, Any] = {
+        "Any": Any,
+        "Mapping": Mapping,
+        "BASE_EVIDENCE": BASE_EVIDENCE,
     }
-    manifest.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
-    schema.write_text(json.dumps({"type": "object"}), encoding="utf-8")
-    monkeypatch.setattr(validator, "ROOT", tmp_path)
-    monkeypatch.setattr(validator, "MANIFEST", manifest)
-    monkeypatch.setattr(validator, "SCHEMA", schema)
-    return validator.validate()
+    exec(compile(module, str(VALIDATOR), "exec"), namespace)
+    loaded = namespace["required_evidence"]
+    assert callable(loaded)
+    return loaded
 
 
-def test_security_evidence_is_accepted(tmp_path: Path, monkeypatch) -> None:
+def test_security_evidence_is_accepted() -> None:
     """Accept the canonical generic security evidence key."""
-    assert _validate_security_evidence(tmp_path, monkeypatch, "security_evidence") == []
+    required = _required_evidence()({"quality": {"security_scan": True}})
+    declared = BASE_EVIDENCE | {"security_evidence"}
+
+    assert required <= declared
 
 
-def test_security_workflow_is_not_a_compatibility_alias(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
+def test_security_workflow_is_not_a_compatibility_alias() -> None:
     """Reject the removed workflow-specific key as security evidence."""
-    errors = _validate_security_evidence(tmp_path, monkeypatch, "security_workflow")
+    required = _required_evidence()({"quality": {"security_scan": True}})
+    declared = BASE_EVIDENCE | {"security_workflow"}
 
-    assert "missing evidence declaration: security_evidence" in errors
+    assert "security_evidence" in required
+    assert "security_workflow" not in required
+    assert not required <= declared
