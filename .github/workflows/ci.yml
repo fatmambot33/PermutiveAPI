@@ -1,9 +1,7 @@
-# Required PR and agent-branch checks.
+# Required PR checks.
 name: Python CI
 
 on:
-  push:
-    branches: ["agent/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
