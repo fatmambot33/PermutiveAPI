@@ -2,6 +2,16 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
+## 6.8.2 - 2026-08-26
+
+### Fixed
+- Constrained the optional dataframe integration and development dependency to `pandas>=2,<3`.
+- Kept pandas 3 outside the supported dependency range until compatibility is explicitly validated.
+
+### Compatibility
+- Core installs remain unchanged because pandas is still optional.
+- Existing pandas 2.x users remain supported without requiring a pandas 3 upgrade.
+
 ## 6.8.1 - 2026-08-25
 
 ### Fixed
