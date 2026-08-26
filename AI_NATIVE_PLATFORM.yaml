@@ -1,7 +1,7 @@
 version: 1
 standard:
   repository: fatmambot33/ai-native-platform
-  ref: v0.2.0
+  ref: 597c6f90fca88bd68d53a62f57ccc556cfa05be7
 quality:
   typed: true
   tests: true
