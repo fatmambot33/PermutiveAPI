@@ -1,7 +1,7 @@
 version: 1
 standard:
   repository: fatmambot33/ai-native-platform
-  ref: 585484a227741a9eac78393e631b9d3794b85ec8
+  ref: v0.2.0
 quality:
   typed: true
   tests: true
@@ -89,7 +89,7 @@ evidence:
     - tests/test_plugins.py
     docs: docs
     examples: README.md
-    security_workflow: .github/workflows/security.yml
+    security_evidence: .github/workflows/security.yml
     env_example: plugins/permutiveapi/.env.example
     gitignore: .gitignore
     self_improvement_workflow: .github/workflows/ai-self-improvement.yml
