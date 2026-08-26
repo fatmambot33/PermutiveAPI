@@ -1,6 +1,8 @@
 name: Python CI
 
 on:
+  push:
+    branches: ["agent/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
