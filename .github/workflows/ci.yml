@@ -1,3 +1,4 @@
+# Consolidated required pull-request checks.
 name: Python CI
 
 on:
