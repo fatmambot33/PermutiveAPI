@@ -1,3 +1,4 @@
+# Required PR and agent-branch checks.
 name: Python CI
 
 on:
