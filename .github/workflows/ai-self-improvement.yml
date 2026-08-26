@@ -1,0 +1,62 @@
+name: AI self-improvement discovery
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Discover actionable maintenance markers
+        id: scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          findings="$(grep -RInE 'TODO|FIXME|HACK|XXX' src tests docs scripts 2>/dev/null | head -n 50 || true)"
+          if [ -z "$findings" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          {
+            echo 'findings<<EOF'
+            echo "$findings"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+      - name: Create one deduplicated agent-ready issue
+        if: steps.scan.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FINDINGS: ${{ steps.scan.outputs.findings }}
+        shell: bash
+        run: |
+          title='[AI improvement] Review discovered maintenance markers'
+          existing="$(gh issue list --state open --search "in:title $title" --json number --jq 'length')"
+          if [ "$existing" != "0" ]; then
+            echo "An open discovery issue already exists."
+            exit 0
+          fi
+          body="$(cat <<EOF
+          ## Problem
+          Automated discovery found maintenance markers that may represent technical debt or incomplete product work.
+
+          ## Evidence
+          \`\`\`
+          $FINDINGS
+          \`\`\`
+
+          ## Desired outcome
+          Triage each finding against PRODUCT.md, ROADMAP.md, and AI_NATIVE_PLATFORM.yaml. Close obsolete markers and turn valid work into bounded, testable changes.
+
+          ## Agent handoff
+          An agent may prepare a pull request after confirming scope. Breaking, security, credential, public API, and release changes require human approval before merge.
+          EOF
+          )"
+          gh issue create --title "$title" --body "$body"
