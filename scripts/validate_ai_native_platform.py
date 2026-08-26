@@ -76,7 +76,7 @@ def required_evidence(data: Mapping[str, Any]) -> set[str]:
         if quality.get("examples") is True:
             keys.add("examples")
         if quality.get("security_scan") is True:
-            keys.add("security_workflow")
+            keys.add("security_evidence")
 
     if isinstance(plugin, Mapping):
         credentials = plugin.get("credentials", {})
