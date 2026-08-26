@@ -98,3 +98,19 @@ jobs:
           python -m venv /tmp/permutiveapi-dataframe
           /tmp/permutiveapi-dataframe/bin/pip install "${wheel}[dataframe]"
           /tmp/permutiveapi-dataframe/bin/python -c "import pandas; import PermutiveAPI"
+
+  ci:
+    name: ci
+    if: ${{ always() }}
+    needs: [lint, tests, package]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful CI
+        shell: bash
+        run: |
+          echo "lint=${{ needs.lint.result }}"
+          echo "tests=${{ needs.tests.result }}"
+          echo "package=${{ needs.package.result }}"
+          test "${{ needs.lint.result }}" = "success"
+          test "${{ needs.tests.result }}" = "success"
+          test "${{ needs.package.result }}" = "success"
