@@ -1,0 +1,51 @@
+name: AI-native platform
+
+on:
+  push:
+    branches:
+      - main
+      - "agent/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . PyYAML jsonschema
+      - name: Validate declarations and repository evidence
+        run: python scripts/validate_ai_native_platform.py
+      - name: Validate installed product surface
+        run: permutiveapi validate
+      - name: Validate governed scenarios
+        run: python scripts/validate_scenario_evidence.py
+      - name: Validate capability negotiation
+        run: python scripts/validate_capability_contract.py
+      - name: Validate API contracts
+        run: python scripts/generate_api_contracts.py --check
+      - name: Validate sanitized replay
+        run: python scripts/validate_recordings.py
+      - name: Validate executable recipes
+        run: python scripts/validate_recipes.py
+      - name: Validate first success
+        run: python scripts/validate_first_success.py
+      - name: Validate performance budgets
+        run: python scripts/validate_performance.py
+      - name: Run governed-platform evaluations
+        run: |
+          permutiveapi eval > /tmp/permutiveapi-scorecard.json
+          python scripts/generate_evaluation_scorecard.py --check evals/scorecard.json
+      - name: Validate release metadata
+        run: python scripts/validate_release_metadata.py
