@@ -80,6 +80,11 @@ else
   echo "Codex review request for current HEAD ${SHORT_SHA} already exists."
 fi
 
+if [[ "${CODEX_REVIEW_REQUEST_ONLY:-0}" == "1" ]]; then
+  echo "Codex review request phase complete for ${SHORT_SHA}."
+  exit 0
+fi
+
 deadline=$((SECONDS + TIMEOUT_SECONDS))
 while (( SECONDS < deadline )); do
   if has_matching_review; then
