@@ -89,6 +89,7 @@ evidence:
     - tests/test_plugins.py
     docs: docs
     examples: README.md
+    ai_review_workflow: .github/workflows/codex-review.yml
     security_evidence: .github/workflows/security.yml
     env_example: plugins/permutiveapi/.env.example
     gitignore: .gitignore
