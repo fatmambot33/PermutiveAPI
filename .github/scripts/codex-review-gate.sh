@@ -15,39 +15,41 @@ MARKER="<!-- codex-review-gate:${HEAD_SHA} -->"
 COMMENT_ID=""
 
 has_matching_review() {
-  local reviews
-  reviews="$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/reviews?per_page=100")"
-  jq -e \
+  gh api "repos/${REPO}/pulls/${PR_NUMBER}/reviews?per_page=100" | jq -e \
     --arg login "$CODEX_LOGIN" \
     --arg sha "$SHORT_SHA" \
     'any(.[]; .user.login == $login and ((.body // "") | contains($sha)))' \
-    <<<"$reviews" >/dev/null
+    >/dev/null
 }
 
 has_pr_clean_reaction() {
-  local reactions
-  reactions="$(gh api \
-    -H "Accept: application/vnd.github+json" \
-    "repos/${REPO}/issues/${PR_NUMBER}/reactions?per_page=100")"
-  jq -e \
+  gh api -H "Accept: application/vnd.github+json" \
+    "repos/${REPO}/issues/${PR_NUMBER}/reactions?per_page=100" | jq -e \
     --arg login "$CODEX_LOGIN" \
     --arg since "$HEAD_COMMIT_AT" \
     'any(.[]; .user.login == $login and .content == "+1" and .created_at >= $since)' \
-    <<<"$reactions" >/dev/null
+    >/dev/null
+}
+
+find_trigger_comment() {
+  COMMENT_ID="$(
+    gh api "repos/${REPO}/issues/${PR_NUMBER}/comments?per_page=100" | jq -r \
+      --arg marker "$MARKER" \
+      '[.[] | select((.body // "") | contains($marker))] | last | .id // empty'
+  )"
 }
 
 has_trigger_clean_reaction() {
+  [[ -n "$COMMENT_ID" ]] || find_trigger_comment
   [[ -n "$COMMENT_ID" ]] || return 1
-  local reactions
-  reactions="$(gh api \
-    -H "Accept: application/vnd.github+json" \
-    "repos/${REPO}/issues/comments/${COMMENT_ID}/reactions?per_page=100")"
-  jq -e \
+  gh api -H "Accept: application/vnd.github+json" \
+    "repos/${REPO}/issues/comments/${COMMENT_ID}/reactions?per_page=100" | jq -e \
     --arg login "$CODEX_LOGIN" \
     'any(.[]; .user.login == $login and .content == "+1")' \
-    <<<"$reactions" >/dev/null
+    >/dev/null
 }
 
+echo "Checking Codex evidence for HEAD ${SHORT_SHA}."
 HEAD_COMMIT_AT="$(
   gh api "repos/${REPO}/commits/${HEAD_SHA}" \
     --jq '.commit.committer.date // .commit.author.date'
@@ -58,30 +60,22 @@ if has_matching_review || has_pr_clean_reaction; then
   exit 0
 fi
 
-comments="$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments?per_page=100")"
-COMMENT_ID="$(
-  jq -r --arg marker "$MARKER" \
-    '[.[] | select((.body // "") | contains($marker))] | last | .id // empty' \
-    <<<"$comments"
-)"
-
-if [[ -z "$COMMENT_ID" && "$HEAD_REPO" == "$REPO" ]]; then
-  body="$(printf '@codex review\n\nAutomated merge gate for `%s`.\n%s\n' "$SHORT_SHA" "$MARKER")"
-  response="$(
-    gh api --method POST \
-      "repos/${REPO}/issues/${PR_NUMBER}/comments" \
-      -f body="$body"
-  )"
-  COMMENT_ID="$(jq -r '.id' <<<"$response")"
-  echo "Requested Codex review for current HEAD ${SHORT_SHA}."
-elif [[ -z "$COMMENT_ID" ]]; then
-  echo "External PR detected; waiting for Codex auto-review or a maintainer @codex review request."
-else
-  echo "Codex review request for current HEAD ${SHORT_SHA} already exists."
-fi
+find_trigger_comment
 
 if [[ "${CODEX_REVIEW_REQUEST_ONLY:-0}" == "1" ]]; then
-  echo "Codex review request phase complete for ${SHORT_SHA}."
+  if [[ -z "$COMMENT_ID" && "$HEAD_REPO" == "$REPO" ]]; then
+    body="$(printf '@codex review\n\nAutomated merge gate for `%s`.\n%s\n' "$SHORT_SHA" "$MARKER")"
+    if response="$(gh api --method POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$body" 2>/dev/null)"; then
+      COMMENT_ID="$(jq -r '.id' <<<"$response")"
+      echo "Requested Codex review for current HEAD ${SHORT_SHA}."
+    else
+      echo "::notice::PR workflow token cannot post the Codex request; the dedicated request workflow or a maintainer comment will trigger it."
+    fi
+  elif [[ -n "$COMMENT_ID" ]]; then
+    echo "Codex review request for current HEAD ${SHORT_SHA} already exists."
+  else
+    echo "External PR detected; waiting for Codex auto-review or a maintainer @codex review request."
+  fi
   exit 0
 fi
 
@@ -102,5 +96,5 @@ while (( SECONDS < deadline )); do
   sleep "$POLL_SECONDS"
 done
 
-echo "::error::Codex has not completed a review of current HEAD ${SHORT_SHA}. Re-run the check after Codex responds, or comment @codex review on the PR."
+echo "::error::Codex has not completed a review of current HEAD ${SHORT_SHA}. Comment @codex review on the PR, then re-run this check after Codex responds."
 exit 1
