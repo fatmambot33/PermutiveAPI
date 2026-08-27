@@ -1,0 +1,38 @@
+name: Request Codex review
+
+on:
+  pull_request_target:
+    types: [synchronize]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  request:
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request review for the new HEAD
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_sha="${HEAD_SHA:0:10}"
+          marker="<!-- codex-review-gate:${HEAD_SHA} -->"
+          existing="$(
+            gh api "repos/${REPO}/issues/${PR_NUMBER}/comments?per_page=100" \
+              --jq ".[] | select(.body | contains(\"${marker}\")) | .id" \
+              | tail -n 1
+          )"
+          if [[ -n "$existing" ]]; then
+            echo "Codex request already exists for ${short_sha}."
+            exit 0
+          fi
+          body="$(printf '@codex review\n\nAutomated merge gate for `%s`.\n%s\n' "$short_sha" "$marker")"
+          gh api --method POST "repos/${REPO}/issues/${PR_NUMBER}/comments" -f body="$body" >/dev/null
+          echo "Requested Codex review for ${short_sha}."
