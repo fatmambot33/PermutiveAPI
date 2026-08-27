@@ -1,0 +1,23 @@
+name: Codex review governance
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  codex-review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require Codex review of current HEAD
+        uses: fatmambot33/ai-native-platform/actions/codex-review-gate@4b6adbafbfb3b69ed0facd6ee8183b15cd7796c6
+        with:
+          token: ${{ github.token }}
+          pr-number: ${{ github.event.pull_request.number }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          head-repo: ${{ github.event.pull_request.head.repo.full_name }}
