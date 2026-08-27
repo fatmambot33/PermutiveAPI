@@ -22,14 +22,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Request Codex review of current HEAD
         if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          CODEX_REVIEW_REQUEST_ONLY: "1"
-        run: bash .github/scripts/codex-review-gate.sh
+        uses: fatmambot33/ai-native-platform/actions/codex-review-gate@bab7925d367aeaaf7941d10e34e7fe1ed66b35d5
+        with:
+          token: ${{ github.token }}
+          pr-number: ${{ github.event.pull_request.number }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          head-repo: ${{ github.event.pull_request.head.repo.full_name }}
+          request-only: "true"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -64,10 +63,9 @@ jobs:
         run: python scripts/validate_release_metadata.py
       - name: Require Codex review of current HEAD
         if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-        run: bash .github/scripts/codex-review-gate.sh
+        uses: fatmambot33/ai-native-platform/actions/codex-review-gate@bab7925d367aeaaf7941d10e34e7fe1ed66b35d5
+        with:
+          token: ${{ github.token }}
+          pr-number: ${{ github.event.pull_request.number }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          head-repo: ${{ github.event.pull_request.head.repo.full_name }}
