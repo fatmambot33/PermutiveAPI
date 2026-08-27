@@ -2,6 +2,17 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
+## 6.8.3 - 2026-08-27
+
+### Changed
+- Adopted the AI Native Platform v0.2 security-evidence contract and pinned the registered consumer to the revised MCP-optional v0.2 contract.
+- Kept repository security evidence explicit while preserving the existing MCP surface.
+- Simplified solo-maintainer CI protection around the aggregate `ci`, AI-native `validate`, and CodeQL gates without reducing underlying lint, Python-version, package, or security coverage.
+
+### Compatibility
+- No public Python SDK, transport, resource, query, plugin, MCP, or governance API is removed or changed incompatibly.
+- This patch synchronizes the published source distribution with the current AI-native contract and repository validation state.
+
 ## 6.8.2 - 2026-08-26
 
 ### Fixed
