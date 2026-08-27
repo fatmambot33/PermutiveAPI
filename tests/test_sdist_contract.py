@@ -34,6 +34,13 @@ def test_sdist_contains_operational_and_release_evidence(tmp_path: Path) -> None
         names = tuple(archive.getnames())
 
     required_suffixes = {
+        ".github/ISSUE_TEMPLATE/ai-improvement.yml",
+        ".github/workflows/ai-self-improvement.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/security.yml",
+        ".gitignore",
+        "AGENTS.md",
+        "AI_NATIVE_PLATFORM.yaml",
         "API_COVERAGE.md",
         "CHANGELOG.md",
         "ROADMAP.md",
@@ -43,9 +50,13 @@ def test_sdist_contains_operational_and_release_evidence(tmp_path: Path) -> None
         "contracts/api-samples-v1.json",
         "docs/OPERATIONAL_RELIABILITY.md",
         "docs/releases/6.7.0.md",
+        "plugins/permutiveapi/.codex-plugin/plugin.json",
+        "plugins/permutiveapi/.env.example",
         "recordings/core-v1.json",
+        "schemas/ai-native-platform.schema.json",
         "scripts/build_release_manifest.py",
         "scripts/generate_api_contracts.py",
+        "scripts/validate_ai_native_platform.py",
         "scripts/validate_performance.py",
         "scripts/validate_recordings.py",
         "scripts/verify_release_manifest.py",
