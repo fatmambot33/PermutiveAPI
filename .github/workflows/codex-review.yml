@@ -1,65 +1,47 @@
 name: Codex review governance
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
 
-concurrency:
-  group: codex-review-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
-  issues: write
-  pull-requests: read
-  statuses: write
+
+concurrency:
+  group: codex-review-${{ github.event_name }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  governance:
-    if: github.event.pull_request.draft == false
+  request:
+    if: github.event_name == 'pull_request_target' && github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
     runs-on: ubuntu-latest
-    env:
-      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
-      - name: Mark current HEAD review pending
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --method POST \
-            "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
-            -f state=pending \
-            -f context=codex-review \
-            -f description='Waiting for Codex review of current HEAD' \
-            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
-            >/dev/null
-      - name: Require Codex review of current HEAD
-        id: gate
-        continue-on-error: true
-        uses: fatmambot33/ai-native-platform/actions/codex-review-gate@cc4e22c56537260fb10a89deda8a6002c00b6637
+      - name: Request Codex review of current HEAD
+        uses: fatmambot33/ai-native-platform/actions/codex-review-gate@e1eb223d546407310b7a1aaeae2b7a703155434d
         with:
           token: ${{ github.token }}
           pr-number: ${{ github.event.pull_request.number }}
           head-sha: ${{ github.event.pull_request.head.sha }}
-      - name: Publish current HEAD review result
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GATE_OUTCOME: ${{ steps.gate.outcome }}
-        run: |
-          if [[ "$GATE_OUTCOME" == "success" ]]; then
-            state=success
-            description='Codex reviewed current HEAD'
-          else
-            state=failure
-            description='Codex review of current HEAD did not pass'
-          fi
-          gh api --method POST \
-            "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
-            -f state="$state" \
-            -f context=codex-review \
-            -f description="$description" \
-            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
-            >/dev/null
-      - name: Require successful Codex gate
-        if: steps.gate.outcome != 'success'
-        run: exit 1
+          mode: request
+
+  codex-review:
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require Codex review of current HEAD
+        uses: fatmambot33/ai-native-platform/actions/codex-review-gate@e1eb223d546407310b7a1aaeae2b7a703155434d
+        with:
+          token: ${{ github.token }}
+          pr-number: ${{ github.event.pull_request.number }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          mode: wait
