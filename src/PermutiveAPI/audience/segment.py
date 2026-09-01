@@ -600,6 +600,12 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
         Return a dictionary of segments indexed by their names.
     code_dictionary()
         Return a dictionary of segments indexed by their codes.
+    by_id(segment_id)
+        Return a segment by ID without making an API request.
+    by_name(name)
+        Return a segment by name without making an API request.
+    by_code(code)
+        Return a segment by code without making an API request.
     to_pd_dataframe()
         Convert the segment list into a pandas ``DataFrame``.
     """
@@ -668,6 +674,21 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
             self._refresh_cache()
         return self._id_dictionary_cache
 
+    def by_id(self, segment_id: str) -> Optional[Segment]:
+        """Return a segment by ID without making an API request.
+
+        Parameters
+        ----------
+        segment_id : str
+            Segment identifier to look up.
+
+        Returns
+        -------
+        Optional[Segment]
+            Matching segment, or ``None`` when the ID is not present.
+        """
+        return self.id_dictionary.get(segment_id)
+
     @property
     def name_dictionary(self) -> Dict[str, Segment]:
         """Return a dictionary of segments indexed by their names.
@@ -681,6 +702,21 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
             self._refresh_cache()
         return self._name_dictionary_cache
 
+    def by_name(self, name: str) -> Optional[Segment]:
+        """Return a segment by name without making an API request.
+
+        Parameters
+        ----------
+        name : str
+            Segment name to look up.
+
+        Returns
+        -------
+        Optional[Segment]
+            Matching segment, or ``None`` when the name is not present.
+        """
+        return self.name_dictionary.get(name)
+
     @property
     def code_dictionary(self) -> Dict[str, Segment]:
         """Return a dictionary of segments indexed by their codes.
@@ -693,6 +729,21 @@ class SegmentList(List[Segment], JSONSerializable[List[Any]]):
         if not self._code_dictionary_cache:
             self._refresh_cache()
         return self._code_dictionary_cache
+
+    def by_code(self, code: str) -> Optional[Segment]:
+        """Return a segment by code without making an API request.
+
+        Parameters
+        ----------
+        code : str
+            Segment code to look up.
+
+        Returns
+        -------
+        Optional[Segment]
+            Matching segment, or ``None`` when the code is not present.
+        """
+        return self.code_dictionary.get(code)
 
     def to_pd_dataframe(self) -> "pd.DataFrame":
         """Convert the segment list into a pandas ``DataFrame``.
