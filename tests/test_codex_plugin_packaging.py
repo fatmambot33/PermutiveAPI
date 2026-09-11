@@ -62,6 +62,7 @@ def test_codex_manifest_promotes_direct_setup() -> None:
 
     assert manifest["interface"]["defaultPrompt"][0] == "Set up PermutiveAPI."
     assert "stable-PyPI bootstrap" in manifest["interface"]["longDescription"]
-    assert "Check my Permutive connection and credentials." in manifest["interface"][
-        "defaultPrompt"
-    ]
+    assert (
+        "Check my Permutive connection and credentials."
+        in manifest["interface"]["defaultPrompt"]
+    )
