@@ -1,61 +1,75 @@
 ---
 name: permutiveapi
-description: Install and use PermutiveAPI from Git with credentials loaded only from a local .env file. Use for workspace inspection, cohorts, segments, imports, sources, diagnostics, and confirmed writes.
+description: Use PermutiveAPI directly from Codex for workspace inspection, cohorts, segments, imports, sources, diagnostics, and confirmed writes. Bootstrap the stable PyPI package automatically when needed and keep credentials local.
 ---
 
 # PermutiveAPI
 
+## User experience
+
+Treat this plugin as the Codex front door to PermutiveAPI. Users should be able to ask for outcomes such as:
+
+- `Set up PermutiveAPI.`
+- `List my cohorts.`
+- `Inspect this segment.`
+- `Explain my workspace configuration.`
+- `Prepare a cohort change.`
+
+Do not require users to write Python, import `CodexPlugin`, or manually install the SDK during the normal workflow.
+
 ## Local-only credential policy
 
-Use only credentials stored in the user's local project `.env`. Never request secret values in chat, upload them, print them, or copy them into Codex, Git, plugin files, hosted configuration, MCP URLs, or command history.
+Use only credentials resolved by PermutiveAPI's local credential provider. Never request secret values in chat, upload them, print them, or copy them into Codex, Git, plugin files, hosted configuration, MCP URLs, or command history.
 
-## First-use setup
+## First-use bootstrap
 
-Install the repository version locally:
+Before the first Permutive workflow in a working environment:
 
-```bash
-python -m pip install --upgrade "git+https://github.com/fatmambot33/PermutiveAPI.git"
-```
+1. Check whether the `PermutiveAPI` package is importable.
+2. If it is missing, install or upgrade the stable release from PyPI:
 
-Before every API workflow, run:
+   ```bash
+   python -m pip install --upgrade PermutiveAPI
+   ```
 
-```bash
-permutiveapi doctor
-```
+3. Run:
 
-When the check fails, guide the user through the local interactive wizard:
+   ```bash
+   permutiveapi doctor
+   ```
 
-```bash
-permutiveapi configure
-```
+4. If local credentials are missing or invalid, launch the local interactive setup:
 
-The wizard:
+   ```bash
+   permutiveapi configure
+   ```
 
-1. Prompts for the API key without echoing it.
-2. Prompts for the workspace ID.
-3. Writes only to the current project's `.env`.
-4. Uses restrictive file permissions where supported.
-5. Refuses to overwrite an existing file unless `--force` is supplied.
-6. Warns when `.env` is not ignored by Git.
+   The user enters secrets only into the local non-echoing prompt. Never ask them to paste an API key into chat.
 
-Run `permutiveapi doctor` again after configuration. It verifies the file, required variable names, permissions, and Git-ignore protection without displaying values. Stop before API calls until it passes.
+5. Run `permutiveapi doctor` again. Stop before API calls until it passes.
 
-Use `--env-file PATH` for a deliberate non-default local file. Do not fall back to hosted secrets, Codex-managed credentials, remote secret stores, or prompt-supplied credentials.
+Do not reinstall the package on every request. Bootstrap only when the package is unavailable or when the user explicitly asks to upgrade it.
 
-## Workflow
+Use `--env-file PATH` only when the user deliberately selects a non-default local credential file. Do not fall back to hosted secrets, Codex-managed credentials, remote secret stores, or prompt-supplied credentials.
 
-1. Run `permutiveapi doctor`.
-2. Run plugin diagnostics without printing secrets.
-3. Use `PermutiveAPI.plugins.codex.CodexPlugin` and typed tools.
-4. Start read-only and inspect before changing.
-5. Present the exact mutation and obtain confirmation for writes.
-6. Redact authorization data from every output and error.
+## Execution workflow
 
-```python
-from dotenv import load_dotenv
-from PermutiveAPI.plugins.codex import CodexPlugin
+Use the existing `PermutiveAPI.plugins.codex.CodexPlugin` as the implementation layer; do not create a parallel API surface.
 
-load_dotenv(".env")
-plugin = CodexPlugin.from_env()
-print(plugin.diagnostics())
-```
+1. Start in read-only mode.
+2. Use the typed plugin tools for discovery and reads.
+3. Prefer `invoke_safe()` at the plugin boundary so errors stay structured and secret-safe.
+4. For a write request, prepare and show the exact mutation first.
+5. Enable read-write mode only for that requested workflow.
+6. Obtain explicit user confirmation before invoking a write tool.
+7. Redact authorization data from every output and error.
+
+The normal user-facing response should describe results and required confirmations, not the Python plumbing used to obtain them.
+
+## Safety invariants
+
+- Read-only is the default.
+- Writes require explicit confirmation.
+- Never expose credentials in output, logs, traces, exceptions, or generated files.
+- Reuse the canonical SDK clients, typed resources, policy, and error handling.
+- If bootstrap or diagnostics fail, explain the actionable local fix instead of bypassing the checks.
