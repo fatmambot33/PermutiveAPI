@@ -23,14 +23,16 @@ The core package does not require HTTPX or pandas.
 
 ## Configure safely
 
+For normal setup, use the shortest readiness flow:
+
 ```bash
 permutiveapi configure
-permutiveapi doctor
-permutiveapi validate
-permutiveapi eval
+permutiveapi check
 ```
 
-`configure` writes only `PERMUTIVE_API_KEY` to a local `.env` file without echoing it. `doctor` verifies the variable, permissions, and Git ignore policy. `validate` and `eval` are credential-free and network-free.
+`configure` writes only `PERMUTIVE_API_KEY` to a local `.env` file without echoing it. `check` resolves credentials without displaying them and performs one bounded read-only Permutive API request so authentication and connectivity are verified together.
+
+Use `permutiveapi check --json` for a machine-readable readiness report with stable secret-safe error codes, retryability, recommended actions, and safe context. Use `permutiveapi doctor` only when inspecting local `.env` permissions or Git-ignore hygiene. `validate` and `eval` remain credential-free and network-free product checks.
 
 Credential lookup order is explicit input, process environment, project `.env`, then `~/.config/permutive/.env`. Credentials are never uploaded, logged, or included in object representations.
 
@@ -87,6 +89,8 @@ plugin = CodexPlugin.from_env()
 tools = plugin.tools().as_openai_tools()
 agent_kit = plugin.agent_kit()
 ```
+
+For Codex users, the plugin is the preferred entry point. Ask `Set up PermutiveAPI` or `Check my Permutive connection and credentials`; the welcome and troubleshooting skills route setup through `permutiveapi check --json`, launch local non-echoing configuration only when needed, and continue directly to the requested task after readiness succeeds.
 
 Read-only is the default. Write tools require explicit read-write mode and confirmation. Adaptive integrations negotiate capabilities before execution. `CodexPlugin.invoke_safe()` returns stable secret-safe error codes, retryability, recommended actions, and safe context.
 
@@ -149,7 +153,8 @@ See [docs/OPERATIONAL_RELIABILITY.md](docs/OPERATIONAL_RELIABILITY.md) for the c
 | Command | Purpose |
 |---|---|
 | `permutiveapi configure` | Create a protected local credential file. |
-| `permutiveapi doctor` | Check credential safety without showing values. |
+| `permutiveapi check` | Verify credentials and live read-only API connectivity. |
+| `permutiveapi doctor` | Inspect local credential-file safety without showing values. |
 | `permutiveapi validate` | Validate the installed product surface. |
 | `permutiveapi test` | Run deterministic installed-package checks. |
 | `permutiveapi eval` | Print governed-platform scorecard JSON. |
