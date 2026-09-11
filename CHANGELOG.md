@@ -2,6 +2,30 @@
 
 All notable changes to PermutiveAPI are documented here. The project follows Semantic Versioning.
 
+## 6.9.0 - 2026-09-11
+
+### Added
+- A streamlined Codex-first onboarding flow with dedicated `welcome` and `troubleshooting` skills.
+- `permutiveapi check` as the canonical readiness command for local credential resolution and one bounded read-only Permutive API connectivity check.
+- Secret-safe readiness JSON with stable error codes, retryability, recommended actions, and safe context for agent-driven recovery.
+- Regression coverage for connection readiness, credential failures, plugin packaging, and skill discovery.
+
+### Changed
+- Made the Codex plugin the zero-friction entry point: install from the stable PyPI package only when needed, configure locally, verify readiness, then continue directly to the requested task.
+- Removed normal-user Python boilerplate from the Codex setup path while retaining `CodexPlugin` as the canonical internal and programmatic execution surface.
+- Routed setup and troubleshooting through the same `check -> targeted repair -> check -> execute` workflow.
+- Kept `permutiveapi doctor` focused on local `.env` hygiene rather than requiring it for every normal workflow.
+- Synchronized Codex marketplace metadata with the package release version.
+
+### Security
+- Credentials remain local and are never requested, echoed, uploaded, logged, or copied into plugin configuration.
+- Readiness checking is read-only and bounded; write workflows remain opt-in and require explicit confirmation.
+- Authentication, authorization, transport, rate-limit, upstream, and response failures are reported through sanitized actionable guidance.
+
+### Compatibility
+- This is a backward-compatible minor release. No supported 6.x SDK, resource, query, transport, plugin, MCP, or governance API is removed.
+- Existing `configure`, `doctor`, validation, evaluation, and programmatic Codex integration workflows remain supported.
+
 ## 6.8.3 - 2026-08-27
 
 ### Changed
