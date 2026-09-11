@@ -1,6 +1,6 @@
 {
   "name": "permutiveapi",
-  "version": "6.4.1",
+  "version": "6.8.3",
   "description": "Use the typed Permutive API SDK safely from Codex.",
   "author": {
     "name": "FaTmamBo33",
@@ -14,15 +14,15 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "PermutiveAPI",
-    "shortDescription": "Typed Permutive workflows for Codex",
-    "longDescription": "Install and use PermutiveAPI from Git, inspect cohorts and segments, and make confirmed write operations through its safe typed plugin surface.",
+    "shortDescription": "Permutive workflows directly from Codex",
+    "longDescription": "Use PermutiveAPI directly from Codex with automatic stable-PyPI bootstrap, local-only credentials, typed reads, and explicitly confirmed writes.",
     "developerName": "FaTmamBo33",
     "category": "Developer Tools",
     "capabilities": ["Read", "Write", "Interactive"],
     "websiteURL": "https://github.com/fatmambot33/PermutiveAPI",
     "defaultPrompt": [
-      "Inspect my Permutive workspace safely.",
-      "List cohorts and explain their configuration.",
+      "Set up PermutiveAPI.",
+      "List my cohorts and explain their configuration.",
       "Prepare a confirmed Permutive API change."
     ],
     "brandColor": "#2563EB"
