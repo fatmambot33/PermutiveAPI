@@ -43,10 +43,10 @@ dev = [
     "pandas>=2,<3",
     "pydocstyle>=6",
     "pyright>=1.1.390",
+    "pytest>=8,<9",
     "pytest-asyncio>=0.23",
     "pytest-cov>=5",
     "pytest-pydocstyle>=2",
-    "pytest>=8,<9",
     "twine>=5",
 ]
 
@@ -54,77 +54,105 @@ dev = [
 requires = ["hatchling>=1.26"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+include = ["src/PermutiveAPI"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/PermutiveAPI"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/src",
-    "/README.md",
-    "/LICENSE",
-    "/PUBLIC_API.md",
-    "/API_COVERAGE.md",
-    "/MIGRATION.md",
-    "/ROADMAP.md",
-    "/SECURITY.md",
-    "/RELEASING.md",
-    "/CHANGELOG.md",
-    "/docs",
-    "/evals",
-    "/recordings",
-    "/contracts",
-    "/scenarios",
-    "/plugins",
-    "/.agents",
-    "/AI_NATIVE_PLATFORM.yaml",
+    "src/PermutiveAPI",
+    "tests",
+    "typing_examples",
+    "benchmarks",
+    "capabilities",
+    "contracts",
+    "evals",
+    "metrics",
+    "mock_fixtures",
+    "recordings",
+    "scenarios",
+    "scripts",
+    "docs",
+    "schemas",
+    "plugins",
+    ".github",
+    ".gitignore",
+    "AGENTS.md",
+    "README.md",
+    "CHANGELOG.md",
+    "ROADMAP.md",
+    "PRODUCT.md",
+    "AI_NATIVE_PLATFORM.yaml",
+    "TYPING_SCOPE.json",
+    "PUBLIC_API.md",
+    "API_COVERAGE.md",
+    "MIGRATION.md",
+    "RELEASING.md",
+    "LICENSE",
 ]
 
-[tool.pytest.ini_options]
-addopts = "--strict-config --strict-markers"
-markers = [
-    "integration: opt-in live integration tests requiring explicit credentials",
-]
+[tool.black]
+target-version = ["py39"]
+line-length = 88
 
 [tool.pyright]
 include = [
     "src/PermutiveAPI/__init__.py",
     "src/PermutiveAPI/actionable_errors.py",
-    "src/PermutiveAPI/agentkit.py",
-    "src/PermutiveAPI/async_sdk.py",
+    "src/PermutiveAPI/agent.py",
+    "src/PermutiveAPI/ai_native.py",
+    "src/PermutiveAPI/async_client.py",
     "src/PermutiveAPI/capabilities.py",
-    "src/PermutiveAPI/capability_surface.py",
     "src/PermutiveAPI/cli.py",
     "src/PermutiveAPI/client.py",
-    "src/PermutiveAPI/compatibility.py",
+    "src/PermutiveAPI/config.py",
     "src/PermutiveAPI/consolidation.py",
-    "src/PermutiveAPI/context.py",
     "src/PermutiveAPI/contracts.py",
     "src/PermutiveAPI/credentials.py",
     "src/PermutiveAPI/diagnostics.py",
     "src/PermutiveAPI/evaluations.py",
     "src/PermutiveAPI/first_success.py",
-    "src/PermutiveAPI/http.py",
     "src/PermutiveAPI/integration_registry.py",
     "src/PermutiveAPI/mcp.py",
-    "src/PermutiveAPI/mock_server.py",
+    "src/PermutiveAPI/models.py",
     "src/PermutiveAPI/performance.py",
-    "src/PermutiveAPI/plugins.py",
+    "src/PermutiveAPI/plugins/__init__.py",
+    "src/PermutiveAPI/plugins/base.py",
     "src/PermutiveAPI/plugins/codex.py",
+    "src/PermutiveAPI/plugins/runtime.py",
     "src/PermutiveAPI/public_surface.py",
-    "src/PermutiveAPI/queries.py",
+    "src/PermutiveAPI/query_dsl.py",
     "src/PermutiveAPI/recipes.py",
     "src/PermutiveAPI/recording.py",
     "src/PermutiveAPI/release_evidence.py",
     "src/PermutiveAPI/resilience.py",
     "src/PermutiveAPI/resource_registry.py",
     "src/PermutiveAPI/resources.py",
+    "src/PermutiveAPI/scenario_fixtures.py",
     "src/PermutiveAPI/scenarios.py",
     "src/PermutiveAPI/sdk.py",
+    "src/PermutiveAPI/testing.py",
     "src/PermutiveAPI/tools.py",
     "src/PermutiveAPI/validation.py",
-    "src/PermutiveAPI/workflows.py",
-    "typing_examples",
 ]
 extraPaths = ["src"]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+reportUnsupportedDunderAll = false
+reportAttributeAccessIssue = false
+
+[tool.pydocstyle]
+convention = "numpy"
+add-ignore = "D105"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "--strict-markers --strict-config --cov=PermutiveAPI --cov-branch --cov-report=term-missing --cov-fail-under=70"
+markers = [
+    "integration: tests requiring live Permutive credentials",
+]
