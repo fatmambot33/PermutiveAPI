@@ -36,6 +36,23 @@ def test_codex_skill_bootstraps_stable_pypi_package() -> None:
     assert "git+https://github.com/fatmambot33/PermutiveAPI.git" not in skill
     assert "Do not require users to write Python" in skill
     assert "explicit user confirmation" in skill
+    assert "permutiveapi check --json" in skill
+
+
+def test_codex_plugin_packages_welcome_and_troubleshooting_skills() -> None:
+    welcome = (PLUGIN_ROOT / "skills" / "welcome" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    troubleshooting = (
+        PLUGIN_ROOT / "skills" / "troubleshooting" / "SKILL.md"
+    ).read_text(encoding="utf-8")
+
+    assert "permutiveapi check --json" in welcome
+    assert "credentials_missing" in welcome
+    assert "permutiveapi check --json" in troubleshooting
+    assert "authentication_failed" in troubleshooting
+    assert "authorization_denied" in troubleshooting
+    assert "Never request, print, echo, upload, or log the API key" in troubleshooting
 
 
 def test_codex_manifest_promotes_direct_setup() -> None:
@@ -45,3 +62,6 @@ def test_codex_manifest_promotes_direct_setup() -> None:
 
     assert manifest["interface"]["defaultPrompt"][0] == "Set up PermutiveAPI."
     assert "stable-PyPI bootstrap" in manifest["interface"]["longDescription"]
+    assert "Check my Permutive connection and credentials." in manifest["interface"][
+        "defaultPrompt"
+    ]
