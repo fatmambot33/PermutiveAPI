@@ -2,7 +2,7 @@
 
 ## Codex-first experience
 
-For Codex users, the plugin is the preferred entry point. The repository already exposes a Codex marketplace at `.agents/plugins/marketplace.json`.
+For Codex users, the plugin is the preferred entry point. The repository exposes a Codex marketplace at `.agents/plugins/marketplace.json`.
 
 For a managed workspace, import it from **Workspace settings > Plugins > Add > Import marketplace** using:
 
@@ -15,38 +15,76 @@ Leave the path empty because the marketplace manifest is at the repository root,
 Then work in natural language:
 
 - `Set up PermutiveAPI.`
+- `Check my Permutive connection and credentials.`
 - `List my cohorts.`
 - `Inspect this segment.`
 - `Explain my workspace configuration.`
 - `Prepare a cohort change.`
 
-The plugin bootstraps the stable PyPI package when it is not already available, runs local credential diagnostics, and reuses the canonical `CodexPlugin` tool surface. Normal Codex use does not require users to write Python or import the SDK manually.
+The plugin bootstraps the stable PyPI package only when it is missing, reuses the canonical `CodexPlugin` tool surface, and keeps normal use free of Python boilerplate.
 
-## First-use setup
+## One-step readiness check
 
-The plugin installs the stable package from PyPI when needed:
-
-```bash
-python -m pip install --upgrade PermutiveAPI
-```
-
-It then runs:
+The normal setup and troubleshooting preflight is:
 
 ```bash
-permutiveapi doctor
+permutiveapi check --json
 ```
 
-If credentials are missing, the local interactive setup is launched:
+This single command resolves credentials without displaying them and performs one bounded read-only Permutive API request. The result reports credential status and connection status separately with a stable error code and a secret-safe recommended action.
+
+A successful result means the environment is ready for normal read-only plugin use.
+
+If credentials are missing, launch the local non-echoing setup:
 
 ```bash
 permutiveapi configure
 ```
 
-Enter the API key only into the local non-echoing prompt. The plugin must never request secret values in chat or copy them into hosted configuration.
+Enter the API key only into the local prompt. Never paste it into chat or hosted plugin configuration. Then rerun:
 
-Run `permutiveapi doctor` again before any network operation. `PERMUTIVE_API_KEY` is resolved from explicit application input, the process environment, a project `.env`, or `~/.config/permutive/.env`, in that order. Secret values are never printed, committed, remotely stored, or included in object representations.
+```bash
+permutiveapi check --json
+```
 
-The plugin does not reinstall PermutiveAPI on every request. Package bootstrap is only needed when the package is unavailable or the user explicitly asks to upgrade it.
+`PERMUTIVE_API_KEY` is resolved from the process environment, the selected project `.env`, or `~/.config/permutive/.env`. Secret values are never printed, committed, remotely stored, or included in object representations.
+
+Use `permutiveapi doctor` only when the readiness check reports unsafe local `.env` protections or when local credential storage itself needs inspection.
+
+## Welcome and troubleshooting skills
+
+The plugin includes dedicated skill surfaces for onboarding and recovery:
+
+- `welcome` drives first-use setup and readiness with the shortest safe flow.
+- `troubleshooting` maps readiness error codes to one corrective action at a time.
+- `permutiveapi` remains the primary execution skill for normal reads and confirmed writes.
+
+Troubleshooting starts with `permutiveapi check --json`; it does not begin by reinstalling the SDK, asking for a key, or running unrelated validation commands.
+
+## Error routing
+
+The readiness check uses stable categories including:
+
+- `credentials_missing`
+- `credential_file_unsafe`
+- `authentication_failed`
+- `authorization_denied`
+- `transport_unavailable`
+- `rate_limited`
+- `upstream_server_error`
+- `invalid_response`
+
+The returned `recommended_action` and `safe_context` are designed for agent use and exclude credential values and raw sensitive payloads.
+
+## Package bootstrap
+
+When the package is unavailable, install the stable release from PyPI:
+
+```bash
+python -m pip install --upgrade PermutiveAPI
+```
+
+Do not reinstall PermutiveAPI on every request. Git installs are reserved for unreleased development validation.
 
 ## Safety model
 
