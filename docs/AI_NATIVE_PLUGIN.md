@@ -2,12 +2,15 @@
 
 ## Codex-first experience
 
-For Codex users, the plugin is the preferred entry point. Install the repository marketplace and plugin once:
+For Codex users, the plugin is the preferred entry point. The repository already exposes a Codex marketplace at `.agents/plugins/marketplace.json`.
 
-```bash
-codex plugin marketplace add fatmambot33/PermutiveAPI --ref main
-codex plugin add permutiveapi@fatmambot33-permutiveapi
+For a managed workspace, import it from **Workspace settings > Plugins > Add > Import marketplace** using:
+
+```text
+https://github.com/fatmambot33/PermutiveAPI
 ```
+
+Leave the path empty because the marketplace manifest is at the repository root, and use `main` when a branch is requested. After import, make the PermutiveAPI plugin available or installed for the intended role. Codex users can then select it from **Sources > Use plugins**.
 
 Then work in natural language:
 
