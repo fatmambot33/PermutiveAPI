@@ -2,7 +2,20 @@
 
 The `permutiveapi` command provides a small, deterministic lifecycle surface. It never uploads credentials and does not mutate the active Python environment without an explicit external package-manager command.
 
-## Credential commands
+## Credential and connection commands
+
+### `permutiveapi check`
+
+This is the canonical readiness command for normal users and Codex workflows. It resolves the API key from approved local sources without displaying it, verifies project `.env` protections when that file is the active source, and performs one bounded read-only Permutive API request.
+
+```bash
+permutiveapi check
+permutiveapi check --json
+```
+
+The JSON form reports credential status, credential source category, connection status, a stable error code, retryability, a secret-safe recommended action, and safe request context. Use it as the first diagnostic for setup and troubleshooting.
+
+A successful result means both credential resolution and live API connectivity are ready.
 
 ### `permutiveapi configure`
 
@@ -10,9 +23,13 @@ Interactively writes `PERMUTIVE_API_KEY` to a local `.env` file. Secret input is
 
 The API key is the only credential required by the canonical SDK and Codex plugin. Workspace identifiers belong in individual API requests when an endpoint requires one; they are not global authentication material.
 
+After configuration, run `permutiveapi check` rather than a separate sequence of setup commands.
+
 ### `permutiveapi doctor`
 
-Checks that the local credential file exists, contains `PERMUTIVE_API_KEY`, has restrictive permissions where supported, and is ignored by Git. Credential values are never displayed.
+Checks that an explicit local credential file exists, contains `PERMUTIVE_API_KEY`, has restrictive permissions where supported, and is ignored by Git. Credential values are never displayed.
+
+`doctor` is the focused local-storage diagnostic. Use it when `check` reports `credential_file_unsafe` or when inspecting local credential-file hygiene directly.
 
 ## Product commands
 
@@ -83,5 +100,5 @@ Prints the exact interpreter-specific `pip uninstall PermutiveAPI` command. It d
 ## Exit codes
 
 - `0`: the command completed successfully.
-- `1`: validation, an evaluation, a recipe, or first success failed, or local configuration needs repair.
+- `1`: a readiness check, validation, evaluation, recipe, or first success failed, or local configuration needs repair.
 - `2`: required input is missing, no recipe matched, or an unsafe overwrite was refused.
