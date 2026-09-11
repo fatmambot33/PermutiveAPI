@@ -10,6 +10,7 @@ description: Use PermutiveAPI directly from Codex for workspace inspection, coho
 Treat this plugin as the Codex front door to PermutiveAPI. Users should be able to ask for outcomes such as:
 
 - `Set up PermutiveAPI.`
+- `Check my Permutive connection.`
 - `List my cohorts.`
 - `Inspect this segment.`
 - `Explain my workspace configuration.`
@@ -17,54 +18,58 @@ Treat this plugin as the Codex front door to PermutiveAPI. Users should be able 
 
 Do not require users to write Python, import `CodexPlugin`, or manually install the SDK during the normal workflow.
 
+Use the dedicated welcome skill for first-use setup and readiness requests. Use the troubleshooting skill when setup, authentication, authorization, connection, or API execution fails.
+
 ## Local-only credential policy
 
 Use only credentials resolved by PermutiveAPI's local credential provider. Never request secret values in chat, upload them, print them, or copy them into Codex, Git, plugin files, hosted configuration, MCP URLs, or command history.
 
-## First-use bootstrap
+## Readiness check
 
-Before the first Permutive workflow in a working environment:
+The canonical preflight is one command:
 
-1. Check whether the `PermutiveAPI` package is importable.
-2. If it is missing, install or upgrade the stable release from PyPI:
+```bash
+permutiveapi check --json
+```
 
-   ```bash
-   python -m pip install --upgrade PermutiveAPI
-   ```
+It resolves credentials without displaying them and performs one bounded read-only API request. A successful result means both credentials and connection are ready.
 
-3. Run:
+Do not run `doctor`, `validate`, or Python snippets before ordinary API work. Use `permutiveapi doctor` only when the readiness check reports unsafe local credential-file protections or when local storage itself is being investigated.
 
-   ```bash
-   permutiveapi doctor
-   ```
+If credentials are missing, use the local non-echoing setup:
 
-4. If local credentials are missing or invalid, launch the local interactive setup:
+```bash
+permutiveapi configure
+```
 
-   ```bash
-   permutiveapi configure
-   ```
-
-   The user enters secrets only into the local non-echoing prompt. Never ask them to paste an API key into chat.
-
-5. Run `permutiveapi doctor` again. Stop before API calls until it passes.
-
-Do not reinstall the package on every request. Bootstrap only when the package is unavailable or when the user explicitly asks to upgrade it.
-
-Use `--env-file PATH` only when the user deliberately selects a non-default local credential file. Do not fall back to hosted secrets, Codex-managed credentials, remote secret stores, or prompt-supplied credentials.
+Then rerun `permutiveapi check --json`. Never ask the user to paste an API key into chat.
 
 ## Execution workflow
 
 Use the existing `PermutiveAPI.plugins.codex.CodexPlugin` as the implementation layer; do not create a parallel API surface.
 
-1. Start in read-only mode.
-2. Use the typed plugin tools for discovery and reads.
-3. Prefer `invoke_safe()` at the plugin boundary so errors stay structured and secret-safe.
-4. For a write request, prepare and show the exact mutation first.
-5. Enable read-write mode only for that requested workflow.
-6. Obtain explicit user confirmation before invoking a write tool.
-7. Redact authorization data from every output and error.
+1. Confirm readiness with the canonical check when setup has not yet been established in the current environment.
+2. Start in read-only mode.
+3. Use the typed plugin tools for discovery and reads.
+4. Prefer `invoke_safe()` at the plugin boundary so errors stay structured and secret-safe.
+5. For a write request, prepare and show the exact mutation first.
+6. Enable read-write mode only for that requested workflow.
+7. Obtain explicit user confirmation before invoking a write tool.
+8. Redact authorization data from every output and error.
 
 The normal user-facing response should describe results and required confirmations, not the Python plumbing used to obtain them.
+
+## Package bootstrap
+
+If the package is unavailable, install the stable PyPI release:
+
+```bash
+python -m pip install --upgrade PermutiveAPI
+```
+
+Do not reinstall the package on every request. Bootstrap only when the package is unavailable or when the user explicitly asks to upgrade it.
+
+Use `--env-file PATH` only when the user deliberately selects a non-default local credential file. Do not fall back to hosted secrets, Codex-managed credentials, remote secret stores, or prompt-supplied credentials.
 
 ## Safety invariants
 
@@ -72,4 +77,4 @@ The normal user-facing response should describe results and required confirmatio
 - Writes require explicit confirmation.
 - Never expose credentials in output, logs, traces, exceptions, or generated files.
 - Reuse the canonical SDK clients, typed resources, policy, and error handling.
-- If bootstrap or diagnostics fail, explain the actionable local fix instead of bypassing the checks.
+- If readiness fails, follow the troubleshooting skill rather than bypassing the check.
