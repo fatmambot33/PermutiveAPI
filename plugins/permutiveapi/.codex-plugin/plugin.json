@@ -15,13 +15,14 @@
   "interface": {
     "displayName": "PermutiveAPI",
     "shortDescription": "Permutive workflows directly from Codex",
-    "longDescription": "Use PermutiveAPI directly from Codex with automatic stable-PyPI bootstrap, local-only credentials, typed reads, and explicitly confirmed writes.",
+    "longDescription": "Use PermutiveAPI directly from Codex with automatic stable-PyPI bootstrap, local-only credentials, one-step readiness checks, typed reads, and explicitly confirmed writes.",
     "developerName": "FaTmamBo33",
     "category": "Developer Tools",
     "capabilities": ["Read", "Write", "Interactive"],
     "websiteURL": "https://github.com/fatmambot33/PermutiveAPI",
     "defaultPrompt": [
       "Set up PermutiveAPI.",
+      "Check my Permutive connection and credentials.",
       "List my cohorts and explain their configuration.",
       "Prepare a confirmed Permutive API change."
     ],
