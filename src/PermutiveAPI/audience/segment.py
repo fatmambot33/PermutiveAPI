@@ -24,6 +24,7 @@ from . import _API_ENDPOINT
 from ..utils import http
 from ..utils.http import BatchRequest, Progress, process_batch
 from ..utils.json import JSONSerializable, load_json_list
+from ..utils.list import CacheInvalidatingList
 
 _API_PAYLOAD = ["name", "code", "description", "cpm", "categories"]
 
@@ -587,7 +588,7 @@ class Segment(JSONSerializable[Dict[str, Any]]):
         return SegmentList.from_json(all_segments)
 
 
-class SegmentList(List[Segment], JSONSerializable[List[Any]]):
+class SegmentList(CacheInvalidatingList[Segment], JSONSerializable[List[Any]]):
     """Custom list that holds Segment objects and provides caching and serialization.
 
     Methods

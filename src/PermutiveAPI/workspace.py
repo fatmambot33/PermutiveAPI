@@ -4,6 +4,7 @@ from typing import Callable, Dict, List, Optional, Type, Union, Any
 from dataclasses import dataclass
 from pathlib import Path
 from .utils.json import JSONSerializable, load_json_list
+from .utils.list import CacheInvalidatingList
 from .audience.imports import Import, ImportList
 from .audience.segment import Segment, SegmentList
 from .cohort import Cohort, CohortList
@@ -285,7 +286,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         )
 
 
-class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
+class WorkspaceList(CacheInvalidatingList[Workspace], JSONSerializable[List[Any]]):
     """Manage a collection of Workspace objects.
 
     Methods

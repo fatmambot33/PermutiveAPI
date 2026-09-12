@@ -15,9 +15,90 @@ merge_list(lst1, lst2=None)
 from __future__ import annotations
 
 import ast
-from typing import Any, List, Optional, TypeVar, Union
+from typing import Any, Callable, Generic, Iterable, List, Optional, TypeVar, Union
 
 T_co = TypeVar("T_co")
+
+
+T = TypeVar("T")
+
+
+class CacheInvalidatingList(List[T], Generic[T]):
+    """Refresh subclass lookup caches after in-place list mutations.
+
+    Subclasses are expected to implement ``_refresh_cache``. Construction uses
+    the normal ``list`` initializer; caches are refreshed only after subsequent
+    mutations.
+    """
+
+    def _refresh_derived_cache(self) -> None:
+        refresh = getattr(self, "_refresh_cache", None)
+        if callable(refresh):
+            refresh()
+
+    def append(self, item: T) -> None:
+        """Append an item and refresh derived caches."""
+        super().append(item)
+        self._refresh_derived_cache()
+
+    def extend(self, items: Iterable[T]) -> None:
+        """Extend the list and refresh derived caches."""
+        super().extend(items)
+        self._refresh_derived_cache()
+
+    def insert(self, index: int, item: T) -> None:
+        """Insert an item and refresh derived caches."""
+        super().insert(index, item)
+        self._refresh_derived_cache()
+
+    def remove(self, item: T) -> None:
+        """Remove an item and refresh derived caches."""
+        super().remove(item)
+        self._refresh_derived_cache()
+
+    def pop(self, index: int = -1) -> T:
+        """Pop an item and refresh derived caches."""
+        item = super().pop(index)
+        self._refresh_derived_cache()
+        return item
+
+    def clear(self) -> None:
+        """Clear the list and refresh derived caches."""
+        super().clear()
+        self._refresh_derived_cache()
+
+    def reverse(self) -> None:
+        """Reverse the list and refresh derived caches."""
+        super().reverse()
+        self._refresh_derived_cache()
+
+    def sort(
+        self,
+        *,
+        key: Optional[Callable[[T], Any]] = None,
+        reverse: bool = False,
+    ) -> None:
+        """Sort the list and refresh derived caches."""
+        super().sort(key=key, reverse=reverse)
+        self._refresh_derived_cache()
+
+    def __setitem__(self, index: Any, value: Any) -> None:
+        super().__setitem__(index, value)
+        self._refresh_derived_cache()
+
+    def __delitem__(self, index: Any) -> None:
+        super().__delitem__(index)
+        self._refresh_derived_cache()
+
+    def __iadd__(self, items: Iterable[T]):
+        result = super().__iadd__(items)
+        self._refresh_derived_cache()
+        return result
+
+    def __imul__(self, count: int):
+        result = super().__imul__(count)
+        self._refresh_derived_cache()
+        return result
 
 
 def chunk_list(lst: List[T_co], n: int) -> List[List[T_co]]:
@@ -109,6 +190,7 @@ def merge_list(lst1: List, lst2: Optional[Union[int, str, List]] = None) -> List
 
 
 __all__ = [
+    "CacheInvalidatingList",
     "chunk_list",
     "convert_list",
     "compare_list",

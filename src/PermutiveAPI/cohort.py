@@ -25,6 +25,7 @@ import pandas as pd
 from .utils import http
 from .utils.http import BatchRequest, Progress, process_batch
 from .utils.json import JSONSerializable, load_json_list
+from .utils.list import CacheInvalidatingList
 
 _API_VERSION = "v2"
 _API_ENDPOINT = f"https://api.permutive.app/cohorts-api/{_API_VERSION}/cohorts/"
@@ -664,7 +665,7 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         return cohorts_list
 
 
-class CohortList(List[Cohort], JSONSerializable[List[Any]]):
+class CohortList(CacheInvalidatingList[Cohort], JSONSerializable[List[Any]]):
     """A list-like object for managing a collection of Cohort instances.
 
     It provides caching mechanisms for quick lookups by id, code, name, etc.

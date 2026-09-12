@@ -25,6 +25,7 @@ import pandas as pd
 from ..utils import http
 from ..utils.http import BatchRequest, Progress, process_batch
 from ..utils.json import JSONSerializable, load_json_list
+from ..utils.list import CacheInvalidatingList
 from . import _API_ENDPOINT
 from .source import Source
 from .segment import SegmentList, Segment
@@ -267,7 +268,7 @@ class Import(JSONSerializable[Dict[str, Any]]):
         return results, errors
 
 
-class ImportList(List[Import], JSONSerializable[List[Any]]):
+class ImportList(CacheInvalidatingList[Import], JSONSerializable[List[Any]]):
     """Manage a list of Import objects.
 
     Provide caching for quick lookup and JSON (de)serialization helpers.
@@ -352,7 +353,7 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
             self._name_dictionary_cache[_import.name] = _import
             self._code_dictionary_cache[_import.code] = _import
             for identifier in _import.identifiers:
-                self._identifier_dictionary_cache[identifier].append(_import)
+                list.append(self._identifier_dictionary_cache[identifier], _import)
 
     @property
     def id_dictionary(self) -> Dict[str, Import]:
