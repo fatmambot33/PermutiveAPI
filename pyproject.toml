@@ -88,6 +88,8 @@ include = [
     "TYPING_SCOPE.json",
     "PUBLIC_API.md",
     "API_COVERAGE.md",
+    "COMPATIBILITY_MATRIX.md",
+    "DEPRECATIONS.json",
     "MIGRATION.md",
     "RELEASING.md",
     "LICENSE",
