@@ -25,6 +25,7 @@ import pandas as pd
 from ..utils import http
 from ..utils.http import BatchRequest, Progress, process_batch
 from ..utils.json import JSONSerializable, load_json_list
+from ..utils.list import CacheInvalidatingList
 from . import _API_ENDPOINT
 from .source import Source
 from .segment import SegmentList, Segment
@@ -267,7 +268,7 @@ class Import(JSONSerializable[Dict[str, Any]]):
         return results, errors
 
 
-class ImportList(List[Import], JSONSerializable[List[Any]]):
+class ImportList(CacheInvalidatingList[Import], JSONSerializable[List[Any]]):
     """Manage a list of Import objects.
 
     Provide caching for quick lookup and JSON (de)serialization helpers.
@@ -282,6 +283,12 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
         Return a dictionary of imports indexed by their names.
     code_dictionary()
         Return a dictionary of imports indexed by their codes.
+    by_id(import_id)
+        Return an import by ID without making an API request.
+    by_name(name)
+        Return an import by name without making an API request.
+    by_code(code)
+        Return an import by code without making an API request.
     identifier_dictionary()
         Return a dictionary of imports indexed by their identifiers.
     to_pd_dataframe()
@@ -346,7 +353,7 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
             self._name_dictionary_cache[_import.name] = _import
             self._code_dictionary_cache[_import.code] = _import
             for identifier in _import.identifiers:
-                self._identifier_dictionary_cache[identifier].append(_import)
+                list.append(self._identifier_dictionary_cache[identifier], _import)
 
     @property
     def id_dictionary(self) -> Dict[str, Import]:
@@ -361,6 +368,21 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
             self._refresh_cache()
         return self._id_dictionary_cache
 
+    def by_id(self, import_id: str) -> Optional[Import]:
+        """Return an import by ID without making an API request.
+
+        Parameters
+        ----------
+        import_id : str
+            Import identifier to look up.
+
+        Returns
+        -------
+        Optional[Import]
+            Matching import, or ``None`` when the ID is not present.
+        """
+        return self.id_dictionary.get(import_id)
+
     @property
     def name_dictionary(self) -> Dict[str, Import]:
         """Return a dictionary of imports indexed by their names.
@@ -374,6 +396,21 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
             self._refresh_cache()
         return self._name_dictionary_cache
 
+    def by_name(self, name: str) -> Optional[Import]:
+        """Return an import by name without making an API request.
+
+        Parameters
+        ----------
+        name : str
+            Import name to look up.
+
+        Returns
+        -------
+        Optional[Import]
+            Matching import, or ``None`` when the name is not present.
+        """
+        return self.name_dictionary.get(name)
+
     @property
     def code_dictionary(self) -> Dict[str, Import]:
         """Return a dictionary of imports indexed by their codes.
@@ -386,6 +423,21 @@ class ImportList(List[Import], JSONSerializable[List[Any]]):
         if not self._code_dictionary_cache:
             self._refresh_cache()
         return self._code_dictionary_cache
+
+    def by_code(self, code: str) -> Optional[Import]:
+        """Return an import by code without making an API request.
+
+        Parameters
+        ----------
+        code : str
+            Import code to look up.
+
+        Returns
+        -------
+        Optional[Import]
+            Matching import, or ``None`` when the code is not present.
+        """
+        return self.code_dictionary.get(code)
 
     @property
     def identifier_dictionary(self) -> Dict[str, "ImportList"]:

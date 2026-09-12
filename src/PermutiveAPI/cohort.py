@@ -25,6 +25,7 @@ import pandas as pd
 from .utils import http
 from .utils.http import BatchRequest, Progress, process_batch
 from .utils.json import JSONSerializable, load_json_list
+from .utils.list import CacheInvalidatingList
 
 _API_VERSION = "v2"
 _API_ENDPOINT = f"https://api.permutive.app/cohorts-api/{_API_VERSION}/cohorts/"
@@ -646,7 +647,6 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
             If the cohort list cannot be fetched.
         """
         logging.debug(f"CohortAPI::list")
-
         params = {}
         if include_child_workspaces:
             params["include-child-workspaces"] = "true"
@@ -665,7 +665,7 @@ class Cohort(JSONSerializable[Dict[str, Any]]):
         return cohorts_list
 
 
-class CohortList(List[Cohort], JSONSerializable[List[Any]]):
+class CohortList(CacheInvalidatingList[Cohort], JSONSerializable[List[Any]]):
     """A list-like object for managing a collection of Cohort instances.
 
     It provides caching mechanisms for quick lookups by id, code, name, etc.
@@ -680,6 +680,12 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
         Return a dictionary of cohorts indexed by their codes.
     name_dictionary()
         Return a dictionary of cohorts indexed by their names.
+    by_id(cohort_id)
+        Return a cohort by ID without making an API request.
+    by_code(code)
+        Return a cohort by code without making an API request.
+    by_name(name)
+        Return a cohort by name without making an API request.
     tag_dictionary()
         Return a dictionary of cohorts indexed by their tags.
     segment_type_dictionary()
@@ -767,6 +773,21 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
             self._refresh_cache()
         return self._id_dictionary_cache
 
+    def by_id(self, cohort_id: str) -> Optional[Cohort]:
+        """Return a cohort by ID without making an API request.
+
+        Parameters
+        ----------
+        cohort_id : str
+            Cohort identifier to look up.
+
+        Returns
+        -------
+        Optional[Cohort]
+            Matching cohort, or ``None`` when the ID is not present.
+        """
+        return self.id_dictionary.get(cohort_id)
+
     @property
     def code_dictionary(self) -> Dict[str, Cohort]:
         """Return a dictionary of cohorts indexed by their code.
@@ -780,6 +801,21 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
             self._refresh_cache()
         return self._code_dictionary_cache
 
+    def by_code(self, code: Union[int, str]) -> Optional[Cohort]:
+        """Return a cohort by code without making an API request.
+
+        Parameters
+        ----------
+        code : Union[int, str]
+            Cohort code to look up.
+
+        Returns
+        -------
+        Optional[Cohort]
+            Matching cohort, or ``None`` when the code is not present.
+        """
+        return self.code_dictionary.get(str(code))
+
     @property
     def name_dictionary(self) -> Dict[str, Cohort]:
         """Return a dictionary of cohorts indexed by their names.
@@ -792,6 +828,21 @@ class CohortList(List[Cohort], JSONSerializable[List[Any]]):
         if not self._name_dictionary_cache:
             self._refresh_cache()
         return self._name_dictionary_cache
+
+    def by_name(self, name: str) -> Optional[Cohort]:
+        """Return a cohort by name without making an API request.
+
+        Parameters
+        ----------
+        name : str
+            Cohort name to look up.
+
+        Returns
+        -------
+        Optional[Cohort]
+            Matching cohort, or ``None`` when the name is not present.
+        """
+        return self.name_dictionary.get(name)
 
     @property
     def tag_dictionary(self) -> Dict[str, List[Cohort]]:

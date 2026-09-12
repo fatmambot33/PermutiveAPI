@@ -4,6 +4,7 @@ from typing import Callable, Dict, List, Optional, Type, Union, Any
 from dataclasses import dataclass
 from pathlib import Path
 from .utils.json import JSONSerializable, load_json_list
+from .utils.list import CacheInvalidatingList
 from .audience.imports import Import, ImportList
 from .audience.segment import Segment, SegmentList
 from .cohort import Cohort, CohortList
@@ -285,7 +286,7 @@ class Workspace(JSONSerializable[Dict[str, Any]]):
         )
 
 
-class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
+class WorkspaceList(CacheInvalidatingList[Workspace], JSONSerializable[List[Any]]):
     """Manage a collection of Workspace objects.
 
     Methods
@@ -296,6 +297,10 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
         Return a dictionary of workspaces indexed by their IDs.
     name_dictionary()
         Return a dictionary of workspaces indexed by their names.
+    by_id(workspace_id)
+        Return a workspace by ID without making an API request.
+    by_name(name)
+        Return a workspace by name without making an API request.
     master_workspace()
         Return the top-level workspace.
     """
@@ -358,6 +363,21 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
             self._refresh_cache()
         return self._id_dictionary_cache
 
+    def by_id(self, workspace_id: str) -> Optional[Workspace]:
+        """Return a workspace by ID without making an API request.
+
+        Parameters
+        ----------
+        workspace_id : str
+            Workspace identifier to look up.
+
+        Returns
+        -------
+        Optional[Workspace]
+            Matching workspace, or ``None`` when the ID is not present.
+        """
+        return self.id_dictionary.get(workspace_id)
+
     @property
     def name_dictionary(self) -> Dict[str, Workspace]:
         """Return a dictionary of workspaces indexed by their names.
@@ -370,6 +390,21 @@ class WorkspaceList(List[Workspace], JSONSerializable[List[Any]]):
         if not self._name_dictionary_cache:
             self._refresh_cache()
         return self._name_dictionary_cache
+
+    def by_name(self, name: str) -> Optional[Workspace]:
+        """Return a workspace by name without making an API request.
+
+        Parameters
+        ----------
+        name : str
+            Workspace name to look up.
+
+        Returns
+        -------
+        Optional[Workspace]
+            Matching workspace, or ``None`` when the name is not present.
+        """
+        return self.name_dictionary.get(name)
 
     @property
     def master_workspace(self) -> Workspace:
