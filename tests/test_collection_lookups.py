@@ -91,6 +91,7 @@ def test_collection_lookup_caches_refresh_after_mutations() -> None:
     assert cohorts.by_id("cohort-2") is cohort_b
     cohorts[0] = cohort_b
     assert cohorts.by_id("cohort-1") is None
+    cohorts[0] = cohort_a
     cohorts.remove(cohort_b)
     assert cohorts.by_name("News") is None
 
@@ -117,9 +118,7 @@ def test_collection_lookup_caches_refresh_after_mutations() -> None:
     imports.remove(import_b)
     assert imports.by_id("import-2") is None
 
-    segment_a = Segment(
-        code="vip", name="VIP", import_id="import-1", id="segment-1"
-    )
+    segment_a = Segment(code="vip", name="VIP", import_id="import-1", id="segment-1")
     segment_b = Segment(
         code="loyal", name="Loyal", import_id="import-1", id="segment-2"
     )
