@@ -54,6 +54,12 @@ def validate(root: Path, expected_tag: str | None = None) -> list[str]:
     release_notes = root / "docs" / "releases" / f"{version}.md"
     if not release_notes.is_file():
         errors.append(f"missing release notes: {release_notes.as_posix()}")
+    else:
+        expected_title = f"# PermutiveAPI {version}"
+        release_text = release_notes.read_text(encoding="utf-8")
+        if not release_text.startswith(f"{expected_title}\n"):
+            relative_path = release_notes.relative_to(root).as_posix()
+            errors.append(f"{relative_path} must start with `{expected_title}`")
 
     if expected_tag is not None:
         normalized_tag = expected_tag.removeprefix("refs/tags/").removeprefix("v")
