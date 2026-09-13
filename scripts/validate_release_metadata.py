@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from pathlib import Path
 
@@ -11,6 +12,7 @@ VERSION_PATTERN = re.compile(
     re.MULTILINE,
 )
 CHANGELOG_PATTERN = r"^## {version} - \d{{4}}-\d{{2}}-\d{{2}}$"
+PLUGIN_MANIFEST = Path("plugins/permutiveapi/.codex-plugin/plugin.json")
 
 
 def project_version(pyproject: Path) -> str:
@@ -60,6 +62,27 @@ def validate(root: Path, expected_tag: str | None = None) -> list[str]:
         if not release_text.startswith(f"{expected_title}\n"):
             relative_path = release_notes.relative_to(root).as_posix()
             errors.append(f"{relative_path} must start with `{expected_title}`")
+
+    plugin_manifest = root / PLUGIN_MANIFEST
+    if not plugin_manifest.is_file():
+        errors.append(f"missing Codex plugin manifest: {PLUGIN_MANIFEST.as_posix()}")
+    else:
+        try:
+            plugin = json.loads(plugin_manifest.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as error:
+            errors.append(f"invalid Codex plugin manifest JSON: {error.msg}")
+        else:
+            if not isinstance(plugin, dict):
+                errors.append(
+                    "invalid Codex plugin manifest: top-level JSON must be an object"
+                )
+            else:
+                plugin_version = plugin.get("version")
+                if plugin_version != version:
+                    errors.append(
+                        "Codex plugin version "
+                        f"{plugin_version!r} does not match project version {version!r}"
+                    )
 
     if expected_tag is not None:
         normalized_tag = expected_tag.removeprefix("refs/tags/").removeprefix("v")
