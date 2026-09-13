@@ -78,3 +78,18 @@ def test_codex_plugin_version_must_match_project_version(tmp_path: Path) -> None
         "Codex plugin version '1.2.2' does not match project version '1.2.3'"
         in result.stdout
     )
+
+
+def test_codex_plugin_manifest_must_be_an_object(tmp_path: Path) -> None:
+    """Reject syntactically valid non-object plugin manifests cleanly."""
+    _write_release_fixture(tmp_path)
+    plugin_manifest = tmp_path / "plugins" / "permutiveapi" / ".codex-plugin" / "plugin.json"
+    plugin_manifest.write_text("[]\n", encoding="utf-8")
+
+    result = _run_validator(tmp_path)
+
+    assert result.returncode == 1
+    assert (
+        "invalid Codex plugin manifest: top-level JSON must be an object"
+        in result.stdout
+    )
