@@ -11,17 +11,28 @@ permissions:
   issues: write
   checks: write
 
+concurrency:
+  group: codex-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   codex-review:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve live base revision
+        id: base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          echo "sha=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${BASE_REF}" --jq .sha)" >> "$GITHUB_OUTPUT"
       - name: Run shared current-HEAD Codex review gate
         uses: fatmambot33/ai-native-platform/actions/codex-review-gate@f111347c63e4bf90e63d5eb40424dea7c531f989
         with:
           token: ${{ github.token }}
           pr-number: ${{ github.event.pull_request.number }}
           head-sha: ${{ github.event.pull_request.head.sha }}
-          review-context: ${{ github.event.pull_request.base.sha }}
+          review-context: ${{ steps.base.outputs.sha }}
           mode: request-and-wait
           check-name: codex-review
