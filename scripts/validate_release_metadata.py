@@ -72,12 +72,15 @@ def validate(root: Path, expected_tag: str | None = None) -> list[str]:
         except json.JSONDecodeError as error:
             errors.append(f"invalid Codex plugin manifest JSON: {error.msg}")
         else:
-            plugin_version = plugin.get("version")
-            if plugin_version != version:
-                errors.append(
-                    "Codex plugin version "
-                    f"{plugin_version!r} does not match project version {version!r}"
-                )
+            if not isinstance(plugin, dict):
+                errors.append("invalid Codex plugin manifest: top-level JSON must be an object")
+            else:
+                plugin_version = plugin.get("version")
+                if plugin_version != version:
+                    errors.append(
+                        "Codex plugin version "
+                        f"{plugin_version!r} does not match project version {version!r}"
+                    )
 
     if expected_tag is not None:
         normalized_tag = expected_tag.removeprefix("refs/tags/").removeprefix("v")
