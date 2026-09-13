@@ -83,7 +83,9 @@ def test_codex_plugin_version_must_match_project_version(tmp_path: Path) -> None
 def test_codex_plugin_manifest_must_be_an_object(tmp_path: Path) -> None:
     """Reject syntactically valid non-object plugin manifests cleanly."""
     _write_release_fixture(tmp_path)
-    plugin_manifest = tmp_path / "plugins" / "permutiveapi" / ".codex-plugin" / "plugin.json"
+    plugin_manifest = (
+        tmp_path / "plugins" / "permutiveapi" / ".codex-plugin" / "plugin.json"
+    )
     plugin_manifest.write_text("[]\n", encoding="utf-8")
 
     result = _run_validator(tmp_path)
