@@ -11,6 +11,18 @@ from PermutiveAPI import (
     WorkspaceList,
 )
 from PermutiveAPI.audience.source import Source
+from PermutiveAPI.utils.list import CacheInvalidatingList
+
+
+class _TrackedList(CacheInvalidatingList[int]):
+    """Record refreshes triggered by list mutation methods."""
+
+    def __init__(self, items: list[int]) -> None:
+        self.refreshes = 0
+        super().__init__(items)
+
+    def _refresh_cache(self) -> None:
+        self.refreshes += 1
 
 
 def test_cohort_list_lookup_helpers() -> None:
@@ -145,3 +157,23 @@ def test_collection_lookup_caches_refresh_after_mutations() -> None:
     assert workspaces.by_id("workspace-2") is workspace_b
     workspaces.remove(workspace_b)
     assert workspaces.by_name("Child") is None
+
+
+def test_cache_invalidating_list_refreshes_for_all_mutation_paths() -> None:
+    """Every supported in-place list mutation refreshes derived caches."""
+    values = _TrackedList([3, 1, 2])
+
+    values.append(4)
+    values.extend([5])
+    values.insert(0, 0)
+    values.pop()
+    values.remove(0)
+    values.reverse()
+    values.sort()
+    values[0] = 10
+    del values[0]
+    values += [6]
+    values *= 2
+    values.clear()
+
+    assert values.refreshes == 12
