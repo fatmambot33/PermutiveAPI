@@ -49,6 +49,5 @@ def test_release_note_title_must_match_project_version(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert (
-        "docs/releases/1.2.3.md must start with `# PermutiveAPI 1.2.3`"
-        in result.stdout
+        "docs/releases/1.2.3.md must start with `# PermutiveAPI 1.2.3`" in result.stdout
     )
