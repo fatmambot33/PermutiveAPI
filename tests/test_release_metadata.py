@@ -1,30 +1,37 @@
-"""Regression tests for release metadata alignment."""
+"""Regression tests for release metadata validation."""
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
+
+from scripts.validate_release_metadata import validate
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _project_version() -> str:
-    """Return the authoritative project version from ``pyproject.toml``."""
-    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    match = re.search(r'^version = "([^"]+)"$', pyproject, flags=re.MULTILINE)
-    assert match is not None
-    return match.group(1)
+def test_current_release_metadata_is_valid() -> None:
+    """Keep the repository's current release metadata internally consistent."""
+    assert validate(ROOT) == []
 
 
-def test_current_release_metadata_matches_project_version() -> None:
-    """Keep release documentation aligned with the package version."""
-    version = _project_version()
-    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    release_notes = ROOT / "docs" / "releases" / f"{version}.md"
-
-    assert re.search(rf"^## {re.escape(version)} - ", changelog, flags=re.MULTILINE)
-    assert release_notes.is_file()
-    assert release_notes.read_text(encoding="utf-8").startswith(
-        f"# PermutiveAPI {version}\n"
+def test_release_note_title_must_match_project_version(tmp_path: Path) -> None:
+    """Reject release notes whose document title drifts from the project version."""
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "PermutiveAPI"\nversion = "1.2.3"\n',
+        encoding="utf-8",
     )
+    (tmp_path / "CHANGELOG.md").write_text(
+        "# Changelog\n\n## 1.2.3 - 2026-09-13\n",
+        encoding="utf-8",
+    )
+    releases = tmp_path / "docs" / "releases"
+    releases.mkdir(parents=True)
+    (releases / "1.2.3.md").write_text(
+        "# PermutiveAPI 1.2.2\n",
+        encoding="utf-8",
+    )
+
+    assert validate(tmp_path) == [
+        "docs/releases/1.2.3.md must start with `# PermutiveAPI 1.2.3`"
+    ]
