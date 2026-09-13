@@ -1,0 +1,27 @@
+name: Codex review gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, edited]
+    branches:
+      - main
+
+permissions:
+  contents: read
+  issues: write
+  checks: write
+
+jobs:
+  codex-review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run shared current-HEAD Codex review gate
+        uses: fatmambot33/ai-native-platform/actions/codex-review-gate@f111347c63e4bf90e63d5eb40424dea7c531f989
+        with:
+          token: ${{ github.token }}
+          pr-number: ${{ github.event.pull_request.number }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          review-context: ${{ github.event.pull_request.base.sha }}
+          mode: request-and-wait
+          check-name: codex-review
