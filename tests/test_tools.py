@@ -8,7 +8,6 @@ from PermutiveAPI.agent import PermutiveAgentKit
 from PermutiveAPI.mcp import PermutiveMCPConfig
 from PermutiveAPI.tools import ToolDefinition, ToolRegistry, tool
 
-
 SCHEMA = {
     "type": "object",
     "properties": {"value": {"type": "integer"}},
